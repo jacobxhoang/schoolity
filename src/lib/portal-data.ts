@@ -79,12 +79,28 @@ export function grades(payload: unknown): GradeData {
     })),
   };
 }
+export function profilePayload(payload: unknown): JsonObject {
+  const raw = object(payload);
+  if (!raw.studentInfoXML && !raw.studentInfoDetailXML) return raw;
+  return Object.fromEntries([
+    ...Object.entries(object(raw.studentInfoXML)),
+    ...Object.entries(object(raw.studentInfoDetailXML)).filter(
+      ([, value]) => value !== null && value !== undefined && value !== '',
+    ),
+  ]);
+}
 export function profile(payload: unknown): Profile {
-  const p = object(payload);
+  const p = profilePayload(payload);
+  // A district student number is distinct from an account/GUID or child index.
+  // Keep it as text, preserving leading zeros and never guessing from a login.
+  const studentId = [p.permID, p.permId, p.PermID, p.studentID, p.studentId, p.StudentID, p.studentNumber]
+    .map((value) => typeof value === 'string' ? value.trim() : Number.isSafeInteger(value) && Number(value) >= 0 ? String(value) : '')
+    .find((value) => value.length > 0);
   return {
     name: displayText(p.formattedName) || 'Student',
     school: displayText(p.schoolName) || 'Your school',
     grade: string(p.grade),
+    ...(studentId ? { studentId } : {}),
   };
 }
 export function events(payload: unknown, kind: string): EventItem[] {

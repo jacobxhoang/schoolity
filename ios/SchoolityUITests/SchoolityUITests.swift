@@ -1,4 +1,5 @@
 import XCTest
+import Vision
 
 final class SchoolityUITests: XCTestCase {
     private func capture(_ name: String) {
@@ -104,5 +105,39 @@ final class SchoolityUITests: XCTestCase {
         capture("saved-sign-in-cancelled")
         app.buttons["login.usePassword"].tap()
         XCTAssertTrue(app.textFields["login.username"].waitForExistence(timeout: 5))
+    }
+
+    func testStudentIDShowsBarcodeAndDistrictNumber() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing"]
+        app.launch()
+        XCTAssertTrue(app.buttons["Account"].waitForExistence(timeout: 10))
+        app.buttons["Account"].tap()
+        let link = app.buttons["account.studentID"]
+        if !link.isHittable { app.swipeUp() }
+        link.tap()
+        XCTAssertTrue(app.staticTexts["studentID.number"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["studentID.number"].label, "Student ID, 00012345")
+        if !app.staticTexts["studentID.number"].isHittable { app.swipeUp() }
+        let image = try XCTUnwrap(XCUIScreen.main.screenshot().image.cgImage)
+        let request = VNDetectBarcodesRequest()
+        request.symbologies = [.code128]
+        try VNImageRequestHandler(cgImage: image).perform([request])
+        XCTAssertTrue(request.results?.contains(where: { $0.payloadStringValue == "00012345" }) == true)
+        capture("student-id")
+    }
+
+    func testMissingStudentIDDoesNotCreateAFakeCard() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--ui-no-student-id"]
+        app.launch()
+        XCTAssertTrue(app.buttons["Account"].waitForExistence(timeout: 10))
+        app.buttons["Account"].tap()
+        let link = app.buttons["account.studentID"]
+        if !link.isHittable { app.swipeUp() }
+        link.tap()
+        XCTAssertTrue(app.staticTexts["Student ID unavailable"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["studentID.number"].exists)
+        capture("student-id-unavailable")
     }
 }

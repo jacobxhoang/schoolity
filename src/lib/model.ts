@@ -36,6 +36,7 @@ export interface Profile {
   name: string;
   school: string;
   grade: string;
+  studentId?: string;
 }
 export interface EventItem {
   author?: string;

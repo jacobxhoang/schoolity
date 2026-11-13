@@ -4,7 +4,7 @@ import { store } from './store.ts';
 import { sessionLifetime } from './session-policy.ts';
 import { randomBytes, createHash } from 'node:crypto';
 import { BlockList } from 'node:net';
-import { object, string } from '../portal-data.ts';
+import { object, profilePayload, string } from '../portal-data.ts';
 export class PortalError extends Error {
   status: number;
   constructor(message: string, status = 502) {
@@ -287,6 +287,7 @@ export async function read(
   if (!('data' in response))
     throw new PortalError('The district returned an unexpected response.');
   const data = object(response.data);
+  if (resource === 'profile') return profilePayload(data);
   for (const key of spec[2]) if (data[key] != null) return data[key];
   return data;
 }

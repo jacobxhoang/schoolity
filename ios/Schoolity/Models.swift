@@ -42,6 +42,7 @@ struct StudentProfile: Codable {
     var name: String
     var school: String
     var grade: String
+    var studentId: String?
 }
 
 struct MailAttachment: Codable, Identifiable {

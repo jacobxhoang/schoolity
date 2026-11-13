@@ -7,6 +7,8 @@ final class AppStore: ObservableObject {
     @Published var access: Access = .checking
     @Published var gradebook: Gradebook?
     @Published var profile: StudentProfile?
+    @Published var isLoadingProfile = false
+    @Published var profileError: String?
     @Published var records: [SchoolResource: [SchoolEvent]] = [:]
     @Published var failures: [SchoolResource: String] = [:]
     @Published var loadingResources: Set<SchoolResource> = []
@@ -203,11 +205,25 @@ final class AppStore: ObservableObject {
             handle(error)
             gradeError = error.localizedDescription
         }
-        if profile == nil, access == .signedIn, ticket == generation {
-            do {
-                let next: StudentProfile = try await client.read("profile", term: nil)
-                if ticket == generation { profile = next }
-            } catch { if ticket == generation { handle(error) } }
+        if profile == nil, access == .signedIn, ticket == generation { await loadProfile() }
+    }
+
+    func loadProfile(refresh: Bool = false) async {
+        guard access == .signedIn, !isLoadingProfile, refresh || profile == nil else { return }
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing") { return }
+        #endif
+        let ticket = generation
+        isLoadingProfile = true
+        profileError = nil
+        defer { if ticket == generation { isLoadingProfile = false } }
+        do {
+            let next: StudentProfile = try await client.read("profile", term: nil)
+            if ticket == generation { profile = next }
+        } catch {
+            guard ticket == generation else { return }
+            handle(error)
+            profileError = error.localizedDescription
         }
     }
 
@@ -267,6 +283,8 @@ final class AppStore: ObservableObject {
         generation = UUID()
         gradebook = nil
         profile = nil
+        isLoadingProfile = false
+        profileError = nil
         records = [:]
         failures = [:]
         loadingResources = []

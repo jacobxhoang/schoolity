@@ -7,6 +7,11 @@ on:
   pull_request:
     paths: ["ios/**", ".github/workflows/ios.yml", "src/lib/portal-data.ts", "src/routes/api/**"]
   workflow_dispatch:
+    inputs:
+      keep_test_evidence:
+        description: Keep simulator screenshots and test results for one day
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -58,12 +63,11 @@ jobs:
           xcodebuild archive -project Schoolity.xcodeproj -scheme Schoolity \
             -configuration Release -destination 'generic/platform=iOS' \
             -archivePath build/Schoolity.xcarchive \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" \
             | tee build/archive.log
-          ditto -c -k --sequesterRsrc --keepParent build/Schoolity.xcarchive build/Schoolity-unsigned.xcarchive.zip
           mkdir -p build/ipa/Payload
           ditto build/Schoolity.xcarchive/Products/Applications/Schoolity.app build/ipa/Payload/Schoolity.app
-          ditto -c -k --keepParent build/ipa/Payload build/Schoolity-unsigned.ipa
+          ditto -c -k --keepParent build/ipa/Payload build/Schoolity.ipa
       - name: Select and boot an available iPhone
         run: |
           set -euo pipefail
@@ -116,34 +120,29 @@ jobs:
             -only-testing:SchoolityUITests/SchoolityUITests/testLoginHasNoAnonymousEntry \
             -only-testing:SchoolityUITests/SchoolityUITests/testAccessibilityGradebookAndCourse \
             -only-testing:SchoolityUITests/SchoolityUITests/testSavedSignInCanUnlock \
+            -only-testing:SchoolityUITests/SchoolityUITests/testStudentIDShowsBarcodeAndDistrictNumber \
             -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO \
             | tee build/ui-dark.log
           grep -Eq 'Executed [1-9][0-9]* tests?' build/ui-dark.log
           xcrun simctl ui "$SIMULATOR_ID" content_size large
-      - name: Package simulator app and screenshots
-        if: always()
+      - name: Export test screenshots
+        if: failure() || inputs.keep_test_evidence == true
         run: |
           set -euo pipefail
-          if [ -d DerivedData/Build/Products/Debug-iphonesimulator/Schoolity.app ]; then
-            ditto -c -k --sequesterRsrc --keepParent DerivedData/Build/Products/Debug-iphonesimulator/Schoolity.app build/Schoolity-simulator.zip
-          fi
           for result in TestResults/*.xcresult; do
             [ -d "$result" ] || continue
             name=$(basename "$result" .xcresult)
             xcrun xcresulttool export attachments --path "$result" --output-path "build/screenshots/$name" || true
           done
-      - name: Upload compiled apps
-        if: always()
+      - name: Transfer IPA to release job
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
-          name: Schoolity-iOS-${{ github.run_number }}
-          path: |
-            ios/build/*.zip
-            ios/build/*.ipa
-          if-no-files-found: warn
-          retention-days: 7
+          name: Schoolity-IPA
+          path: ios/build/Schoolity.ipa
+          if-no-files-found: error
+          retention-days: 1
       - name: Upload test evidence and build logs
-        if: always()
+        if: failure() || inputs.keep_test_evidence == true
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: Schoolity-iOS-tests-${{ github.run_number }}
@@ -152,4 +151,38 @@ jobs:
             ios/build/screenshots/
             ios/build/*.log
           if-no-files-found: warn
-          retention-days: 7
+          retention-days: 1
+
+  publish-release:
+    name: Publish IPA release
+    needs: compile-and-test
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download tested IPA
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: Schoolity-IPA
+          path: release
+      - name: Publish Schoolity.ipa
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          COMMIT_SHA: ${{ github.sha }}
+          BUILD_NUMBER: ${{ github.run_number }}
+          BUILD_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          tag="ios-build-${BUILD_NUMBER}.${BUILD_ATTEMPT}"
+          cat > "$RUNNER_TEMP/release-notes.md" <<'NOTES'
+          Native Schoolity iPhone app, built and tested automatically.
+
+          Download **Schoolity.ipa** below. This build is unsigned and requires Apple signing before installation.
+          NOTES
+          gh release create "$tag" release/Schoolity.ipa \
+            --target "$COMMIT_SHA" --title "Schoolity iOS · Build ${BUILD_NUMBER}.${BUILD_ATTEMPT}" \
+            --notes-file "$RUNNER_TEMP/release-notes.md" --latest
+          url=$(gh release view "$tag" --json url --jq .url)
+          echo "### [Download Schoolity.ipa]($url)" >> "$GITHUB_STEP_SUMMARY"

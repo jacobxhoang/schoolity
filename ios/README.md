@@ -12,14 +12,21 @@ Existing saved sessions are upgraded to require local authentication on the firs
 
 ## Build on GitHub (works from Windows)
 
-Open the repository's **Actions → iOS → Run workflow**. Pushes to `main` that change the iOS app or its server contract also compile automatically; pull requests compile without write permissions or secrets.
+Open the repository's **Actions → iOS → Run workflow** on `main`. Pushes to `main` that change the iOS app or its server contract also compile automatically. After the tests pass, download **Schoolity.ipa** from the [latest release](https://github.com/verityhoangjacob67/schoolity/releases/latest).
 
-The macOS workflow generates the Xcode project, compiles a Release archive for iPhone, runs unit and native UI tests on an installed iPhone simulator, and uploads:
+The macOS job generates the Xcode project, compiles a Release archive for iPhone, and runs unit and native UI tests. A separate release job publishes **only Schoolity.ipa** as the app download, tagged `ios-build-<run>.<attempt>` and marked Latest. The tag targets the tested commit; reruns create a fresh release. The app's build number follows the workflow run number.
 
-- `Schoolity-iOS-<run>`: unsigned device `.ipa`, `.xcarchive.zip`, and simulator `.app.zip`.
-- `Schoolity-iOS-tests-<run>`: build logs, XCTest results, and synthetic-data simulator screenshots.
+Pull requests and manual builds of other branches compile/test without publishing. Build jobs have read-only repository access; only the main-branch release job receives permission to create a release. No Apple credentials or repository secrets are needed.
 
-Artifacts expire after seven days. The IPA and archive are **unsigned**: the IPA must be signed with your own Apple development identity before installation; downloading it alone will not install it on an iPhone. This workflow needs no Apple account, certificates, or repository secrets. It does use GitHub-hosted macOS runner minutes; availability follows your account's Actions allowance.
+The release IPA does not expire with Actions artifacts. A one-day internal IPA artifact transfers the file between jobs. Test evidence is retained for one day only on failure, or when **Keep simulator screenshots and test results for one day** is checked for a manual run. No simulator ZIP or archive ZIP is published.
+
+The IPA is **unsigned** and requires Apple signing before installation; downloading it alone will not install it on an iPhone. The workflow uses GitHub-hosted macOS runner minutes; availability follows your account's Actions allowance.
+
+## Student ID
+
+Open **Account → Student ID** to show the district-provided student number and a black-on-white Code 128 barcode. The value stays text to preserve leading zeros. Summary/detail profile data is combined, using explicit district student-number fields; account usernames, GUIDs, and child indexes are never substituted. If no ID is supplied, the app shows an unavailable state with Retry. Profile and ID data remain in memory and clear when the app locks or signs out.
+
+The barcode uses Core Image at integer pixel scales with quiet zones. An automated Vision decoding test checks the exact encoded value. This is a Schoolity display of district data, not a district-issued credential; live Anoka ID-field compatibility and campus scanner acceptance still need private verification. No student photo or manually invented ID is included.
 
 ## Open in Xcode
 

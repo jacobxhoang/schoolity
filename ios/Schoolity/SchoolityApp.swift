@@ -177,8 +177,9 @@ struct WorkspaceView: View {
 struct AccountButton: View {
     @EnvironmentObject private var store: AppStore
     @State private var showAccount = false
+    @State private var accountSize: PresentationDetent = .medium
     var body: some View {
-        Button { showAccount = true } label: { Image(systemName: "person.crop.circle").frame(minWidth: 44, minHeight: 44) }
+        Button { accountSize = .medium; showAccount = true } label: { Image(systemName: "person.crop.circle").frame(minWidth: 44, minHeight: 44) }
             .accessibilityLabel("Account")
             .sheet(isPresented: $showAccount) {
                 NavigationStack {
@@ -191,6 +192,12 @@ struct AccountButton: View {
                             }
                         }
                         Section {
+                            NavigationLink {
+                                StudentIDView().onAppear { accountSize = .large }
+                            } label: { Label("Student ID", systemImage: "barcode") }
+                            .accessibilityIdentifier("account.studentID")
+                        }
+                        Section {
                             Button("Sign out", role: .destructive) { Task { await store.signOut() } }
                         }
                     }
@@ -198,7 +205,7 @@ struct AccountButton: View {
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showAccount = false } } }
                 }
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.medium, .large], selection: $accountSize)
             }
     }
 }
