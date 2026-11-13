@@ -18,7 +18,6 @@ export interface Course {
   teacher: string;
   room: string;
   period: string;
-  color: string;
   official: number | null;
   categories: Category[];
   assignments: Task[];

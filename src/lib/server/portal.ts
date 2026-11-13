@@ -5,45 +5,13 @@ import { sessionLifetime } from './session-policy.ts';
 import { randomBytes, createHash } from 'node:crypto';
 import { BlockList } from 'node:net';
 import { object, profilePayload, string } from '../portal-data.ts';
+import { DISTRICT_URL } from '../config.ts';
 export class PortalError extends Error {
   status: number;
   constructor(message: string, status = 502) {
     super(message);
     this.status = status;
   }
-}
-export function districtAddress(raw: string): URL {
-  let parsed: URL;
-  try {
-    parsed = new URL(raw.includes('://') ? raw : `https://${raw}`);
-  } catch {
-    throw new PortalError('Enter a valid district portal address.', 400);
-  }
-  if (
-    parsed.protocol !== 'https:' ||
-    parsed.username ||
-    parsed.password ||
-    parsed.port
-  )
-    throw new PortalError(
-      'Use an HTTPS district address without a custom port.',
-      400,
-    );
-  if (
-    !/^(?:[a-z\d-]+\.)+[a-z]{2,}$/i.test(parsed.hostname) ||
-    /\.(local|localhost|internal)$/i.test(parsed.hostname)
-  )
-    throw new PortalError('Enter your public district portal address.', 400);
-  let prefix = parsed.pathname
-    .replace(/\/[^/]+\.aspx$/i, '')
-    .replace(/\/$/, '');
-  if (!/^(\/[\w-]+)*$/.test(prefix))
-    throw new PortalError('The portal address has an unsupported path.', 400);
-  if (parsed.hostname === 'sisstudent.fcps.edu' && !prefix) prefix = '/SVUE';
-  parsed.pathname = prefix;
-  parsed.search = '';
-  parsed.hash = '';
-  return parsed;
 }
 const privateNetworks = new BlockList();
 for (const [address, prefix] of [
@@ -109,7 +77,7 @@ export async function exchange(
           reject(
             new PortalError(
               incoming.statusCode === 401 || incoming.statusCode === 403
-                ? 'Your district rejected the login. Check your portal address and credentials.'
+                ? 'Your district rejected the login. Check your username and password.'
                 : `The district returned HTTP ${incoming.statusCode}.`,
               incoming.statusCode === 401 || incoming.statusCode === 403
                 ? 401
@@ -208,12 +176,11 @@ export async function limitLogin(scope: 'login' | 'renew', key: string) {
   }
 }
 export async function signIn(
-  district: string,
   username: string,
   password: string,
   send = exchange,
 ): Promise<{ id: string; maxAge: number }> {
-  const base = districtAddress(district).href.replace(/\/$/, '');
+  const base = DISTRICT_URL;
   const auth = Buffer.from(`${username}:${password}`).toString('base64');
   const result = await send(base, 'AttemptLogin', `Basic ${auth}`, {
     userID: null,
@@ -224,7 +191,7 @@ export async function signIn(
   });
   if (typeof result.access_token !== 'string' || !result.access_token)
     throw new PortalError(
-      'Login was not accepted. Check your district and credentials.',
+      'Login was not accepted. Check your username and password.',
       401,
     );
   const id = randomBytes(32).toString('base64url');
