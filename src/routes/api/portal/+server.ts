@@ -1,22 +1,19 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import {
-  endSession,
-  limitLogin,
-  findSession,
   PortalError,
   read,
-  signIn,
 } from '$lib/server/portal';
 import { nativeData, object } from '$lib/portal-data';
 import { DISTRICT_URL } from '$lib/config';
-import { sessionCookieOptions } from '$lib/server/session-policy';
+import { browserAuth } from '$lib/server/browser-auth';
 export const POST: RequestHandler = async ({
   request,
   cookies,
   url,
   getClientAddress,
 }) => {
+  const context = { cookies, url, getClientAddress };
   const headers = { 'Cache-Control': 'no-store', Pragma: 'no-cache' };
   try {
     if (
@@ -34,14 +31,11 @@ export const POST: RequestHandler = async ({
     } catch {
       throw new PortalError('Invalid request.', 400);
     }
-    const id = cookies.get('schoolity_session');
     if (input.action === 'logout') {
-      await endSession(id);
-      cookies.delete('schoolity_session', { path: '/' });
+      await browserAuth.logout(context);
       return json({ ok: true }, { headers });
     }
     if (input.action === 'login') {
-      await limitLogin(getClientAddress());
       if (
         typeof input.username !== 'string' ||
         typeof input.password !== 'string' ||
@@ -49,6 +43,8 @@ export const POST: RequestHandler = async ({
         !input.password
       )
         throw new PortalError('Enter your username and password.', 400);
+      if (input.remember !== undefined && typeof input.remember !== 'boolean')
+        throw new PortalError('Choose whether to stay signed in.', 400);
       if (
         input.district !== undefined &&
         input.district !== DISTRICT_URL &&
@@ -58,28 +54,17 @@ export const POST: RequestHandler = async ({
           'This Schoolity instance only connects to the configured Anoka district.',
           400,
         );
-      const next = await signIn(DISTRICT_URL, input.username, input.password);
-      await endSession(id);
-      cookies.set(
-        'schoolity_session',
-        next.id,
-        sessionCookieOptions(url, next.maxAge),
-      );
+      await browserAuth.login(context, input.username, input.password, input.remember === true);
       return json({ ok: true }, { headers });
     }
-    const session = await findSession(id);
     if (input.action === 'session')
-      return json({ connected: !!session }, { headers });
-    if (!session)
-      throw new PortalError(
-        'Your session has ended. Sign in again to refresh your school data.',
-        401,
-      );
+      return json({ connected: !!await browserAuth.restore(context) }, { headers });
     if (typeof input.resource !== 'string')
       throw new PortalError('Select a resource.', 400);
-    const data = await read(session, input.resource, input.term);
+    const resource = input.resource;
+    const data = await browserAuth.withSession(context, (session) => read(session, resource, input.term));
     return json(
-      { data: input.normalized === true ? nativeData(data, input.resource) : data },
+      { data: input.normalized === true ? nativeData(data, resource) : data },
       { headers },
     );
   } catch (error) {

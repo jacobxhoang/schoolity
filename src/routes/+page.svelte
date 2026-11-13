@@ -8,7 +8,7 @@
     targetExplanation,
     scoreChange,
   } from '$lib/workspace';
-  let { data: sessionData }: { data: { authenticated: boolean } } = $props();
+  let { data: sessionData }: { data: { authenticated: boolean; signInError?: string; retrySavedSignIn?: boolean } } = $props();
   let authenticated = $state(untrack(() => sessionData.authenticated));
   import Icon from '$lib/Icon.svelte';
   import Trend from '$lib/Trend.svelte';
@@ -26,16 +26,15 @@
   import './app.css';
   import './monochrome.css';
   const navigation = [
-    { id: 'overview', label: 'Overview', icon: 'grid' },
     { id: 'grades', label: 'Gradebook', icon: 'book' },
     { id: 'schedule', label: 'Schedule', icon: 'calendar' },
     { id: 'mail', label: 'Inbox', icon: 'mail' },
     { id: 'documents', label: 'Documents', icon: 'file' },
   ];
-  let tab = $state('overview'),
+  let tab = $state('grades'),
     data = $state<GradeData>({ courses: [], terms: [], currentTerm: 0 }),
     person = $state({ name: 'Student', school: 'Anoka-Hennepin', grade: '' }),
-    busy = $state(false),
+    busy = $state(untrack(() => sessionData.authenticated)),
     error = $state(''),
     notice = $state('');
   let selected = $state<string | null>(null),
@@ -51,8 +50,9 @@
     mainContent = $state<HTMLElement>();
   let username = $state(''),
     password = $state(''),
+    rememberSignIn = $state(false),
     loginBusy = $state(false),
-    loginError = $state(''),
+    loginError = $state(untrack(() => sessionData.signInError ?? '')),
     hypothetical = $state(false);
   let edits = $state<Record<string, Course>>({}),
     resourceData = $state<Record<string, EventItem[]>>({});
@@ -157,13 +157,11 @@
           resource: 'grades',
           ...(term === undefined ? {} : { term }),
         }),
-        api({ action: 'read', resource: 'profile' }).catch(() => ({
-          data: {},
-        })),
+        api({ action: 'read', resource: 'profile' }).catch(() => null),
       ]);
       if (version !== generation || !authenticated) return;
       data = grades(g.data);
-      person = profile(p.data);
+      if (p) person = profile(p.data);
       lastRefresh = Date.now();
       if (selected && !data.courses.some((c) => c.id === selected)) {
         selected = null;
@@ -319,14 +317,15 @@
     loginError = '';
     loginBusy = true;
     try {
-      await api({ action: 'login', username, password });
+      await api({ action: 'login', username, password, remember: rememberSignIn });
       password = '';
       showPassword = false;
       authenticated = true;
       data = { courses: [], terms: [], currentTerm: 0 };
       person = { name: 'Student', school: 'Your school', grade: '' };
       resourceData = {};
-      tab = 'overview';
+      tab = 'grades';
+      writeLocation('#grades');
       await load();
     } catch (e) {
       loginError = e instanceof Error ? e.message : 'Unable to sign in.';
@@ -409,14 +408,17 @@
     busy = false;
   }
   async function logout() {
+    let message = '';
     try {
       await api({ action: 'logout' });
-      authenticated = false;
-      clearWorkspace();
-      loginError = '';
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Could not sign out. Try again.';
+      message = e instanceof Error ? e.message : 'Could not fully sign out. Try again.';
     }
+    // The server deletes cookies even when cleanup partially fails.
+    authenticated = false;
+    clearWorkspace();
+    error = '';
+    loginError = message;
   }
   async function changeTerm(value: string) {
     edits = {};
@@ -513,6 +515,10 @@
         void loadResource(tab);
     };
     window.addEventListener('popstate', back);
+    const returned = (event: PageTransitionEvent) => {
+      if (event.persisted && authenticated && !busy) void load();
+    };
+    window.addEventListener('pageshow', returned);
     if (authenticated)
       void load().then(() => {
         if (['schedule', 'mail', 'documents'].includes(tab))
@@ -521,6 +527,7 @@
     return () => {
       mq.removeEventListener('change', resize);
       window.removeEventListener('popstate', back);
+      window.removeEventListener('pageshow', returned);
     };
   });
 </script>
@@ -555,11 +562,11 @@
         onclick={() => closeMenu()}><Icon name="close" /></button
       >
       <a
-        href="#overview"
+        href="#grades"
         class="brand"
         onclick={(e) => {
           e.preventDefault();
-          void navigate('overview');
+          void navigate('grades');
         }}><span class="brand-symbol">S</span>Schoolity</a
       >
       <nav aria-label="Main navigation">
@@ -831,11 +838,11 @@
               >
             </table>
           </div>
-        {:else if tab === 'overview' || tab === 'grades'}
+        {:else if tab === 'grades'}
           <div class="page-heading">
             <div>
               <h1>
-                {tab === 'overview' ? 'Overview' : 'Gradebook'}
+                Gradebook
               </h1>
             </div>
             <button
@@ -856,7 +863,7 @@
               <span>Ungraded</span><strong>{upcoming.length}</strong>
             </div>
           </section>
-          <div class="content-columns" class:gradebook-page={tab === 'grades'}>
+          <div class="content-columns">
             <div class="courses-column">
               <div class="section-heading">
                 <div>
@@ -917,38 +924,6 @@
                     another period or refresh.
                   </p>
                 </div>{/if}
-            </div>
-            <div class="right-column">
-              <section class="up-next">
-                <div class="section-heading">
-                  <h2>Ungraded assignments</h2>
-                  <Icon name="clock" size={17} />
-                </div>
-
-                {#each upcoming.slice(0, 4) as task}<button
-                    class="upcoming-task"
-                    onclick={() => {
-                      const c = data.courses.find(
-                        (c) => c.name === task.course,
-                      );
-                      if (c) openCourse(c);
-                    }}
-                    ><span
-                      class="task-marker"
-                      style={`background:${task.color}`}
-                    ></span>
-                    <div>
-                      <strong>{task.title}</strong><small>{task.course}</small
-                      ><span
-                        >{dateLabel(task.due)} <i>·</i>
-                        {task.possible} points</span
-                      >
-                    </div>
-                    <Icon name="chevron" size={14} /></button
-                  >{/each}{#if !upcoming.length}<p class="section-description">
-                    No ungraded assignments.
-                  </p>{/if}
-              </section>
             </div>
           </div>
         {:else}
@@ -1126,6 +1101,14 @@
               ></button
             >
           </div>
+          <label class="remember-sign-in">
+            <input type="checkbox" bind:checked={rememberSignIn} />
+            <span>Keep me signed in for 30 days</span>
+          </label>
+          <p class="remember-hint">
+            Saves an encrypted copy of your school login on Schoolity's server.
+            Signing out removes it.
+          </p>
           {#if loginError}<div class="form-error" role="alert">
               {loginError}
             </div>{/if}
@@ -1136,6 +1119,7 @@
             /></button
           >
         </form>
+        {#if sessionData.retrySavedSignIn}<button class="text-button" onclick={() => location.reload()}>Retry saved sign-in</button>{/if}
         <button class="text-button" onclick={() => (privacyOpen = true)}
           >Privacy & connection</button
         >
@@ -1164,26 +1148,32 @@
         ><Icon name="shield" size={32} />
         <h2 id="privacy-title">Privacy</h2>
         <p class="privacy-summary">
-          Your password isn’t saved. Signing out clears this workspace.
+          Saved sign-in keeps an encrypted copy of your school login on
+          Schoolity's server for up to 30 days. Signing out removes it.
         </p>
         <p>Schoolity is independent of your district and Edupoint.</p>
         <details class="privacy-details">
           <summary>Connection details</summary>
           <h3>When you connect</h3>
           <p>
-            Your username and password pass through this app's server once to
+            Your username and password pass through this app's server to
             sign in to your district. Schoolity holds the resulting access token
             in memory locally or in a shared store on Vercel until the district
             session expires (up to 30 days). Your browser receives an HTTP-only
-            session cookie. Your password is not saved in the browser or on the
-            server.
+            session cookie. If you choose “Keep me signed in”, the server stores
+            your username and password encrypted for up to 30 days so an expired
+            school session can renew automatically. A separate HTTP-only cookie
+            identifies that saved sign-in. Your password is never stored in
+            browser storage. Signing out deletes the saved login and ends every
+            session linked to it.
           </p>
           <h3>Where your information lives</h3>
           <p>
             Grades and other school records are held in this page's memory. API
             responses are marked no-store. The only preference saved in local
             storage is the color theme. Hosting and session-store operators can
-            access data passing through its server.
+            access data passing through its server, including decrypting saved
+            sign-ins if they control the encryption key.
           </p>
           <h3>About this version</h3>
           <p>

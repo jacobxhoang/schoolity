@@ -158,6 +158,7 @@ export interface Session {
   base: string;
   token: string;
   expires: number;
+  rememberKey?: string;
 }
 export async function findSession(
   id: string | undefined,
@@ -167,25 +168,35 @@ export async function findSession(
     const raw = await store.get('session:' + id);
     if (!raw) return undefined;
     const entry = JSON.parse(raw) as Session;
-    if (entry.expires > Date.now()) return entry;
+    if (entry.expires > Date.now()) {
+      if (!entry.rememberKey) return entry;
+      if (/^remember:[a-f0-9]{64}$/.test(entry.rememberKey) && await store.get(entry.rememberKey)) return entry;
+    }
     await store.delete('session:' + id);
     return undefined;
   } catch {
     throw new PortalError('Session storage is unavailable. Try again.', 503);
   }
 }
+export async function bindRememberedSession(id: string, rememberKey: string): Promise<void> {
+  const session = await findSession(id);
+  if (!session || !/^remember:[a-f0-9]{64}$/.test(rememberKey))
+    throw new PortalError('Your session has ended. Sign in again.', 401);
+  await store.set('session:' + id, JSON.stringify({ ...session, rememberKey }),
+    Math.max(1, Math.ceil((session.expires - Date.now()) / 1000)));
+}
 export async function endSession(id: string | undefined): Promise<void> {
   if (id && /^[A-Za-z0-9_-]{43}$/.test(id)) await store.delete('session:' + id);
 }
-export async function limitLogin(ip: string) {
+export async function limitLogin(scope: 'login' | 'renew', key: string) {
   try {
     const count = await store.increment(
-      'login:' + createHash('sha256').update(ip).digest('hex'),
+      `limit:${scope}:` + createHash('sha256').update(key).digest('hex'),
       600,
     );
     if (count > 10)
       throw new PortalError(
-        'Too many login attempts. Try again in ten minutes.',
+        'Too many sign-in attempts. Try again in ten minutes.',
         429,
       );
   } catch (e) {

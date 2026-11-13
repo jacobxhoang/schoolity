@@ -1,13 +1,14 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { findSession, PortalError } from '$lib/server/portal';
+import { PortalError } from '$lib/server/portal';
+import { browserAuth } from '$lib/server/browser-auth';
 import {
   downloadDocument,
   downloadMailAttachment,
 } from '$lib/server/documents';
 import { object } from '$lib/portal-data';
 
-export const POST: RequestHandler = async ({ request, cookies, url }) => {
+export const POST: RequestHandler = async ({ request, cookies, url, getClientAddress }) => {
   const headers = {
     'Cache-Control': 'no-store',
     Pragma: 'no-cache',
@@ -19,12 +20,6 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
       !request.headers.get('content-type')?.startsWith('application/json')
     )
       throw new PortalError('A same-origin JSON request is required.', 403);
-    const session = await findSession(cookies.get('schoolity_session'));
-    if (!session)
-      throw new PortalError(
-        'Your session has ended. Sign in again to download.',
-        401,
-      );
     if (Number(request.headers.get('content-length')) > 1024)
       throw new PortalError('Request too large.', 413);
     const raw = await request.text();
@@ -41,10 +36,10 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
       input.kind !== 'mail'
     )
       throw new PortalError('Unsupported download type.', 400);
-    const file =
+    const file = await browserAuth.withSession({ cookies, url, getClientAddress }, (session) =>
       input.kind === 'mail'
-        ? await downloadMailAttachment(session, input.messageId, input.id)
-        : await downloadDocument(session, input.id);
+        ? downloadMailAttachment(session, input.messageId, input.id)
+        : downloadDocument(session, input.id));
     const ascii = file.filename.replace(/[^\x20-\x7e]/g, '_');
     const encoded = encodeURIComponent(file.filename).replace(
       /['()*]/g,

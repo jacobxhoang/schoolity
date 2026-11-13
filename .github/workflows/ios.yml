@@ -3,9 +3,9 @@ name: iOS
 on:
   push:
     branches: [main]
-    paths: ["ios/**", ".github/workflows/ios.yml", "src/lib/portal-data.ts", "src/routes/api/**"]
+    paths: ["ios/**", ".github/workflows/ios.yml", "src/lib/portal-data.ts", "src/lib/config.ts", "src/lib/server/**", "src/routes/api/**"]
   pull_request:
-    paths: ["ios/**", ".github/workflows/ios.yml", "src/lib/portal-data.ts", "src/routes/api/**"]
+    paths: ["ios/**", ".github/workflows/ios.yml", "src/lib/portal-data.ts", "src/lib/config.ts", "src/lib/server/**", "src/routes/api/**"]
   workflow_dispatch:
     inputs:
       keep_test_evidence:
@@ -185,7 +185,7 @@ jobs:
           Download **Schoolity.ipa** below. This build is unsigned and requires Apple signing before installation.
           NOTES
           gh release create "$tag" release/Schoolity.ipa \
-            --target "$COMMIT_SHA" --title "Schoolity iOS · Build ${BUILD_NUMBER}.${BUILD_ATTEMPT}" \
+            --target "$COMMIT_SHA" --title "Schoolity iOS - Build ${BUILD_NUMBER}.${BUILD_ATTEMPT}" \
             --notes-file "$RUNNER_TEMP/release-notes.md" --latest
           url=$(gh release view "$tag" --json url --jq .url)
           echo "### [Download Schoolity.ipa]($url)" >> "$GITHUB_STEP_SUMMARY"

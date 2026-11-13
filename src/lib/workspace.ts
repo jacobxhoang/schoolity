@@ -3,7 +3,6 @@ export interface LocationState {
   course: string | null;
 }
 const sections = new Set([
-  "overview",
   "grades",
   "schedule",
   "mail",
@@ -11,7 +10,7 @@ const sections = new Set([
 ]);
 export function readLocation(hash: string): LocationState {
   const parts = hash.replace(/^#/, "").split("/");
-  const section = sections.has(parts[0]) ? parts[0] : "overview";
+  const section = sections.has(parts[0]) ? parts[0] : "grades";
   try {
     return {
       section,

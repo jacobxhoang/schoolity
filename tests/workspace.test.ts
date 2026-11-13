@@ -11,6 +11,8 @@ import { requestPortal, RequestFailure } from '../src/lib/portal-request.ts';
 import { targetScore, trend, type Course } from '../src/lib/model.ts';
 
 test('course navigation round-trips unusual district identifiers', () => {
+  for (const hash of ['', '#overview', '#unknown'])
+    assert.deepEqual(readLocation(hash), { section: 'grades', course: null });
   assert.deepEqual(readLocation(courseLocation('Math/2 · A')), {
     section: 'grades',
     course: 'Math/2 · A',
@@ -20,7 +22,7 @@ test('course navigation round-trips unusual district identifiers', () => {
     course: null,
   });
   assert.deepEqual(readLocation('#attendance'), {
-    section: 'overview',
+    section: 'grades',
     course: null,
   });
 });

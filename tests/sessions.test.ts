@@ -4,7 +4,9 @@ import {
   sessionLifetime,
   sessionCookieOptions,
 } from '../src/lib/server/session-policy.ts';
-import { signIn, findSession, endSession } from '../src/lib/server/portal.ts';
+import { signIn, findSession, endSession, limitLogin, PortalError } from '../src/lib/server/portal.ts';
+import { store } from '../src/lib/server/store.ts';
+import { createHash, randomUUID } from 'node:crypto';
 test('district sessions longer than thirty minutes retain their validity', () => {
   assert.equal(sessionLifetime(86400), 86400);
   assert.equal(sessionLifetime('7200'), 7200);
@@ -27,6 +29,21 @@ test('persistent cookies allow returning navigation while keeping credentials ou
     sessionCookieOptions(new URL('http://127.0.0.1:5180'), 300).secure,
     false,
   );
+});
+test('interactive and automatic sign-in use separate rate-limit buckets', async () => {
+  const key = 'synthetic-' + randomUUID();
+  const digest = createHash('sha256').update(key).digest('hex');
+  const stored = ['limit:login:' + digest, 'limit:renew:' + digest];
+  try {
+    for (let i = 0; i < 10; i++) await limitLogin('login', key);
+    await assert.rejects(
+      limitLogin('login', key),
+      (e) => e instanceof PortalError && e.status === 429,
+    );
+    await limitLogin('renew', key);
+  } finally {
+    for (const item of stored) await store.delete(item);
+  }
 });
 test('the same saved session survives repeated server loads and sign-out revokes it', async () => {
   const before = Date.now();
