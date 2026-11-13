@@ -6,7 +6,7 @@ struct SchoolityApp: App {
     @StateObject private var store = AppStore()
     var body: some Scene {
         WindowGroup {
-            Group {
+            ZStack {
                 switch store.access {
                 case .checking:
                     ProgressView("Opening Schoolity…")

@@ -55,7 +55,13 @@ final class AppStore: ObservableObject {
         if ProcessInfo.processInfo.arguments.contains("--ui-locked") {
             testingSavedSignIn = true
             access = .locked
-            if ProcessInfo.processInfo.arguments.contains("--ui-auto-unlock") { await unlockSavedSignIn() }
+            if ProcessInfo.processInfo.arguments.contains("--ui-auto-unlock") {
+                // Model the asynchronous system prompt across a rendered state
+                // transition so UI checks also exercise the launch task lifetime.
+                do { try await Task.sleep(for: .milliseconds(200)) }
+                catch { return }
+                await unlockSavedSignIn()
+            }
             return
         }
         if ProcessInfo.processInfo.arguments.contains("--ui-testing") {
