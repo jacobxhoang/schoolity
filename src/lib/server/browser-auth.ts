@@ -1,5 +1,4 @@
 import type { Cookies } from '@sveltejs/kit';
-import { DISTRICT_URL } from '../config.ts';
 import { findSession, signIn, endSession, bindRememberedSession, limitLogin, PortalError, type Session } from './portal.ts';
 import { rememberedLogins, rememberedLoginKey, REMEMBER_SECONDS } from './remembered-login.ts';
 import { sessionCookieOptions } from './session-policy.ts';
@@ -38,7 +37,7 @@ export class BrowserAuth {
       'login',
       `${context.getClientAddress()}\n${username.trim().toLowerCase()}`,
     );
-    const next = await d.signIn(DISTRICT_URL, username.trim(), password);
+    const next = await d.signIn(username.trim(), password);
     let rememberedId: string | undefined;
     try {
       // Clear any previous session before replacing it, but never block a valid
@@ -75,7 +74,7 @@ export class BrowserAuth {
     if (!credentials) return undefined;
     await d.limitLogin('renew', id);
     let next;
-    try { next = await d.signIn(DISTRICT_URL, credentials.username, credentials.password); }
+    try { next = await d.signIn(credentials.username, credentials.password); }
     catch (error) {
       if (error instanceof PortalError && error.status === 401) { await d.remembered.end(id); return undefined; }
       throw error;

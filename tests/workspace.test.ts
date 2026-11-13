@@ -39,7 +39,6 @@ const course: Course = {
   teacher: '',
   room: '',
   period: '',
-  color: '',
   official: 90,
   categories: [],
   assignments: [

@@ -8,7 +8,6 @@ const course: Course = {
   teacher: '',
   room: '',
   period: '',
-  color: '',
   official: null,
   categories: [
     { name: 'Practice', weight: 30 },
