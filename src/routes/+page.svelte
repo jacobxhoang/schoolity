@@ -965,40 +965,53 @@
               })}
             </p>{/if}
           <section class="records-list">
-            {#each shownRecords as item}<article class="record-card">
-                <span class="record-icon"
-                  ><Icon
-                    name={tab === 'schedule'
-                      ? 'clock'
-                      : tab === 'mail'
-                        ? 'mail'
-                        : 'file'}
-                    size={22}
-                  /></span
-                >
-                <div>
-                  <small>{item.date}</small>
-                  <h3>{item.title}</h3>
-                  <p>{item.detail}</p>
-                </div>
-                {#if tab === 'documents'}<div class="document-actions">
-                    <button
-                      class="primary small"
-                      disabled={!item.id || downloading[item.id]}
-                      onclick={() => downloadFile(item)}
-                      >{item.id && downloading[item.id]
-                        ? 'Downloading…'
-                        : item.id
-                          ? 'Download'
-                          : 'Unavailable'}</button
-                    >{#if item.id && downloadErrors[item.id]}<p
-                        class="document-error"
-                        role="alert"
-                      >
-                        {downloadErrors[item.id]}
-                      </p>{/if}
-                  </div>{/if}
-              </article>{/each}{#if !resourceData[tab]?.length && !busy}<div
+            {#each shownRecords as item}{#if tab === 'mail'}{#key item}<details
+                    class="mail-message"
+                  >
+                    <summary
+                      ><span>{item.title || 'Untitled message'}</span><Icon
+                        name="chevron"
+                        size={16}
+                      /></summary
+                    >
+                    <div class="mail-content">
+                      <small>{item.date}</small>
+                      <p>{item.detail || 'No message content.'}</p>
+                    </div>
+                  </details>{/key}{:else}<article class="record-card">
+                  <span class="record-icon"
+                    ><Icon
+                      name={tab === 'schedule'
+                        ? 'clock'
+                        : tab === 'mail'
+                          ? 'mail'
+                          : 'file'}
+                      size={22}
+                    /></span
+                  >
+                  <div>
+                    <small>{item.date}</small>
+                    <h3>{item.title}</h3>
+                    <p>{item.detail}</p>
+                  </div>
+                  {#if tab === 'documents'}<div class="document-actions">
+                      <button
+                        class="primary small"
+                        disabled={!item.id || downloading[item.id]}
+                        onclick={() => downloadFile(item)}
+                        >{item.id && downloading[item.id]
+                          ? 'Downloading…'
+                          : item.id
+                            ? 'Download'
+                            : 'Unavailable'}</button
+                      >{#if item.id && downloadErrors[item.id]}<p
+                          class="document-error"
+                          role="alert"
+                        >
+                          {downloadErrors[item.id]}
+                        </p>{/if}
+                    </div>{/if}
+                </article>{/if}{/each}{#if !resourceData[tab]?.length && !busy}<div
                 class="empty-state"
               >
                 <Icon
