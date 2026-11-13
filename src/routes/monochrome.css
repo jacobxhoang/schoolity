@@ -1294,6 +1294,18 @@ td strong {
 .mail-message summary span {
   overflow-wrap: anywhere;
 }
+.mail-heading {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  min-width: 0;
+}
+.mail-author {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
 .mail-message summary svg {
   color: var(--muted);
 }

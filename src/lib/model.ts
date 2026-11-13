@@ -38,6 +38,7 @@ export interface Profile {
   grade: string;
 }
 export interface EventItem {
+  author?: string;
   id?: string;
   filename?: string;
   title: string;

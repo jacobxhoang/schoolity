@@ -969,10 +969,12 @@
                     class="mail-message"
                   >
                     <summary
-                      ><span>{item.title || 'Untitled message'}</span><Icon
-                        name="chevron"
-                        size={16}
-                      /></summary
+                      ><span class="mail-heading"
+                        ><span>{item.title || 'Untitled message'}</span><span
+                          class="mail-author"
+                          >{item.author || 'Unknown sender'}</span
+                        ></span
+                      ><Icon name="chevron" size={16} /></summary
                     >
                     <div class="mail-content">
                       <small>{item.date}</small>

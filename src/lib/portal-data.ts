@@ -87,10 +87,14 @@ export function events(payload: unknown, kind: string): EventItem[] {
   if (kind === 'mail')
     return rows(data.inboxItemListings).map((m) => ({
       title: string(m.subject),
-      detail: `${string(rows(m.from)[0]?.details1)} · ${string(m.messageText)
+      author: rows(m.from)
+        .map((sender) => string(sender.details1).trim())
+        .filter(Boolean)
+        .join(', '),
+      detail: string(m.messageText)
         .replace(/<[^>]*>/g, ' ')
         .replace(/&nbsp;/g, ' ')
-        .replace(/&amp;/g, '&')}`,
+        .replace(/&amp;/g, '&'),
       date: string(m.sendDateTimeFormattedShort ?? m.sendDateTime),
     }));
   if (kind === 'schedule')
