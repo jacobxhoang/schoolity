@@ -73,7 +73,7 @@ export const POST: RequestHandler = async ({
         error:
           error instanceof PortalError
             ? error.message
-            : 'Could not reach your district. Check the portal address and try again.',
+            : 'Could not reach your district. Try again.',
       },
       { status: error instanceof PortalError ? error.status : 502, headers },
     );

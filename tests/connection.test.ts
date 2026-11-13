@@ -1,10 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  districtAddress,
-  publicAddress,
-  findSession,
-} from '../src/lib/server/portal.ts';
+import { publicAddress, findSession } from '../src/lib/server/portal.ts';
 import { read } from '../src/lib/server/portal.ts';
 import { DISTRICT_HOST, DISTRICT_URL } from '../src/lib/config.ts';
 
@@ -23,25 +19,6 @@ test('attendance is not an available district resource', async () => {
   );
 });
 
-test('district URLs retain deployment prefixes and remove portal filenames', () => {
-  assert.equal(
-    districtAddress('https://district.example.org/SVUE/Home_PXP2.aspx?x=1')
-      .href,
-    'https://district.example.org/SVUE',
-  );
-  assert.equal(districtAddress('sisstudent.fcps.edu').pathname, '/SVUE');
-});
-test('district input rejects insecure URLs, credentials, internal hosts and custom ports', () => {
-  for (const input of [
-    'http://district.example.org',
-    '127.0.0.1',
-    'https://user:secret@district.example.org',
-    'https://district.example.org:8443',
-    'https://school.internal',
-    'https://district.example.org/%2fhidden',
-  ])
-    assert.throws(() => districtAddress(input));
-});
 test('district connections exclude private and reserved IPv4 and IPv6 destinations', () => {
   for (const address of [
     '127.0.0.1',

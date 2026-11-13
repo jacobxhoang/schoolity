@@ -5,6 +5,7 @@ import {
   sessionCookieOptions,
 } from '../src/lib/server/session-policy.ts';
 import { signIn, findSession, endSession, limitLogin, PortalError } from '../src/lib/server/portal.ts';
+import { DISTRICT_URL } from '../src/lib/config.ts';
 import { store } from '../src/lib/server/store.ts';
 import { createHash, randomUUID } from 'node:crypto';
 test('district sessions longer than thirty minutes retain their validity', () => {
@@ -48,10 +49,12 @@ test('interactive and automatic sign-in use separate rate-limit buckets', async 
 test('the same saved session survives repeated server loads and sign-out revokes it', async () => {
   const before = Date.now();
   const saved = await signIn(
-    'https://synergyportal.anoka.k12.mn.us',
     'synthetic-user',
     'synthetic-password',
-    async () => ({ access_token: 'synthetic-token', expires_in: 86400 }),
+    async (base) => {
+      assert.equal(base, DISTRICT_URL);
+      return { access_token: 'synthetic-token', expires_in: 86400 };
+    },
   );
   assert.equal(saved.maxAge, 86400);
   for (let i = 0; i < 3; i++) {

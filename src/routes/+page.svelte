@@ -106,7 +106,7 @@
       .flatMap((c) =>
         c.assignments
           .filter((a) => a.earned === null && !a.excluded)
-          .map((a) => ({ ...a, course: c.name, color: c.color })),
+          .map((a) => ({ ...a, course: c.name })),
       )
       .toSorted(
         (a, b) => new Date(a.due).getTime() - new Date(b.due).getTime(),
@@ -439,6 +439,7 @@
     // The server deletes cookies even when cleanup partially fails.
     authenticated = false;
     clearWorkspace();
+    rememberSignIn = false;
     error = '';
     loginError = message;
   }
@@ -894,13 +895,8 @@
                     class="course-card"
                     onclick={() => openCourse(course)}
                     ><div class="course-card-top">
-                      <span
-                        class="subject-icon"
-                        style={`--subject:${course.color}`}
-                        ><Icon
-                          name={course.id === 'design' ? 'spark' : 'book'}
-                          size={22}
-                        /></span
+                      <span class="subject-icon"
+                        ><Icon name="book" size={22} /></span
                       >
                     </div>
                     <h3>{course.name}</h3>
