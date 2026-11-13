@@ -1,8 +1,9 @@
 import SwiftUI
+import LocalAuthentication
 
 @MainActor
 final class AppStore: ObservableObject {
-    enum Access: Equatable { case checking, signedOut, signedIn, unavailable }
+    enum Access: Equatable { case checking, locked, signedOut, signedIn, unavailable }
     @Published var access: Access = .checking
     @Published var gradebook: Gradebook?
     @Published var profile: StudentProfile?
@@ -14,15 +15,45 @@ final class AppStore: ObservableObject {
     @Published var loginError: String?
     @Published var startupError: String?
     @Published var signingOut = false
-    private let client = PortalClient()
+    @Published var isUnlocking = false
+    @Published var unlockError: String?
+    private let client: any SchoolPortal
+    private let unlocker: any LocalUnlocking
     private var generation = UUID()
     private var started = false
+    private var backgrounded = false
+    #if DEBUG
+    private var testingSavedSignIn = false
+    #endif
+
+    init(client: (any SchoolPortal)? = nil, unlocker: (any LocalUnlocking)? = nil) {
+        self.client = client ?? PortalClient()
+        self.unlocker = unlocker ?? DeviceUnlocker()
+    }
+
+    var unlockMethod: String {
+        #if DEBUG
+        if testingSavedSignIn { return "Face ID" }
+        #endif
+        return unlocker.method
+    }
+    var unlockSymbol: String {
+        #if DEBUG
+        if testingSavedSignIn { return "faceid" }
+        #endif
+        return unlocker.symbol
+    }
 
     func start() async {
         guard !started else { return }
         started = true
         PortalClient.clearDownloads()
         #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--ui-locked") {
+            testingSavedSignIn = true
+            access = .locked
+            return
+        }
         if ProcessInfo.processInfo.arguments.contains("--ui-testing") {
             loadUITestData()
             return
@@ -33,14 +64,96 @@ final class AppStore: ObservableObject {
     }
 
     func restore() async {
+        guard !isUnlocking else { return }
+        guard let info = client.savedSignIn, info.isValid else {
+            client.clear()
+            reset()
+            return
+        }
+        if info.requiresUnlock || unlocker.available {
+            access = .locked
+            await unlockSavedSignIn()
+            return
+        }
+        let ticket = generation
         access = .checking
         do {
-            if try await client.connected() { access = .signedIn; await refreshGrades() }
-            else { access = .signedOut }
+            try await finishRestoring(context: nil, requiresUnlock: false, ticket: ticket)
         } catch {
+            guard ticket == generation else { return }
+            client.forgetSession()
             startupError = error.localizedDescription
             access = .unavailable
         }
+    }
+
+    func unlockSavedSignIn() async {
+        guard access == .locked, !isUnlocking, !backgrounded else { return }
+        unlockError = nil
+        #if DEBUG
+        if testingSavedSignIn {
+            if ProcessInfo.processInfo.arguments.contains("--ui-unlock-success") { loadUITestData() }
+            else { unlockError = DeviceUnlockFailure.cancelled.localizedDescription }
+            return
+        }
+        #endif
+        guard let info = client.savedSignIn, info.isValid else {
+            client.clear(); reset(); loginError = "Your session ended. Sign in again."
+            return
+        }
+        let ticket = generation
+        isUnlocking = true
+        defer { if ticket == generation { isUnlocking = false } }
+        do {
+            let context = try await unlocker.authenticate()
+            defer { context.invalidate() }
+            guard ticket == generation, !backgrounded else { return }
+            try await finishRestoring(context: context, requiresUnlock: true, ticket: ticket)
+        } catch {
+            guard ticket == generation else { return }
+            client.forgetSession()
+            if case PortalFailure.signedOut = error { handle(error) }
+            else { access = .locked; unlockError = error.localizedDescription }
+        }
+    }
+
+    private func finishRestoring(context: LAContext?, requiresUnlock: Bool, ticket: UUID) async throws {
+        guard try client.restoreSession(context: context, requiresUnlock: requiresUnlock) else {
+            reset(); loginError = "Your session ended. Sign in again."
+            return
+        }
+        let connected = try await client.connected()
+        guard ticket == generation, !backgrounded else { return }
+        if connected { access = .signedIn; await refreshGrades() }
+        else { client.clear(); reset(); loginError = "Your session ended. Sign in again." }
+    }
+
+    func enterBackground() {
+        backgrounded = true
+        guard !signingOut, let info = client.savedSignIn, info.requiresUnlock || unlocker.available else { return }
+        unlocker.cancel()
+        client.forgetSession()
+        clearWorkspace()
+        isUnlocking = false
+        unlockError = nil
+        access = .locked
+    }
+
+    func enterForeground() async {
+        // Local Authentication temporarily makes the app inactive. Only a real
+        // background/foreground transition may trigger another automatic scan.
+        guard backgrounded else { return }
+        backgrounded = false
+        if access == .locked { await unlockSavedSignIn() }
+    }
+
+    func usePasswordInstead() {
+        unlocker.cancel()
+        client.clear()
+        #if DEBUG
+        testingSavedSignIn = false
+        #endif
+        reset()
     }
 
     func signIn(username: String, password: String) async {
@@ -48,9 +161,10 @@ final class AppStore: ObservableObject {
         isLoading = true
         loginError = nil
         do {
-            try await client.signIn(username: username.trimmingCharacters(in: .whitespacesAndNewlines), password: password)
+            try await client.signIn(username: username.trimmingCharacters(in: .whitespacesAndNewlines), password: password, protectSession: unlocker.available)
             generation = UUID()
             access = .signedIn
+            if backgrounded { enterBackground() }
         } catch { loginError = error.localizedDescription }
         isLoading = false
         if access == .signedIn { await refreshGrades() }
@@ -76,7 +190,7 @@ final class AppStore: ObservableObject {
         }
         if profile == nil, access == .signedIn, ticket == generation {
             do {
-                let next: StudentProfile = try await client.read("profile")
+                let next: StudentProfile = try await client.read("profile", term: nil)
                 if ticket == generation { profile = next }
             } catch { if ticket == generation { handle(error) } }
         }
@@ -89,7 +203,7 @@ final class AppStore: ObservableObject {
         failures[resource] = nil
         defer { if ticket == generation { loadingResources.remove(resource) } }
         do {
-            let next: [SchoolEvent] = try await client.read(resource.rawValue)
+            let next: [SchoolEvent] = try await client.read(resource.rawValue, term: nil)
             if ticket == generation { records[resource] = next }
         } catch {
             guard ticket == generation else { return }
@@ -127,6 +241,13 @@ final class AppStore: ObservableObject {
     }
 
     private func reset() {
+        clearWorkspace()
+        isUnlocking = false
+        unlockError = nil
+        access = .signedOut
+    }
+
+    private func clearWorkspace() {
         generation = UUID()
         gradebook = nil
         profile = nil
@@ -135,7 +256,6 @@ final class AppStore: ObservableObject {
         loadingResources = []
         gradeError = nil
         isLoading = false
-        access = .signedOut
         PortalClient.clearDownloads()
     }
 }

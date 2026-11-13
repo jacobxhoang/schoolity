@@ -21,6 +21,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.schoolity.app
         INFOPLIST_KEY_CFBundleDisplayName: Schoolity
+        INFOPLIST_KEY_NSFaceIDUsageDescription: Unlock your saved Schoolity sign-in with Face ID.
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.education
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES

@@ -1,4 +1,18 @@
 import Foundation
+import LocalAuthentication
+
+@MainActor
+protocol SchoolPortal: AnyObject {
+    var savedSignIn: SavedSessionInfo? { get }
+    func restoreSession(context: LAContext?, requiresUnlock: Bool) throws -> Bool
+    func forgetSession()
+    func clear()
+    func connected() async throws -> Bool
+    func signIn(username: String, password: String, protectSession: Bool) async throws
+    func signOut() async throws
+    func read<T: Decodable>(_ resource: String, term: Int?) async throws -> T
+    func download(id: String, filename: String, messageID: String?) async throws -> URL
+}
 
 enum PortalFailure: LocalizedError {
     case signedOut
@@ -31,9 +45,11 @@ private final class PortalRedirects: NSObject, URLSessionTaskDelegate {
 }
 
 @MainActor
-final class PortalClient {
+final class PortalClient: SchoolPortal {
     static let baseURL = URL(string: "https://schoolity-jet.vercel.app")!
-    private var token: SavedSession? = SessionVault.load()
+    // Never retrieve a saved cookie until local authentication has completed.
+    private var token: SavedSession?
+    var savedSignIn: SavedSessionInfo? { SessionVault.info() }
     private let session: URLSession
     private let redirects = PortalRedirects()
 
@@ -50,6 +66,17 @@ final class PortalClient {
     func clear() {
         token = nil
         SessionVault.clear()
+    }
+
+    func forgetSession() { token = nil }
+
+    func restoreSession(context: LAContext?, requiresUnlock: Bool) throws -> Bool {
+        guard let saved = try SessionVault.load(context: context) else { clear(); return false }
+        if let info = SessionVault.info(), info.legacy || (requiresUnlock && !info.requiresUnlock) {
+            try SessionVault.save(saved, requiresUnlock: requiresUnlock)
+        }
+        token = saved
+        return true
     }
 
     private func send(_ body: [String: Any], path: String = "api/portal") async throws -> (Data, HTTPURLResponse) {
@@ -80,14 +107,15 @@ final class PortalClient {
 
     func connected() async throws -> Bool {
         guard token?.isValid == true else { clear(); return false }
+        let requestSession = token?.value
         let (data, _) = try await send(["action": "session"])
         struct Status: Decodable { let connected: Bool }
         let connected = try JSONDecoder().decode(Status.self, from: data).connected
-        if !connected { clear() }
+        if !connected, token?.value == requestSession { clear() }
         return connected
     }
 
-    func signIn(username: String, password: String) async throws {
+    func signIn(username: String, password: String, protectSession: Bool) async throws {
         let (_, response) = try await send(["action": "login", "username": username, "password": password])
         let fields = response.allHeaderFields.reduce(into: [String: String]()) { result, pair in
             result[String(describing: pair.key)] = String(describing: pair.value)
@@ -100,7 +128,7 @@ final class PortalClient {
         }
         let saved = SavedSession(value: cookie.value, expires: expires)
         token = saved
-        do { try SessionVault.save(saved) }
+        do { try SessionVault.save(saved, requiresUnlock: protectSession) }
         catch {
             try? await signOut()
             throw error

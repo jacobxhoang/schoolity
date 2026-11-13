@@ -80,4 +80,29 @@ final class SchoolityUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Sign out"].exists)
         capture("account")
     }
+
+    func testSavedSignInCanUnlock() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-locked", "--ui-unlock-success"]
+        app.launch()
+        XCTAssertTrue(app.buttons["login.unlock"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.tabBars.firstMatch.exists)
+        capture("saved-sign-in")
+        app.buttons["login.unlock"].tap()
+        XCTAssertTrue(app.tabBars.buttons["Grades"].waitForExistence(timeout: 5))
+    }
+
+    func testCancelledUnlockKeepsRetryAndPasswordAvailable() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-locked"]
+        app.launch()
+        XCTAssertTrue(app.buttons["login.unlock"].waitForExistence(timeout: 10))
+        app.buttons["login.unlock"].tap()
+        XCTAssertTrue(app.staticTexts["Unlock cancelled. You can try again."].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["login.unlock"].isEnabled)
+        XCTAssertFalse(app.tabBars.firstMatch.exists)
+        capture("saved-sign-in-cancelled")
+        app.buttons["login.usePassword"].tap()
+        XCTAssertTrue(app.textFields["login.username"].waitForExistence(timeout: 5))
+    }
 }

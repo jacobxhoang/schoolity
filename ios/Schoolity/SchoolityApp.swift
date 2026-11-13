@@ -2,6 +2,7 @@ import SwiftUI
 
 @main
 struct SchoolityApp: App {
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var store = AppStore()
     var body: some Scene {
         WindowGroup {
@@ -19,6 +20,7 @@ struct SchoolityApp: App {
                             .buttonStyle(.borderedProminent)
                     }
                 case .signedOut: LoginView()
+                case .locked: SavedSignInView()
                 case .signedIn: WorkspaceView()
                 }
             }
@@ -26,6 +28,56 @@ struct SchoolityApp: App {
             .environmentObject(store)
             .task { await store.start() }
             .privacySensitive()
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .background { store.enterBackground() }
+                if phase == .active { Task { await store.enterForeground() } }
+            }
+            .overlay {
+                if scenePhase != .active {
+                    ZStack {
+                        Color(uiColor: .systemBackground).ignoresSafeArea()
+                        Text("Schoolity").font(.largeTitle.bold())
+                    }.accessibilityHidden(true)
+                }
+            }
+        }
+    }
+}
+
+struct SavedSignInView: View {
+    @EnvironmentObject private var store: AppStore
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Image(systemName: store.unlockSymbol).font(.largeTitle).accessibilityHidden(true)
+                        Text("Schoolity").font(.largeTitle.bold())
+                    }
+                    .padding(.vertical, 24)
+                    .listRowBackground(Color.clear)
+                }
+                Section {
+                    Button { Task { await store.unlockSavedSignIn() } } label: {
+                        HStack {
+                            Spacer()
+                            if store.isUnlocking { ProgressView().tint(Color(uiColor: .systemBackground)) }
+                            else { Text("Unlock with \(store.unlockMethod)").fontWeight(.semibold) }
+                            Spacer()
+                        }.frame(minHeight: 44)
+                    }
+                    .listRowBackground(Color.primary)
+                    .foregroundStyle(Color(uiColor: .systemBackground))
+                    .disabled(store.isUnlocking)
+                    .accessibilityIdentifier("login.unlock")
+                    Button("Sign in again") { store.usePasswordInstead() }
+                        .frame(minHeight: 44)
+                        .accessibilityIdentifier("login.usePassword")
+                }
+                if let error = store.unlockError {
+                    Section { Label(error, systemImage: "exclamationmark.circle").accessibilityAddTraits(.updatesFrequently) }
+                }
+            }
         }
     }
 }
