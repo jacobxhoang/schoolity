@@ -1,0 +1,24 @@
+{
+  "name": "schoolity",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev --host 127.0.0.1 --port 5180",
+    "build": "vite build",
+    "start": "node build",
+    "preview": "vite preview --host 127.0.0.1 --port 5180",
+    "check": "svelte-kit sync && svelte-check --tsconfig tsconfig.json",
+    "test": "node --experimental-strip-types --test tests/*.test.ts"
+  },
+  "devDependencies": {
+    "@sveltejs/kit": "^2.50.0",
+    "@sveltejs/adapter-node": "^5.5.0",
+    "@sveltejs/vite-plugin-svelte": "^6.2.4",
+    "svelte": "^5.46.4",
+    "svelte-check": "^4.3.5",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "@types/node": "^24.0.0"
+  }
+}
