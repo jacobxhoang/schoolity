@@ -32,14 +32,6 @@ export function number(value: unknown): number | null {
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
 }
-const palette = [
-  '#b2c8f4',
-  '#e9b8a3',
-  '#bdd6b4',
-  '#d3c0e9',
-  '#efd68e',
-  '#9dcfc8',
-];
 export function grades(payload: unknown): GradeData {
   const raw = object(payload),
     g = object(raw.traditionalGradebook ?? payload);
@@ -58,7 +50,6 @@ export function grades(payload: unknown): GradeData {
       teacher: displayText(c.staff),
       room: displayText(c.room),
       period: displayText(c.period),
-      color: palette[i % palette.length],
       official: number(mark.calculatedScoreRaw),
       categories: rows(mark.gradeCalculationSummary)
         .filter((x) => string(x.type).toUpperCase() !== 'TOTAL')

@@ -47,13 +47,13 @@ function fixture(t: TestContext) {
   const auth = new BrowserAuth({
     remembered, findSession, endSession, bindRememberedSession,
     limitLogin: async (scope, key) => { state.limits.push({ scope, key }); },
-    signIn: async (district, username, password) => {
+    signIn: async (username, password) => {
       state.logins++;
       if (state.beforeLogin) await state.beforeLogin();
       if (state.error) throw state.error;
       assert.equal(username, credentials.username);
       assert.equal(password, credentials.password);
-      const result = await signIn(district, username, password, async () => ({ access_token: 'fixture-' + randomUUID(), expires_in: 120 }));
+      const result = await signIn(username, password, async () => ({ access_token: 'fixture-' + randomUUID(), expires_in: 120 }));
       sessions.push(result.id);
       return result;
     },
