@@ -379,6 +379,30 @@ main {
   font-size: 9px;
   color: #a5a5a5;
 }
+.schedule-sync {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 20px;
+  margin-bottom: 19px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--panel);
+}
+.schedule-sync h2 {
+  font-size: 14px;
+}
+.schedule-sync p {
+  margin-top: 6px;
+  max-width: 620px;
+  font-size: 10px;
+  line-height: 1.7;
+  color: #929292;
+}
+.schedule-sync button {
+  flex-shrink: 0;
+}
 .green-dot {
   width: 5px;
   height: 5px;
@@ -540,61 +564,6 @@ main {
 }
 .toggle-control.enabled > span:after {
   left: 16px;
-}
-.target-panel {
-  padding: 20px;
-  border: 1px solid var(--border);
-  background: var(--panel);
-  border-radius: 9px;
-  margin-bottom: 25px;
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  flex-wrap: wrap;
-}
-.target-panel > div:first-child {
-  flex: 1;
-  min-width: 200px;
-}
-.target-panel p {
-  font-size: 10px;
-  color: var(--muted);
-  margin-top: 6px;
-}
-.target-panel label {
-  font-size: 9px;
-  color: var(--muted);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.target-panel input,
-.target-panel select {
-  padding: 9px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  border-radius: 5px;
-  width: 110px;
-  font-size: 12px;
-}
-.target-panel select {
-  width: 140px;
-}
-.target-result {
-  width: 100%;
-  border-top: 1px solid var(--border);
-  padding-top: 15px;
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-.target-result strong {
-  font-size: 19px;
-  font-weight: 500;
-}
-.target-result small {
-  font-size: 10px;
-  color: var(--muted);
 }
 .inline-actions {
   display: flex;
@@ -1139,18 +1108,6 @@ form .primary {
   .what-if p {
     max-width: 100%;
   }
-  .target-panel {
-    gap: 14px;
-  }
-  .target-panel > div:first-child {
-    width: 100%;
-  }
-  .target-panel input {
-    width: 90px;
-  }
-  .target-panel select {
-    width: 120px;
-  }
   table {
     font-size: 10px;
   }
@@ -1163,6 +1120,15 @@ form .primary {
   }
   .modal-backdrop {
     padding: 16px;
+  }
+  .schedule-sync {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px;
+  }
+  .schedule-sync button {
+    width: 100%;
   }
   .record-card {
     padding: 20px;

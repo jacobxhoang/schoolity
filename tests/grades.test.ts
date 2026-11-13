@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { calculate, targetScore, type Course } from '../src/lib/model.ts';
+import { calculate, type Course } from '../src/lib/model.ts';
 import { grades } from '../src/lib/portal-data.ts';
 const course: Course = {
   id: 'test',
@@ -91,10 +91,6 @@ test('points grading includes zero-denominator extra credit', () =>
   ));
 test('no graded points produces no grade', () =>
   assert.equal(calculate({ categories: [], assignments: [] }), null));
-test('target score solves weighted future assignment', () => {
-  const needed = targetScore(course, 'Exam', 50, 93);
-  assert.equal(needed, 50);
-});
 test('mobile JSON mapping preserves term zero and missing scores', () => {
   const result = grades({
     reportingPeriod: { index: 0 },

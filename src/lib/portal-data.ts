@@ -1,4 +1,11 @@
-import type { Course, GradeData, Profile, EventItem } from './model';
+import type {
+  Course,
+  GradeData,
+  Profile,
+  EventItem,
+  ScheduleClass,
+  ScheduleData,
+} from './model';
 import { decodeHTMLStrict } from 'entities';
 export type JsonObject = Record<string, unknown>;
 export function object(value: unknown): JsonObject {
@@ -103,6 +110,127 @@ export function profile(payload: unknown): Profile {
     ...(studentId ? { studentId } : {}),
   };
 }
+function scheduleClass(c: JsonObject, index: number): ScheduleClass {
+  const meeting = c.meetingDays;
+  const meetingDays = Array.isArray(meeting)
+    ? meeting.map(string).filter(Boolean).join(', ')
+    : string(meeting);
+  const startTime = string(c.startTime ?? c.starttime ?? c.beginTime);
+  const endTime = string(c.endTime ?? c.endtime);
+  return {
+    id: string(c.sectionGU ?? c.sectionId) || `class-${index}`,
+    title: displayText(c.courseTitle ?? c.courseName ?? c.title),
+    teacher: displayText(c.teacher ?? c.staff),
+    room: displayText(c.roomName ?? c.room),
+    period: string(c.period),
+    ...(meetingDays ? { meetingDays: displayText(meetingDays) } : {}),
+    ...(startTime ? { startTime } : {}),
+    ...(endTime ? { endTime } : {}),
+  };
+}
+export function schedule(payload: unknown): ScheduleData {
+  const top = object(payload);
+  const wrappedAll = object(top.studentClassScheduleForAllTerms);
+  const wrappedSingle = object(top.studentClassSchedule);
+  const all =
+    Object.keys(wrappedAll).length > 0
+      ? wrappedAll
+      : 'termLists' in top || 'studentClassScheduleForTerms' in top
+        ? top
+        : {};
+  const single = Object.keys(wrappedSingle).length ? wrappedSingle : {};
+  const base = Object.keys(all).length ? all : single;
+  const groups = rows(base.studentClassScheduleForTerms);
+  const flatSource = rows(top.classLists).length
+    ? top
+    : rows(base.classLists).length
+      ? base
+      : single;
+  const flat = rows(flatSource.classLists);
+  const termRows = [...rows(base.termLists), ...rows(top.termLists)];
+  const classGroups = new Map<number, JsonObject[]>();
+  for (const group of groups) {
+    const index = number(group.thisTermIndex ?? group.termIndex);
+    if (index !== null) classGroups.set(index, rows(group.classLists));
+  }
+  if (!classGroups.size && flat.length) {
+    const index =
+      number(
+        flatSource.termIndex ??
+          base.termIndex ??
+          top.termIndex ??
+          single.termIndex,
+      ) ?? 0;
+    classGroups.set(index, flat);
+    if (!termRows.length)
+      termRows.push({
+        termIndex: index,
+        termName:
+          flatSource.termIndexName ??
+          base.termIndexName ??
+          top.termIndexName ??
+          single.termIndexName,
+      });
+  }
+  const metadata = new Map<number, JsonObject>();
+  for (const row of termRows) {
+    const id = number(row.termIndex ?? row.index);
+    if (id !== null) metadata.set(id, row);
+  }
+  for (const id of classGroups.keys())
+    if (!metadata.has(id)) metadata.set(id, { termIndex: id });
+  const groupDates = new Map<number, JsonObject>();
+  for (const group of groups) {
+    const id = number(group.thisTermIndex ?? group.termIndex);
+    if (id !== null) groupDates.set(id, group);
+  }
+  const periodValue = (period: string) => {
+    const value = Number.parseFloat(period);
+    return Number.isFinite(value) ? value : Number.MAX_SAFE_INTEGER;
+  };
+  const terms = [...metadata.entries()].map(([id, row]) => {
+    const group = groupDates.get(id);
+    const beginDate = string(group?.beginDate ?? row.beginDate ?? row.startDate);
+    const endDate = string(group?.endDate ?? row.endDate);
+    return {
+      id,
+      name:
+        displayText(row.termName ?? row.termIndexName ?? row.gradePeriod) ||
+        `Term ${id + 1}`,
+      ...(beginDate ? { beginDate } : {}),
+      ...(endDate ? { endDate } : {}),
+      classes: rows(classGroups.get(id))
+        .map(scheduleClass)
+        .sort(
+          (a, b) =>
+            periodValue(a.period) - periodValue(b.period) ||
+            a.title.localeCompare(b.title),
+        ),
+    };
+  });
+  const hint = number(
+    all.termIndex ?? base.termIndex ?? top.termIndex ?? single.termIndex,
+  );
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const current =
+    hint !== null && metadata.has(hint)
+      ? hint
+      : (terms.find((term) => {
+          const begin = new Date(term.beginDate ?? '');
+          const end = new Date(term.endDate ?? '');
+          return (
+            !Number.isNaN(begin.getTime()) &&
+            !Number.isNaN(end.getTime()) &&
+            today >= begin &&
+            today <= end
+          );
+        })?.id ??
+        terms.find((term) => term.classes.length)?.id ??
+        terms[0]?.id ??
+        0);
+  return { terms, currentTerm: current };
+}
 export function events(payload: unknown, kind: string): EventItem[] {
   const data = object(payload);
   if (kind === 'mail')
@@ -135,14 +263,19 @@ export function events(payload: unknown, kind: string): EventItem[] {
       ),
       date: string(m.sendDateTimeFormattedShort ?? m.sendDateTime),
     }));
-  if (kind === 'schedule')
-    return rows(data.classLists ?? data.classListing ?? data.classes).map(
-      (c) => ({
-        title: displayText(c.courseTitle ?? c.courseName),
-        detail: `${displayText(c.teacher ?? c.staff)} · Room ${displayText(c.roomName ?? c.room)}`,
-        date: `Period ${string(c.period)}`,
-      }),
-    );
+  if (kind === 'schedule') {
+    const parsed = schedule(payload);
+    const term =
+      parsed.terms.find((entry) => entry.id === parsed.currentTerm) ??
+      parsed.terms[0];
+    return (term?.classes ?? []).map((c) => ({
+      title: c.title,
+      detail: [c.teacher, c.room ? `Room ${c.room}` : '']
+        .filter(Boolean)
+        .join(' · '),
+      date: c.period ? `Period ${c.period}` : '',
+    }));
+  }
   if (kind === 'documents')
     return rows(data.studentDocumentDatas).map((d) => ({
       id: string(d.documentGU),

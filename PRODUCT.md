@@ -24,7 +24,7 @@ An independent student dashboard for one district, combining a school portal wit
 
 - A valid StudentVUE login is required to enter the workspace. There is no anonymous demo entry point.
 - The district is fixed to `https://synergyportal.anoka.k12.mn.us` in the interface and server. Do not introduce district selection without a new product decision.
-- Core flow: sign in, open the gradebook, inspect a course and its assignments, explore hypothetical scores or target-score planning, and reset changes.
+- Core flow: sign in, open the gradebook, inspect a course and its assignments, explore hypothetical scores, and reset changes.
 - Additional current sections are schedule, inbox, and documents. Attendance was explicitly removed and must stay absent unless requested again.
 - Current local app: `http://127.0.0.1:5180/`. Source application root is this directory; the sibling Student and GradeCompass checkouts are separate projects.
 - `npm run dev` launches the SvelteKit development server with hot reload on port 5180. `npm run build` produces a Node server; `npm start` runs that build. The production Node server needs its host, port, and origin configured. Check whether a server already owns the port before starting another.
@@ -37,10 +37,11 @@ An independent student dashboard for one district, combining a school portal wit
 - Native Account immediately displays only a district-provided student number and an original Core Image Code 128 barcode, preserving leading zeros. No fallback to usernames, GUIDs, or child indexes. Missing IDs have an unavailable/retry state. ID data is not stored persistently; live district ID-field compatibility and scanner acceptance remain unverified.
 - Successful iOS builds on `main` publish one unsigned `Schoolity.ipa` asset in GitHub Releases. PR builds cannot publish; repository write permission is limited to the separate release job. Diagnostic artifacts are temporary and opt-in except on test failure.
 - Gradebook: reporting-period selection, course details, assignment scores, and calculated grade trends.
-- Calculator: points and weighted-category calculations, hypothetical score editing, hypothetical assignments, reset, and target-score estimates.
+- Calculator: points and weighted-category calculations, hypothetical score editing, hypothetical assignments, and reset.
 - School data comes from the district's mobile JSON API through Schoolity's server. Read adapters exist for grades, student identity, schedule, inbox, and document listings.
+- The web schedule supports switching among district schedule terms. The selected term can be downloaded as an `.ics` calendar file generated in the browser. The native schedule continues to show the district’s current term. The district schedule listing does not include class times, so classes export as weekly all-day events unless times are present.
 - Schoolity does not change district records. Inbox is read-only and currently loads up to 50 messages.
-- Calendar synchronization, persistent offline school-data caching, and notifications are not implemented. Do not portray them as working features.
+- A live calendar subscription feed, two-way calendar sync, persistent offline school-data caching, and notifications are not implemented. Do not portray them as working features.
 - District-specific rounding, dropped scores, standards-based grading, and custom policies may differ from Schoolity's estimates. Preserve the distinction between district-reported and calculated grades.
 - The server receives credentials during sign-in and, only when the student selects the web **Keep me signed in** option (off by default), stores them encrypted with AES-256-GCM in shared storage for up to 30 days. Signing out deletes the saved copy and every linked session. It holds access tokens in memory locally or in shared Redis storage on Vercel for the district session’s lifetime (up to 30 days) and uses an HTTP-only, SameSite=Lax browser session cookie. Restarting a local server invalidates its in-memory sessions.
 - Anonymous HTML shows the login screen. School-data requests require a valid server session. Responses are marked no-store; displayed school data is held in page memory. Only the color-theme preference is saved in local storage.

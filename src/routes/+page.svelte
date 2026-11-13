@@ -5,7 +5,6 @@
   import {
     readLocation,
     courseLocation,
-    targetExplanation,
     scoreChange,
   } from '$lib/workspace';
   let { data: sessionData }: { data: { authenticated: boolean; signInError?: string; retrySavedSignIn?: boolean } } = $props();
@@ -16,13 +15,19 @@
     calculate,
     letter,
     percentage,
-    targetScore,
     trend,
     type Course,
     type GradeData,
     type EventItem,
+    type ScheduleData,
   } from '$lib/model';
-  import { grades, profile, events } from '$lib/portal-data';
+  import {
+    grades,
+    profile,
+    events,
+    schedule as readSchedule,
+  } from '$lib/portal-data';
+  import { calendarFile, calendarFilename } from '$lib/calendar';
   import './app.css';
   import './monochrome.css';
   const navigation = [
@@ -55,10 +60,8 @@
     loginError = $state(untrack(() => sessionData.signInError ?? '')),
     hypothetical = $state(false);
   let edits = $state<Record<string, Course>>({}),
-    resourceData = $state<Record<string, EventItem[]>>({});
-  let target = $state(90),
-    targetPoints = $state(100),
-    targetCategory = $state('');
+    resourceData = $state<Record<string, EventItem[]>>({}),
+    schedule = $state<ScheduleData>({ terms: [], currentTerm: 0 });
   let generation = 0;
   const activeCourse = $derived(
     selected
@@ -109,17 +112,27 @@
         (a, b) => new Date(a.due).getTime() - new Date(b.due).getTime(),
       ),
   );
-  const needed = $derived(
-    activeCourse
-      ? targetScore(
-          activeCourse,
-          targetCategory || activeCourse.categories[0]?.name || 'Practice',
-          targetPoints,
-          target,
-        )
-      : null,
+  const selectedScheduleTerm = $derived(
+    schedule.terms.find((term) => term.id === schedule.currentTerm) ??
+      schedule.terms[0],
   );
-  const shownRecords = $derived(resourceData[tab] ?? []);
+  const scheduleRecords: EventItem[] = $derived(
+    (selectedScheduleTerm?.classes ?? []).map((course) => ({
+      title: course.title,
+      detail: [course.teacher, course.room ? `Room ${course.room}` : '']
+        .filter(Boolean)
+        .join(' · '),
+      date: [
+        course.period ? `Period ${course.period}` : '',
+        course.meetingDays ?? '',
+      ]
+        .filter(Boolean)
+        .join(' · '),
+    })),
+  );
+  const shownRecords = $derived(
+    tab === 'schedule' ? scheduleRecords : (resourceData[tab] ?? []),
+  );
   const dateLabel = (value: string) => {
     const d = new Date(value);
     return Number.isNaN(d.getTime())
@@ -194,9 +207,6 @@
     tab = state.section;
     selected = state.course;
     hypothetical = false;
-    targetCategory =
-      data.courses.find((c) => c.id === selected)?.categories[0]?.name ??
-      'Practice';
     if (
       selected &&
       data.courses.length &&
@@ -219,8 +229,11 @@
     window.scrollTo(0, 0);
     await tick();
     mainContent?.focus();
-    if (['schedule', 'mail', 'documents'].includes(id) && !resourceData[id])
+    if (['schedule', 'mail', 'documents'].includes(id) && !hasResource(id))
       await loadResource(id);
+  }
+  function hasResource(id: string) {
+    return id === 'schedule' ? schedule.terms.length > 0 : !!resourceData[id];
   }
   async function loadResource(id: string) {
     const version = generation;
@@ -230,7 +243,15 @@
     try {
       const res = await api({ action: 'read', resource: id });
       if (version !== generation || !authenticated) return;
-      resourceData = { ...resourceData, [id]: events(res.data, id) };
+      if (id === 'schedule') {
+        const previous = schedule.currentTerm;
+        const next = readSchedule(res.data);
+        schedule = next.terms.some((term) => term.id === previous)
+          ? { ...next, currentTerm: previous }
+          : next;
+      } else {
+        resourceData = { ...resourceData, [id]: events(res.data, id) };
+      }
       refreshTimes = { ...refreshTimes, [id]: Date.now() };
     } catch (e) {
       if (version === generation && tab === id) {
@@ -247,7 +268,6 @@
     selected = course.id;
     tab = 'grades';
     hypothetical = false;
-    targetCategory = course.categories[0]?.name ?? 'Practice';
     closeMenu(false);
     window.scrollTo(0, 0);
     void tick().then(() => mainContent?.focus());
@@ -294,10 +314,10 @@
   function addAssignment() {
     if (!activeCourse) return;
     const course = clone(activeCourse);
-    course.assignments.push({
+    course.assignments.unshift({
       id: crypto.randomUUID(),
       title: 'What-if assignment',
-      category: targetCategory || course.categories[0]?.name || 'Practice',
+      category: course.categories[0]?.name ?? 'Practice',
       earned: 90,
       possible: 100,
       due: new Date().toISOString().slice(0, 10),
@@ -324,6 +344,7 @@
       data = { courses: [], terms: [], currentTerm: 0 };
       person = { name: 'Student', school: 'Your school', grade: '' };
       resourceData = {};
+      schedule = { terms: [], currentTerm: 0 };
       tab = 'grades';
       writeLocation('#grades');
       await load();
@@ -399,6 +420,7 @@
     data = { courses: [], terms: [], currentTerm: 0 };
     person = { name: 'Student', school: 'Anoka-Hennepin', grade: '' };
     resourceData = {};
+    schedule = { terms: [], currentTerm: 0 };
     edits = {};
     selected = null;
     password = '';
@@ -426,6 +448,25 @@
     hypothetical = false;
     writeLocation('#grades');
     await load(Number(value));
+  }
+  function changeScheduleTerm(value: string) {
+    schedule = { ...schedule, currentTerm: Number(value) };
+    notice = '';
+  }
+  function downloadSchedule() {
+    const term = selectedScheduleTerm;
+    if (!term?.classes.length) return;
+    const link = document.createElement('a'),
+      url = URL.createObjectURL(
+        new Blob([calendarFile(term)], { type: 'text/calendar;charset=utf-8' }),
+      );
+    link.href = url;
+    link.download = calendarFilename(term);
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    notice = `${term.name} schedule downloaded for your calendar.`;
   }
   function focusDialog(node: HTMLElement) {
     const previous = document.activeElement as HTMLElement | null;
@@ -511,7 +552,7 @@
     const back = () => {
       applyLocation();
       closeMenu(false);
-      if (['schedule', 'mail', 'documents'].includes(tab) && !resourceData[tab])
+      if (['schedule', 'mail', 'documents'].includes(tab) && !hasResource(tab))
         void loadResource(tab);
     };
     window.addEventListener('popstate', back);
@@ -521,7 +562,7 @@
     window.addEventListener('pageshow', returned);
     if (authenticated)
       void load().then(() => {
-        if (['schedule', 'mail', 'documents'].includes(tab))
+        if (['schedule', 'mail', 'documents'].includes(tab) && !hasResource(tab))
           void loadResource(tab);
       });
     return () => {
@@ -704,41 +745,6 @@
               onclick={enableHypothetical}><span></span>Edit scores</button
             >
           </section>
-          {#if hypothetical}<section class="target-panel">
-              <div>
-                <h3>Target score</h3>
-              </div>
-              <label
-                >Target grade (%)<input
-                  type="number"
-                  min="0"
-                  max="120"
-                  bind:value={target}
-                /></label
-              ><label
-                >Points possible<input
-                  type="number"
-                  min="1"
-                  bind:value={targetPoints}
-                /></label
-              ><label
-                >Category<select bind:value={targetCategory}
-                  >{#each activeCourse.categories.length ? activeCourse.categories : [{ name: 'Practice', weight: 0 }] as cat}<option
-                      value={cat.name}>{cat.name}</option
-                    >{/each}</select
-                ></label
-              >
-              <div class="target-result" aria-live="polite" aria-atomic="true">
-                <strong
-                  >{needed === null
-                    ? 'Estimate unavailable'
-                    : needed <= 0
-                      ? 'Already there'
-                      : needed.toFixed(1) + ' / ' + targetPoints}</strong
-                ><small>{targetExplanation(targetPoints, target, needed)}</small
-                >
-              </div>
-            </section>{/if}
           <div class="section-heading">
             <h2>
               Assignments <span class="count"
@@ -943,6 +949,35 @@
               onclick={() => loadResource(tab)}>↻ Refresh</button
             >
           </div>
+          {#if tab === 'schedule' && schedule.terms.length}
+            <div class="term-line">
+              <span class="green-dot"></span><select
+                aria-label="Schedule term"
+                value={schedule.currentTerm}
+                onchange={(e) => changeScheduleTerm(e.currentTarget.value)}
+                >{#each schedule.terms as term}<option value={term.id}
+                    >{term.name}</option
+                  >{/each}</select
+              ><span
+                >{selectedScheduleTerm?.classes.length ?? 0} classes</span
+              >
+            </div>
+            <section class="schedule-sync" aria-labelledby="calendar-sync-title">
+              <div>
+                <h2 id="calendar-sync-title">Calendar sync</h2>
+                <p>
+                  Download this term’s schedule as a calendar file. Classes
+                  repeat weekly; when the district does not include class times,
+                  they appear as all-day events.
+                </p>
+              </div>
+              <button
+                class="primary small"
+                disabled={!selectedScheduleTerm?.classes.length}
+                onclick={downloadSchedule}>Download calendar</button
+              >
+            </section>
+          {/if}
           {#if refreshTimes[tab]}<p class="resource-freshness">
               Last updated {new Date(refreshTimes[tab]).toLocaleTimeString([], {
                 hour: 'numeric',
@@ -1041,18 +1076,27 @@
                     <h3>{item.title}</h3>
                     <p>{item.detail}</p>
                   </div>
-                </article>{/if}{/each}{#if !resourceData[tab]?.length && !busy}<div
+                </article>{/if}{/each}{#if !shownRecords.length && !busy}<div
                 class="empty-state"
               >
                 <Icon
                   name={navigation.find((n) => n.id === tab)?.icon}
                   size={36}
                 />
-                <h2>No records to show</h2>
-                <p>
-                  No records returned, or this district format isn’t supported
-                  yet.
-                </p>
+                {#if tab === 'schedule'}
+                  <h2>No classes to show</h2>
+                  <p>
+                    {schedule.terms.length
+                      ? 'No classes were returned for this term. Try another term or refresh.'
+                      : 'No schedule was returned. Try refreshing.'}
+                  </p>
+                {:else}
+                  <h2>No records to show</h2>
+                  <p>
+                    No records returned, or this district format isn’t supported
+                    yet.
+                  </p>
+                {/if}
               </div>{/if}
           </section>
           <p class="calculation-note">
@@ -1060,7 +1104,7 @@
               ? 'Latest 50 messages.'
               : tab === 'documents'
                 ? ''
-                : 'Calendar sync unavailable.'}
+                : 'Calendar downloads repeat weekly for the selected term.'}
           </p>
         {/if}
       </main>
@@ -1181,7 +1225,9 @@
             feature coverage is still being verified across district responses.
             Grade estimates may differ from district rules. This first version
             includes gradebook, calculator, schedule, inbox, and document-list
-            adapters and document downloads; calendar sync is not yet available.
+            adapters, document downloads, and schedule calendar downloads.
+            Calendar files are created in your browser from the schedule shown
+            here.
           </p>
         </details>
         <button class="primary" onclick={() => (privacyOpen = false)}

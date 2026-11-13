@@ -261,12 +261,12 @@ export async function read(
     schedule: [
       'StudentClassList',
       {
-        loadAllTerms: false,
+        loadAllTerms: true,
         conSchOrgYearGU: '',
         conSchTermIndex: '-1',
         termIndex: '-1',
       },
-      ['studentClassSchedule'],
+      ['studentClassScheduleForAllTerms', 'studentClassSchedule'],
     ],
     documents: ['GetStudentDocuments', {}, ['studentDocuments']],
     mail: [
@@ -299,6 +299,17 @@ export async function read(
     throw new PortalError('The district returned an unexpected response.');
   const data = object(response.data);
   if (resource === 'profile') return profilePayload(data);
-  for (const key of spec[2]) if (data[key] != null) return data[key];
+  for (const [index, key] of spec[2].entries()) {
+    const value = data[key];
+    if (value == null) continue;
+    const empty =
+      typeof value === 'object' &&
+      !Array.isArray(value) &&
+      Object.keys(value as Record<string, unknown>).length === 0;
+    // Prefer a populated all-term schedule over an empty wrapper, while
+    // preserving the existing empty-response contract for other resources.
+    if (empty && index < spec[2].length - 1) continue;
+    return value;
+  }
   return data;
 }

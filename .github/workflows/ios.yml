@@ -3,9 +3,13 @@ name: iOS
 on:
   push:
     branches: [main]
-    paths: ["ios/**", ".github/workflows/ios.yml", "src/lib/portal-data.ts", "src/lib/config.ts", "src/lib/server/**", "src/routes/api/**"]
+    paths:
+      - "ios/**"
+      - ".github/workflows/ios.yml"
   pull_request:
-    paths: ["ios/**", ".github/workflows/ios.yml", "src/lib/portal-data.ts", "src/lib/config.ts", "src/lib/server/**", "src/routes/api/**"]
+    paths:
+      - "ios/**"
+      - ".github/workflows/ios.yml"
   workflow_dispatch:
     inputs:
       keep_test_evidence:

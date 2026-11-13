@@ -38,20 +38,3 @@ export function chartRange(values: number[]): { low: number; high: number } {
   const clean = values.filter(Number.isFinite);
   return { low: Math.min(0, ...clean), high: Math.max(100, ...clean) };
 }
-export function targetExplanation(
-  points: number,
-  target: number,
-  result: number | null,
-): string {
-  if (!Number.isFinite(points) || points <= 0)
-    return "Enter a points possible value greater than zero.";
-  if (!Number.isFinite(target) || target < 0)
-    return "Enter a valid target grade.";
-  if (result === null)
-    return "This category has no usable grading weight or scored points. Choose another category or add a scored assignment.";
-  if (result <= 0)
-    return "Your current scenario meets this target even with zero points on this next assignment.";
-  if (result > points)
-    return "Above full credit is required. Try another target or assignment size.";
-  return "Points needed on this assignment.";
-}

@@ -38,6 +38,27 @@ export interface Profile {
   grade: string;
   studentId?: string;
 }
+export interface ScheduleClass {
+  id: string;
+  title: string;
+  teacher: string;
+  room: string;
+  period: string;
+  meetingDays?: string;
+  startTime?: string;
+  endTime?: string;
+}
+export interface ScheduleTerm {
+  id: number;
+  name: string;
+  beginDate?: string;
+  endDate?: string;
+  classes: ScheduleClass[];
+}
+export interface ScheduleData {
+  terms: ScheduleTerm[];
+  currentTerm: number;
+}
 export interface EventItem {
   author?: string;
   id?: string;
@@ -97,33 +118,6 @@ export function letter(score: number | null): string {
 }
 export function percentage(score: number | null): string {
   return score === null ? '—' : `${score.toFixed(1)}%`;
-}
-export function targetScore(
-  course: Course,
-  category: string,
-  possible: number,
-  target: number,
-): number | null {
-  if (
-    !Number.isFinite(possible) ||
-    possible <= 0 ||
-    !Number.isFinite(target) ||
-    target < 0
-  )
-    return null;
-  const withScore = (earned: number) =>
-    calculate({
-      ...course,
-      assignments: [
-        ...course.assignments,
-        { id: 'target', title: 'Target', category, possible, earned, due: '' },
-      ],
-    });
-  const low = withScore(0),
-    high = withScore(possible);
-  if (low === null || high === null || high === low || possible <= 0)
-    return null;
-  return ((target - low) / (high - low)) * possible;
 }
 export function trend(course: Course): number[] {
   const ordered = course.assignments

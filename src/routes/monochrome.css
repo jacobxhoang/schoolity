@@ -299,9 +299,6 @@ h3 {
 .toggle-control.enabled > span {
   background: #262626;
 }
-.target-panel {
-  border-color: #e5e5e5;
-}
 .primary {
   background: #171717;
   color: white;
@@ -446,7 +443,7 @@ form label,
   color: var(--muted);
 }
 .dark .course-card,
-.dark .target-panel {
+.dark .schedule-sync {
   border-color: #303030;
 }
 @media (max-width: 1100px) {
@@ -577,9 +574,7 @@ input::placeholder {
   :is(
     .page-heading p,
     .what-if p,
-    .target-panel p,
-    .target-panel label,
-    .target-result small,
+    .schedule-sync p,
     form label,
     .login-description,
     .login-privacy,
@@ -619,7 +614,7 @@ input::placeholder {
   font-size: 14px;
   border-color: var(--control-border);
 }
-.app-shell :is(.search, .target-panel, .what-if, .table-wrap) {
+.app-shell :is(.search, .what-if, .table-wrap) {
   min-width: 0;
 }
 .app-shell :is(strong, .grade-label, input[type='number']) {
@@ -721,6 +716,13 @@ input::placeholder {
   font-size: 14px;
   max-width: 100%;
 }
+.schedule-sync {
+  border-color: #e5e5e5;
+  border-radius: var(--radius);
+}
+.schedule-sync p {
+  max-width: 100%;
+}
 .course-card {
   min-height: 84px;
   border-radius: var(--radius);
@@ -793,18 +795,6 @@ input::placeholder {
 }
 .what-if p {
   margin-top: 2px;
-}
-.target-panel {
-  padding: 16px;
-  gap: 16px;
-  margin-bottom: 20px;
-  border-radius: var(--radius);
-}
-.target-result {
-  align-items: flex-start;
-}
-.target-result strong {
-  flex-shrink: 0;
 }
 table {
   font-size: 13px;
@@ -986,22 +976,6 @@ td strong {
     gap: 8px;
     padding: 14px;
   }
-  .target-panel > div:first-child {
-    min-width: 0;
-    width: 100%;
-    flex-basis: 100%;
-  }
-  .target-panel label {
-    flex: 1;
-    min-width: 120px;
-  }
-  .target-panel :is(input, select) {
-    width: 100%;
-  }
-  .target-result {
-    flex-direction: column;
-    gap: 6px;
-  }
   .inline-actions {
     flex-wrap: wrap;
     gap: 12px;
@@ -1144,7 +1118,7 @@ td strong {
   text-align: center;
   margin-top: 12px;
 }
-.app-shell :is(form input, .target-panel input, .target-panel select) {
+.app-shell form input {
   border-radius: var(--radius-sm);
 }
 .app-shell .password-control input {

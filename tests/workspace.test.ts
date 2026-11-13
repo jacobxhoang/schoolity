@@ -4,11 +4,10 @@ import {
   readLocation,
   courseLocation,
   chartRange,
-  targetExplanation,
   scoreChange,
 } from '../src/lib/workspace.ts';
 import { requestPortal, RequestFailure } from '../src/lib/portal-request.ts';
-import { targetScore, trend, type Course } from '../src/lib/model.ts';
+import { trend, type Course } from '../src/lib/model.ts';
 
 test('course navigation round-trips unusual district identifiers', () => {
   for (const hash of ['', '#overview', '#unknown'])
@@ -33,9 +32,6 @@ test('extra credit is included in chart bounds, with stable empty bounds', () =>
 test('scenario results describe the comparison and unavailable inputs', () => {
   assert.match(scoreChange(90, 86), /\+4.0 percentage points/);
   assert.match(scoreChange(null, 86), /No comparison/);
-  assert.match(targetExplanation(0, 90, null), /greater than zero/);
-  assert.match(targetExplanation(100, 90, null), /no usable grading/);
-  assert.match(targetExplanation(100, 90, 110), /Above full credit/);
 });
 const course: Course = {
   id: 'a',
@@ -67,11 +63,6 @@ const course: Course = {
 };
 test('trend follows dates rather than the text sorting of dates', () =>
   assert.deepEqual(trend(course), [100, 75]));
-test('target calculation rejects unusable assignment sizes and target grades', () => {
-  for (const points of [0, -1, NaN, Infinity])
-    assert.equal(targetScore(course, '', points, 90), null);
-  assert.equal(targetScore(course, '', 100, NaN), null);
-});
 const reply = (status: number, body: unknown): typeof fetch =>
   (async () => new Response(JSON.stringify(body), { status })) as typeof fetch;
 test('successful requests use same-origin no-store POSTs', async () => {
