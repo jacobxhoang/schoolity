@@ -1,33 +1,6 @@
 import SwiftUI
 import Charts
 
-struct OverviewView: View {
-    @EnvironmentObject private var store: AppStore
-    var body: some View {
-        List {
-            if let error = store.gradeError {
-                Section { FailureRow(message: error) { Task { await store.refreshGrades() } } }
-            }
-            if let book = store.gradebook {
-                Section("Grades") {
-                    if book.courses.isEmpty { Text("No courses in this reporting period.").foregroundStyle(.secondary) }
-                    ForEach(book.courses) { course in
-                        NavigationLink { CourseDetailView(course: course).id("\(book.currentTerm)-\(course.id)") } label: { CourseRow(course: course) }
-                    }
-                }
-                Section {
-                    NavigationLink { ResourceView(resource: .mail) } label: { Label("Inbox", systemImage: "tray") }
-                    NavigationLink { ResourceView(resource: .documents) } label: { Label("Documents", systemImage: "doc") }
-                }
-            } else if store.isLoading { ProgressView("Loading grades…") }
-        }
-        .listStyle(.inset)
-        .navigationTitle("Schoolity")
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { AccountButton() } }
-        .refreshable { await store.refreshGrades() }
-    }
-}
-
 struct GradebookView: View {
     @EnvironmentObject private var store: AppStore
     var body: some View {

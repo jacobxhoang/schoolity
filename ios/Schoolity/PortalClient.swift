@@ -91,13 +91,14 @@ final class PortalClient: SchoolPortal {
     }
 
     func renewSession(context: LAContext) async throws -> Bool {
+        let renewingIdentity = identity
         guard let saved = try SessionVault.load(context: context), saved.canRenew,
               let username = saved.username, let password = saved.password else { return false }
         do {
             try await signIn(username: username, password: password, protectSession: true)
             return true
         } catch PortalFailure.credentialsRejected {
-            clear()
+            if renewingIdentity == identity { clear() }
             throw PortalFailure.credentialsRejected
         }
     }
@@ -163,7 +164,8 @@ final class PortalClient: SchoolPortal {
     }
 
     func signOut() async throws {
-        defer { clear() }
+        let signingOutIdentity = identity
+        defer { if signingOutIdentity == identity { clear() } }
         _ = try await send(["action": "logout"])
     }
 

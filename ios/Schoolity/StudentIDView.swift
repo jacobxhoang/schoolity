@@ -43,51 +43,40 @@ private struct ScannableStudentID: View {
     }
 }
 
-struct StudentIDView: View {
+struct StudentIDSection: View {
     @EnvironmentObject private var store: AppStore
     @Environment(\.scenePhase) private var scenePhase
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                if let profile = store.profile, let identifier = profile.studentId, !identifier.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(profile.name).font(.title2.bold())
-                        Text(profile.school).foregroundStyle(Color.primary.opacity(0.65))
-                    }
-                    VStack(spacing: 16) {
-                        ScannableStudentID(identifier: identifier)
-                        Text(identifier)
-                            .font(.title2.monospaced())
-                            .foregroundStyle(.black)
-                            .multilineTextAlignment(.center)
-                            .textSelection(.enabled)
-                            .accessibilityLabel("Student ID, \(identifier)")
-                            .accessibilityIdentifier("studentID.number")
-                    }
-                    .padding(20)
-                    .background(.white, in: RoundedRectangle(cornerRadius: 24))
-                } else if store.isLoadingProfile {
-                    ProgressView("Loading student ID…").frame(maxWidth: .infinity, minHeight: 180)
-                } else {
-                    ContentUnavailableView {
-                        Label("Student ID unavailable", systemImage: "barcode")
-                    } description: {
-                        Text(store.profileError ?? "Your district hasn’t provided a student ID.")
-                            .foregroundStyle(Color.primary.opacity(0.65))
-                    } actions: {
-                        Button("Try again") { Task { await store.loadProfile(refresh: true) } }
-                            .buttonStyle(.bordered)
-                    }
+        VStack(alignment: .leading, spacing: 24) {
+            if let profile = store.profile, let identifier = profile.studentId, !identifier.isEmpty {
+                VStack(spacing: 16) {
+                    ScannableStudentID(identifier: identifier)
+                    Text(identifier)
+                        .font(.title2.monospaced())
+                        .foregroundStyle(.black)
+                        .multilineTextAlignment(.center)
+                        .textSelection(.enabled)
+                        .accessibilityLabel("Student ID, \(identifier)")
+                        .accessibilityIdentifier("studentID.number")
                 }
-            }.padding(20)
-        }
+                .padding(20)
+                .background(.white, in: RoundedRectangle(cornerRadius: 24))
+            } else if store.isLoadingProfile {
+                ProgressView("Loading student ID…").frame(maxWidth: .infinity, minHeight: 180)
+            } else {
+                ContentUnavailableView {
+                    Label("Student ID unavailable", systemImage: "barcode")
+                } description: {
+                    Text(store.profileError ?? "Your district hasn’t provided a student ID.")
+                        .foregroundStyle(Color.primary.opacity(0.65))
+                } actions: {
+                    Button("Try again") { Task { await store.loadProfile(refresh: true) } }
+                        .buttonStyle(.bordered)
+                }
+            }
+        }.frame(maxWidth: .infinity)
         .opacity(scenePhase == .active ? 1 : 0)
         .accessibilityHidden(scenePhase != .active)
-        .background(Color(uiColor: .systemGroupedBackground))
-        .navigationTitle("Student ID")
-        .navigationBarTitleDisplayMode(.inline)
-        .task { await store.loadProfile(refresh: store.profile?.studentId == nil) }
-        .refreshable { await store.loadProfile(refresh: true) }
         .privacySensitive()
     }
 }

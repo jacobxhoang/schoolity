@@ -41,6 +41,8 @@ final class SchoolityUITests: XCTestCase {
         XCTAssertTrue(app.tabBars.buttons["Grades"].waitForExistence(timeout: 10))
         app.tabBars.buttons["Grades"].tap()
         XCTAssertTrue(app.staticTexts["Algebra II"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.tabBars.buttons["Home"].exists)
+        XCTAssertEqual(app.tabBars.buttons.count, 4)
         capture("gradebook")
         app.staticTexts["Algebra II"].tap()
         XCTAssertTrue(app.staticTexts["Grade history"].waitForExistence(timeout: 5))
@@ -93,8 +95,10 @@ final class SchoolityUITests: XCTestCase {
         capture("documents")
         app.buttons["Account"].tap()
         XCTAssertTrue(app.staticTexts["Sample Student"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["Sign out"].exists)
+        XCTAssertTrue(app.staticTexts["studentID.number"].isHittable)
         capture("account")
+        if !app.buttons["Sign out"].isHittable { app.swipeUp() }
+        XCTAssertTrue(app.buttons["Sign out"].isHittable)
     }
 
     func testSavedSignInCanUnlock() {
@@ -103,6 +107,7 @@ final class SchoolityUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.buttons["login.unlock"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.tabBars.firstMatch.exists)
+        XCTAssertEqual(app.buttons["login.unlock"].label, "Sign in")
         capture("saved-sign-in")
         app.buttons["login.unlock"].tap()
         XCTAssertTrue(app.tabBars.buttons["Grades"].waitForExistence(timeout: 5))
@@ -128,9 +133,8 @@ final class SchoolityUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.buttons["Account"].waitForExistence(timeout: 10))
         app.buttons["Account"].tap()
-        let link = app.buttons["account.studentID"]
-        if !link.isHittable { app.swipeUp() }
-        link.tap()
+        XCTAssertTrue(app.staticTexts["Sample Student"].waitForExistence(timeout: 5))
+        for _ in 0..<3 where !app.staticTexts["studentID.number"].isHittable { app.swipeUp() }
         XCTAssertTrue(app.staticTexts["studentID.number"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["studentID.number"].label, "Student ID, 00012345")
         if !app.staticTexts["studentID.number"].isHittable { app.swipeUp() }
@@ -150,9 +154,6 @@ final class SchoolityUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.buttons["Account"].waitForExistence(timeout: 10))
         app.buttons["Account"].tap()
-        let link = app.buttons["account.studentID"]
-        if !link.isHittable { app.swipeUp() }
-        link.tap()
         XCTAssertTrue(app.staticTexts["Student ID unavailable"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.staticTexts["studentID.number"].exists)
         capture("student-id-unavailable")

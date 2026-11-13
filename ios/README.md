@@ -4,9 +4,9 @@ Native SwiftUI app for iOS 17 and later. Includes required Anoka-Hennepin sign-i
 
 ## Saved sign-in and Face ID
 
-Sign in once with your school username and password. On a device with a passcode, Schoolity saves the session and credentials in a protected, device-only Keychain entry. Reopening the app uses Face ID, Touch ID, or the device passcode. If the school session expired, the same authenticated operation signs in again using the saved credentials. Allow Face ID when iOS asks. Cancelling keeps sign-in saved for retry. **Sign in again** and **Sign out** erase the saved session and credentials.
+Sign in once with your school username and password. On a device with a passcode, Schoolity saves the session and credentials in a protected, device-only Keychain entry. Reopening the app shows the original saved-sign-in screen. Tap **Sign in** to use Face ID, Touch ID, or the device passcode; credentials do not need to be retyped and no scan starts automatically. If the school session expired, the same authenticated operation signs in again using the saved credentials. Allow Face ID when iOS asks. Cancelling keeps sign-in saved for retry. **Sign in again** and **Sign out** erase the saved session and credentials.
 
-Schoolity locks when sent to the background, clears displayed records and temporary downloads, and unlocks on return. The app covers its main content while inactive. Apple's own authentication prompt does not cause an unlock loop. A rejected saved password returns to school credentials; transient network errors retain the protected entry for retry. Late network responses cannot activate a backgrounded workspace or restore an explicitly forgotten account.
+Schoolity locks when sent to the background, clears displayed records and temporary downloads, and waits for **Sign in** on return. The app covers its main content while inactive. Apple's own authentication prompt does not cause an unlock loop. A rejected saved password returns to school credentials; transient network errors retain the protected entry for retry. Late network responses cannot activate a backgrounded workspace or restore an explicitly forgotten account.
 
 Existing saved sessions are upgraded to require local authentication on the first successful unlock. Devices without a passcode retain the original saved-sign-in behavior; setting up a passcode enables the protected flow on the next reopen. Protected sessions are never retrieved without successful local authentication, even if biometrics become unavailable. Face ID permission denial can fall back to the device passcode or school credentials. Removing the device passcode invalidates protected Keychain entries.
 
@@ -14,7 +14,7 @@ Older installations stored only a session. Enter your school credentials once af
 
 ## Native interface
 
-The user requested [Pupil](https://github.com/Ziggydave1/Pupil) as a visual/behavioral reference while keeping black and white. The credential screen uses an original responsive cropped-ring composition, separate rounded fields and a bottom-aligned form. Grades open first, with compact native inset rows, course symbols and grade lines beneath course identity. The original Schoolity Face ID unlock screen remains unchanged. Charts, local calculators, Inbox, Schedule, Documents and Student ID retain their functions. Reduced Motion disables the ring's focus transition. No Pupil source code, images, branding, SwiftVue, or credential-storage dependencies are bundled.
+The original Schoolity credential form and saved-sign-in screen are retained in black and white. Saved sign-in has one **Sign in** action. Grades open first; Home is removed, leaving Grades, Schedule, Inbox and Documents. The remaining compact native inset rows, course symbols and stacked grade lines take Pupil as a visual reference. Account displays the student number and barcode directly, with no extra navigation. Charts and local calculators retain their functions. No Pupil source code, images, branding, SwiftVue, or credential-storage dependencies are bundled.
 
 ## Build on GitHub (works from Windows)
 
@@ -30,7 +30,7 @@ The IPA is **unsigned** and requires Apple signing before installation; download
 
 ## Student ID
 
-Open **Account → Student ID** to show the district-provided student number and a black-on-white Code 128 barcode. The value stays text to preserve leading zeros. Summary/detail profile data is combined, using explicit district student-number fields; account usernames, GUIDs, and child indexes are never substituted. If no ID is supplied, the app shows an unavailable state with Retry. Profile and ID data remain in memory and clear when the app locks or signs out.
+Open **Account** to immediately see the district-provided student number and a black-on-white Code 128 barcode. The value stays text to preserve leading zeros. Summary/detail profile data is combined, using explicit district student-number fields; account usernames, GUIDs, and child indexes are never substituted. If no ID is supplied, the app shows an unavailable state with Retry. Profile and ID data remain in memory and clear when the app locks or signs out.
 
 The barcode uses Core Image at integer pixel scales with quiet zones. An automated Vision decoding test checks the exact encoded value. This is a Schoolity display of district data, not a district-issued credential; live Anoka ID-field compatibility and campus scanner acceptance still need private verification. No student photo or manually invented ID is included.
 

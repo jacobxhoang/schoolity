@@ -3,6 +3,26 @@ import LocalAuthentication
 @testable import Schoolity
 
 final class SavedSignInTests: XCTestCase {
+    @MainActor
+    func testOpeningWithSavedCredentialsWaitsForSignInTap() async {
+        let portal = TestPortal()
+        portal.savedSignIn = SavedSessionInfo(expires: .distantPast, requiresUnlock: true, canRenew: true)
+        portal.connectionResult = false
+        portal.renewalResult = true
+        let unlock = TestUnlocker()
+        let store = AppStore(client: portal, unlocker: unlock)
+        await store.start()
+        XCTAssertEqual(store.access, .locked)
+        XCTAssertEqual(unlock.calls, 0)
+        XCTAssertEqual(portal.restoreCalls, 0)
+        XCTAssertEqual(portal.renewalCalls, 0)
+        XCTAssertNotNil(portal.savedSignIn)
+        await store.unlockSavedSignIn()
+        XCTAssertEqual(unlock.calls, 1)
+        XCTAssertEqual(portal.renewalCalls, 1)
+        XCTAssertEqual(store.access, .signedIn)
+    }
+
     func testCredentialsCannotBeSavedWithoutLocalAuthenticationProtection() {
         let saved = SavedSession(value: "synthetic", expires: .distantFuture, username: "sample", password: "synthetic-only")
         XCTAssertThrowsError(try SessionVault.save(saved, requiresUnlock: false))
@@ -17,6 +37,7 @@ final class SavedSignInTests: XCTestCase {
         let unlock = TestUnlocker()
         let store = AppStore(client: portal, unlocker: unlock)
         await store.start()
+        await store.unlockSavedSignIn()
         XCTAssertEqual(unlock.calls, 1)
         XCTAssertEqual(portal.renewalCalls, 1)
         XCTAssertEqual(store.access, .signedIn)
@@ -31,6 +52,7 @@ final class SavedSignInTests: XCTestCase {
         unlock.cancelAuthentication = true
         let store = AppStore(client: portal, unlocker: unlock)
         await store.start()
+        await store.unlockSavedSignIn()
         XCTAssertEqual(store.access, .locked)
         XCTAssertEqual(portal.restoreCalls, 0)
         XCTAssertEqual(portal.renewalCalls, 0)
@@ -45,6 +67,7 @@ final class SavedSignInTests: XCTestCase {
         portal.renewalError = PortalFailure.credentialsRejected
         let store = AppStore(client: portal, unlocker: TestUnlocker())
         await store.start()
+        await store.unlockSavedSignIn()
         XCTAssertEqual(store.access, .signedOut)
         XCTAssertNil(portal.savedSignIn)
         XCTAssertTrue(store.loginError?.contains("username and password") == true)
@@ -58,6 +81,7 @@ final class SavedSignInTests: XCTestCase {
         portal.renewalError = PortalFailure.message("Connection unavailable.")
         let store = AppStore(client: portal, unlocker: TestUnlocker())
         await store.start()
+        await store.unlockSavedSignIn()
         XCTAssertEqual(store.access, .locked)
         XCTAssertNotNil(portal.savedSignIn)
         XCTAssertEqual(store.unlockError, "Connection unavailable.")
@@ -76,7 +100,8 @@ final class SavedSignInTests: XCTestCase {
         let pending = expectation(description: "Credential renewal started")
         portal.onRenewal = { pending.fulfill() }
         let store = AppStore(client: portal, unlocker: TestUnlocker())
-        let task = Task { await store.start() }
+        await store.start()
+        let task = Task { await store.unlockSavedSignIn() }
         await fulfillment(of: [pending], timeout: 3)
         store.enterBackground()
         portal.renewalContinuation?.resume(returning: true)
@@ -101,6 +126,7 @@ final class SavedSignInTests: XCTestCase {
         unlock.cancelAuthentication = true
         let store = AppStore(client: portal, unlocker: unlock)
         await store.start()
+        await store.unlockSavedSignIn()
         XCTAssertEqual(store.access, .locked)
         XCTAssertEqual(unlock.calls, 1)
         XCTAssertEqual(portal.restoreCalls, 0)
@@ -117,6 +143,7 @@ final class SavedSignInTests: XCTestCase {
         let portal = TestPortal()
         let store = AppStore(client: portal, unlocker: TestUnlocker())
         await store.start()
+        await store.unlockSavedSignIn()
         XCTAssertEqual(store.access, .signedIn)
         XCTAssertEqual(portal.restoreCalls, 1)
         XCTAssertTrue(portal.restoredWithContext)
@@ -131,6 +158,7 @@ final class SavedSignInTests: XCTestCase {
         let unlock = TestUnlocker()
         let store = AppStore(client: portal, unlocker: unlock)
         await store.start()
+        await store.unlockSavedSignIn()
         XCTAssertNotNil(store.profile)
         store.enterBackground()
         XCTAssertEqual(store.access, .locked)
@@ -140,6 +168,9 @@ final class SavedSignInTests: XCTestCase {
         XCTAssertNotNil(portal.savedSignIn)
         XCTAssertGreaterThan(portal.forgetCalls, 0)
         await store.enterForeground()
+        XCTAssertEqual(store.access, .locked)
+        XCTAssertEqual(unlock.calls, 1)
+        await store.unlockSavedSignIn()
         XCTAssertEqual(store.access, .signedIn)
         XCTAssertEqual(unlock.calls, 2)
     }
@@ -149,6 +180,7 @@ final class SavedSignInTests: XCTestCase {
         let portal = TestPortal()
         let store = AppStore(client: portal, unlocker: TestUnlocker())
         await store.start()
+        await store.unlockSavedSignIn()
         XCTAssertEqual(store.access, .signedIn)
         portal.savedSignIn = nil // Models temporarily unavailable Keychain metadata.
         store.enterBackground()
@@ -166,9 +198,13 @@ final class SavedSignInTests: XCTestCase {
         unlock.available = false
         let store = AppStore(client: portal, unlocker: unlock)
         await store.start()
+        await store.unlockSavedSignIn()
         store.enterBackground()
         unlock.available = true
         await store.enterForeground()
+        XCTAssertEqual(store.access, .locked)
+        XCTAssertEqual(unlock.calls, 0)
+        await store.unlockSavedSignIn()
         XCTAssertEqual(unlock.calls, 1)
         XCTAssertTrue(portal.protectRestoredSession)
         XCTAssertEqual(store.access, .signedIn)
@@ -181,6 +217,7 @@ final class SavedSignInTests: XCTestCase {
         let unlock = TestUnlocker()
         let store = AppStore(client: portal, unlocker: unlock)
         await store.start()
+        await store.unlockSavedSignIn()
         XCTAssertEqual(store.access, .signedOut)
         XCTAssertEqual(unlock.calls, 0)
         XCTAssertEqual(portal.restoreCalls, 0)
@@ -193,6 +230,7 @@ final class SavedSignInTests: XCTestCase {
         portal.connectionResult = false
         let store = AppStore(client: portal, unlocker: TestUnlocker())
         await store.start()
+        await store.unlockSavedSignIn()
         XCTAssertEqual(store.access, .signedOut)
         XCTAssertNil(portal.savedSignIn)
         XCTAssertNil(store.gradebook)
@@ -204,6 +242,7 @@ final class SavedSignInTests: XCTestCase {
         portal.savedSignIn = SavedSessionInfo(expires: .distantFuture, requiresUnlock: false, legacy: true)
         let store = AppStore(client: portal, unlocker: TestUnlocker())
         await store.start()
+        await store.unlockSavedSignIn()
         XCTAssertEqual(store.access, .signedIn)
         XCTAssertTrue(portal.protectRestoredSession)
         XCTAssertTrue(portal.restoredWithContext)
@@ -217,6 +256,7 @@ final class SavedSignInTests: XCTestCase {
         unlock.available = false
         let store = AppStore(client: portal, unlocker: unlock)
         await store.start()
+        await store.unlockSavedSignIn()
         XCTAssertEqual(store.access, .signedIn)
         XCTAssertEqual(unlock.calls, 0)
         XCTAssertFalse(portal.restoredWithContext)
@@ -230,6 +270,7 @@ final class SavedSignInTests: XCTestCase {
         unlock.available = false
         let store = AppStore(client: portal, unlocker: unlock)
         await store.start()
+        await store.unlockSavedSignIn()
         XCTAssertEqual(store.access, .locked)
         XCTAssertEqual(portal.restoreCalls, 0)
         store.usePasswordInstead()
@@ -243,6 +284,7 @@ final class SavedSignInTests: XCTestCase {
         portal.savedSignIn = nil
         let store = AppStore(client: portal, unlocker: TestUnlocker())
         await store.start()
+        await store.unlockSavedSignIn()
         await store.signIn(username: "sample", password: "synthetic-test-only")
         XCTAssertEqual(store.access, .signedIn)
         XCTAssertEqual(portal.savedSignIn?.requiresUnlock, true)
@@ -258,7 +300,8 @@ final class SavedSignInTests: XCTestCase {
         portal.onConnection = { pending.fulfill() }
         portal.delayConnection = true
         let store = AppStore(client: portal, unlocker: TestUnlocker())
-        let task = Task { await store.start() }
+        await store.start()
+        let task = Task { await store.unlockSavedSignIn() }
         await fulfillment(of: [pending], timeout: 3)
         store.enterBackground()
         portal.connectionContinuation?.resume(returning: false)
