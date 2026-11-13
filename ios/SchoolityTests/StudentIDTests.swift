@@ -7,6 +7,10 @@ final class StudentIDTests: XCTestCase {
         let number = "00012345"
         let image = try XCTUnwrap(StudentIDBarcode.image(for: number, width: 900, height: 240))
         let request = VNDetectBarcodesRequest()
+        // The hosted simulator cannot run the newest Vision inference model.
+        // The original CPU decoder still independently verifies Code 128 data.
+        request.revision = VNDetectBarcodesRequestRevision1
+        request.usesCPUOnly = true
         request.symbologies = [.code128]
         try VNImageRequestHandler(cgImage: image).perform([request])
         XCTAssertEqual(request.results?.first?.payloadStringValue, number)

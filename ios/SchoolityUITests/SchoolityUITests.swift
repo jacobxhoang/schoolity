@@ -121,6 +121,8 @@ final class SchoolityUITests: XCTestCase {
         if !app.staticTexts["studentID.number"].isHittable { app.swipeUp() }
         let image = try XCTUnwrap(XCUIScreen.main.screenshot().image.cgImage)
         let request = VNDetectBarcodesRequest()
+        request.revision = VNDetectBarcodesRequestRevision1
+        request.usesCPUOnly = true
         request.symbologies = [.code128]
         try VNImageRequestHandler(cgImage: image).perform([request])
         XCTAssertTrue(request.results?.contains(where: { $0.payloadStringValue == "00012345" }) == true)
