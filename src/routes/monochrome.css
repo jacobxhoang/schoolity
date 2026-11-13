@@ -1258,14 +1258,6 @@ td strong {
     margin-top: 6px;
   }
 }
-
-.document-actions {
-  margin-left: auto;
-  display: flex;
-  align-items: flex-end;
-  flex-direction: column;
-  gap: 8px;
-}
 .mail-message {
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -1340,11 +1332,6 @@ td strong {
   .record-card {
     flex-wrap: wrap;
   }
-  .document-actions {
-    width: 100%;
-    align-items: flex-start;
-    margin-left: 0;
-  }
 }
 
 .mail-attachments {
@@ -1377,4 +1364,35 @@ td strong {
   flex-basis: 100%;
   margin: 0;
   max-width: 75ch;
+}
+
+.document-card {
+  width: 100%;
+  text-align: left;
+  align-items: center;
+}
+.document-card:hover:not(:disabled) {
+  background: var(--surface);
+  border-color: var(--control-border);
+}
+.document-copy {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.document-copy strong {
+  display: block;
+  font-size: 16px;
+  font-weight: 550;
+  margin: 7px 0;
+}
+.document-copy > span {
+  display: block;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+.document-status {
+  font-size: 12px;
+  color: var(--muted);
 }

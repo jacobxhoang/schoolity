@@ -1028,7 +1028,29 @@
                           </ul>
                         </section>{/if}
                     </div>
-                  </details>{/key}{:else}<article class="record-card">
+                  </details>{/key}{:else if tab === 'documents'}<button
+                  class="record-card document-card"
+                  disabled={!item.id || downloading[item.id]}
+                  aria-label={'Download ' + item.title}
+                  aria-busy={!!item.id && !!downloading[item.id]}
+                  onclick={() => downloadFile(item)}
+                >
+                  <span class="record-icon"><Icon name="file" size={22} /></span
+                  ><span class="document-copy"
+                    ><small>{item.date}</small><strong>{item.title}</strong
+                    ><span>{item.detail}</span></span
+                  >
+                  {#if !item.id || downloading[item.id]}<span
+                      class="document-status"
+                      role="status"
+                      >{item.id ? 'Downloading…' : 'Unavailable'}</span
+                    >{/if}
+                </button>{#if item.id && downloadErrors[item.id]}<p
+                    class="document-error"
+                    role="alert"
+                  >
+                    {downloadErrors[item.id]}
+                  </p>{/if}{:else}<article class="record-card">
                   <span class="record-icon"
                     ><Icon
                       name={tab === 'schedule'
@@ -1044,23 +1066,6 @@
                     <h3>{item.title}</h3>
                     <p>{item.detail}</p>
                   </div>
-                  {#if tab === 'documents'}<div class="document-actions">
-                      <button
-                        class="primary small"
-                        disabled={!item.id || downloading[item.id]}
-                        onclick={() => downloadFile(item)}
-                        >{item.id && downloading[item.id]
-                          ? 'Downloading…'
-                          : item.id
-                            ? 'Download'
-                            : 'Unavailable'}</button
-                      >{#if item.id && downloadErrors[item.id]}<p
-                          class="document-error"
-                          role="alert"
-                        >
-                          {downloadErrors[item.id]}
-                        </p>{/if}
-                    </div>{/if}
                 </article>{/if}{/each}{#if !resourceData[tab]?.length && !busy}<div
                 class="empty-state"
               >
