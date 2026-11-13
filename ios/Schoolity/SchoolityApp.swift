@@ -177,9 +177,9 @@ struct WorkspaceView: View {
 struct AccountButton: View {
     @EnvironmentObject private var store: AppStore
     @State private var showAccount = false
-    @State private var accountSize: PresentationDetent = .medium
+    @State private var accountSize: PresentationDetent = .large
     var body: some View {
-        Button { accountSize = .medium; showAccount = true } label: { Image(systemName: "person.crop.circle").frame(minWidth: 44, minHeight: 44) }
+        Button { accountSize = .large; showAccount = true } label: { Image(systemName: "person.crop.circle").frame(minWidth: 44, minHeight: 44) }
             .accessibilityLabel("Account")
             .sheet(isPresented: $showAccount) {
                 NavigationStack {
