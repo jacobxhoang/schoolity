@@ -45,7 +45,10 @@ final class GradeMathTests: XCTestCase {
         var value = course()
         value.assignments = [Assignment(id: "late", title: "Late", category: "", earned: 12, possible: 10, due: "10/9/2026"),
                              Assignment(id: "early", title: "Early", category: "", earned: 10, possible: 10, due: "9/30/2026")]
-        XCTAssertEqual(GradeMath.trend(value).map(\.score), [100, 110])
+        let points = GradeMath.trend(value)
+        XCTAssertEqual(points.count, 2)
+        XCTAssertEqual(try XCTUnwrap(points.first).score, 100, accuracy: 0.0001)
+        XCTAssertEqual(try XCTUnwrap(points.last).score, 110, accuracy: 0.0001)
     }
 
     func testNormalizedPayloadDecodesEntitiesAsPlainText() throws {

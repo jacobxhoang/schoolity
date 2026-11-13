@@ -8,10 +8,10 @@ Open the repository's **Actions → iOS → Run workflow**. Pushes to `main` tha
 
 The macOS workflow generates the Xcode project, compiles a Release archive for iPhone, runs unit and native UI tests on an installed iPhone simulator, and uploads:
 
-- `Schoolity-iOS-<run>`: unsigned device `.xcarchive.zip` and simulator `.app.zip`.
+- `Schoolity-iOS-<run>`: unsigned device `.ipa`, `.xcarchive.zip`, and simulator `.app.zip`.
 - `Schoolity-iOS-tests-<run>`: build logs, XCTest results, and synthetic-data simulator screenshots.
 
-Artifacts expire after seven days. An unsigned archive is **not an installable IPA**. This workflow needs no Apple account, certificates, or repository secrets. It does use GitHub-hosted macOS runner minutes; availability follows your account's Actions allowance.
+Artifacts expire after seven days. The IPA and archive are **unsigned**: the IPA must be signed with your own Apple development identity before installation; downloading it alone will not install it on an iPhone. This workflow needs no Apple account, certificates, or repository secrets. It does use GitHub-hosted macOS runner minutes; availability follows your account's Actions allowance.
 
 ## Open in Xcode
 

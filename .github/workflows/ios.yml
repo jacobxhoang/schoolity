@@ -61,6 +61,9 @@ jobs:
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
             | tee build/archive.log
           ditto -c -k --sequesterRsrc --keepParent build/Schoolity.xcarchive build/Schoolity-unsigned.xcarchive.zip
+          mkdir -p build/ipa/Payload
+          ditto build/Schoolity.xcarchive/Products/Applications/Schoolity.app build/ipa/Payload/Schoolity.app
+          ditto -c -k --keepParent build/ipa/Payload build/Schoolity-unsigned.ipa
       - name: Select and boot an available iPhone
         run: |
           set -euo pipefail
@@ -92,7 +95,7 @@ jobs:
           xcodebuild test -project Schoolity.xcodeproj -scheme Schoolity \
             -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
             -derivedDataPath DerivedData -resultBundlePath TestResults/Unit.xcresult \
-            -only-testing:SchoolityTests CODE_SIGNING_ALLOWED=NO \
+            -only-testing:SchoolityTests -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO \
             | tee build/unit-tests.log
       - name: Run native interaction and screenshot tests
         run: |
@@ -100,7 +103,7 @@ jobs:
           xcodebuild test -project Schoolity.xcodeproj -scheme Schoolity \
             -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
             -derivedDataPath DerivedData -resultBundlePath TestResults/Light.xcresult \
-            -only-testing:SchoolityUITests CODE_SIGNING_ALLOWED=NO \
+            -only-testing:SchoolityUITests -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO \
             | tee build/ui-light.log
       - name: Check Dark Mode and large text
         run: |
@@ -110,7 +113,7 @@ jobs:
           xcodebuild test -project Schoolity.xcodeproj -scheme Schoolity \
             -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
             -derivedDataPath DerivedData -resultBundlePath TestResults/Dark.xcresult \
-            -only-testing:SchoolityUITests/testLoginHasNoAnonymousEntry CODE_SIGNING_ALLOWED=NO \
+            -only-testing:SchoolityUITests/testLoginHasNoAnonymousEntry -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO \
             | tee build/ui-dark.log
           xcrun simctl ui "$SIMULATOR_ID" content_size large
       - name: Package simulator app and screenshots
@@ -130,7 +133,9 @@ jobs:
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: Schoolity-iOS-${{ github.run_number }}
-          path: ios/build/*.zip
+          path: |
+            ios/build/*.zip
+            ios/build/*.ipa
           if-no-files-found: warn
           retention-days: 7
       - name: Upload test evidence and build logs
