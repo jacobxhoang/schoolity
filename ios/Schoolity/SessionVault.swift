@@ -5,7 +5,10 @@ import LocalAuthentication
 struct SavedSession: Codable {
     let value: String
     let expires: Date
+    var username: String?
+    var password: String?
     var isValid: Bool { !value.isEmpty && expires > Date() }
+    var canRenew: Bool { !(username ?? "").isEmpty && !(password ?? "").isEmpty }
 }
 
 // Non-secret metadata lets the app show an unlock screen without retrieving
@@ -14,7 +17,8 @@ struct SavedSessionInfo: Codable {
     let expires: Date
     let requiresUnlock: Bool
     var legacy: Bool = false
-    var isValid: Bool { expires > Date() }
+    var canRenew: Bool?
+    var isValid: Bool { expires > Date() || canRenew == true }
 }
 
 enum SessionVault {
@@ -48,15 +52,17 @@ enum SessionVault {
         if status == errSecItemNotFound { return nil }
         guard status == errSecSuccess else { throw DeviceUnlockFailure.failed }
         guard let data = result as? Data,
-              let token = try? JSONDecoder().decode(SavedSession.self, from: data), token.isValid else { clear(); return nil }
+              let token = try? JSONDecoder().decode(SavedSession.self, from: data), token.isValid || token.canRenew else { clear(); return nil }
         return token
     }
 
     static func save(_ token: SavedSession, requiresUnlock: Bool) throws {
+        // Credentials are never saved in the passcode-free fallback entry.
+        guard requiresUnlock || !token.canRenew else { throw DeviceUnlockFailure.unavailable }
         let data = try JSONEncoder().encode(token)
         var values = query
         values[kSecValueData as String] = data
-        values[kSecAttrGeneric as String] = try JSONEncoder().encode(SavedSessionInfo(expires: token.expires, requiresUnlock: requiresUnlock))
+        values[kSecAttrGeneric as String] = try JSONEncoder().encode(SavedSessionInfo(expires: token.expires, requiresUnlock: requiresUnlock, canRenew: token.canRenew))
         if requiresUnlock {
             var error: Unmanaged<CFError>?
             guard let control = SecAccessControlCreateWithFlags(nil, kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly, .userPresence, &error) else {

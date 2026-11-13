@@ -21,6 +21,7 @@ struct OverviewView: View {
                 }
             } else if store.isLoading { ProgressView("Loading grades…") }
         }
+        .listStyle(.inset)
         .navigationTitle("Schoolity")
         .toolbar { ToolbarItem(placement: .topBarTrailing) { AccountButton() } }
         .refreshable { await store.refreshGrades() }
@@ -33,13 +34,11 @@ struct GradebookView: View {
         List {
             if let book = store.gradebook {
                 if !book.terms.isEmpty {
-                    Section {
                         Picker("Term", selection: Binding(get: { book.currentTerm }, set: { term in
                             Task { await store.refreshGrades(term: term) }
                         })) {
                             ForEach(book.terms) { Text($0.name).tag($0.id) }
-                        }.disabled(store.isLoading)
-                    }
+                        }.pickerStyle(.menu).disabled(store.isLoading)
                 }
                 Section {
                     ForEach(book.courses) { course in
@@ -53,6 +52,7 @@ struct GradebookView: View {
                 Section { FailureRow(message: error) { Task { await store.refreshGrades() } } }
             }
         }
+        .listStyle(.inset)
         .navigationTitle("Grades")
         .toolbar { ToolbarItem(placement: .topBarTrailing) { AccountButton() } }
         .refreshable { await store.refreshGrades() }
@@ -63,25 +63,23 @@ struct CourseRow: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     let course: Course
     var body: some View {
-        Group {
-            if typeSize.isAccessibilitySize {
-                VStack(alignment: .leading, spacing: 12) {
-                    identity
-                    HStack(alignment: .firstTextBaseline, spacing: 16) {
-                        Text(GradeMath.letter(course.official)).font(.title2.bold())
-                        Text(GradeMath.percent(course.official)).font(.subheadline).foregroundStyle(.secondary)
-                    }.monospacedDigit()
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                if !typeSize.isAccessibilitySize {
+                    Image(systemName: "studentdesk")
+                        .font(.title2)
+                        .frame(width: 36, height: 40)
+                        .accessibilityHidden(true)
                 }
-            } else {
-                HStack(alignment: .firstTextBaseline, spacing: 16) {
                     identity
-                    Spacer(minLength: 0)
-                    VStack(alignment: .trailing, spacing: 5) {
-                        Text(GradeMath.letter(course.official)).font(.title2.bold())
-                        Text(GradeMath.percent(course.official)).font(.subheadline).foregroundStyle(.secondary)
-                    }.monospacedDigit().fixedSize()
-                }
             }
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Text(GradeMath.letter(course.official))
+                    .font(.headline)
+                    .padding(.horizontal, 9).padding(.vertical, 4)
+                    .background(Color.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+                Text(GradeMath.percent(course.official)).font(.callout.weight(.semibold))
+            }.monospacedDigit()
         }.padding(.vertical, 8)
         .accessibilityElement(children: .combine)
     }
@@ -89,7 +87,8 @@ struct CourseRow: View {
     private var identity: some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(course.name).font(.headline).fixedSize(horizontal: false, vertical: true)
-            if !course.teacher.isEmpty { Text(course.teacher).font(.subheadline).foregroundStyle(.secondary) }
+            let details = [course.teacher, course.room.isEmpty ? "" : "Room \(course.room)"].filter { !$0.isEmpty }.joined(separator: " · ")
+            if !details.isEmpty { Text(details).font(.footnote).foregroundStyle(SchoolityStyle.muted) }
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
 }
@@ -154,6 +153,7 @@ struct CourseDetailView: View {
                 }
             }
         }
+        .listStyle(.inset)
         .navigationTitle(course.name)
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $editor) { assignment in

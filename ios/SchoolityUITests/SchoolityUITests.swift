@@ -19,6 +19,21 @@ final class SchoolityUITests: XCTestCase {
         capture("login")
     }
 
+    func testLoginFieldsRemainUsableWithKeyboard() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-login"]
+        app.launch()
+        let username = app.textFields["login.username"]
+        XCTAssertTrue(username.waitForExistence(timeout: 10))
+        username.tap()
+        username.typeText("sample")
+        let password = app.secureTextFields["login.password"]
+        password.tap()
+        password.typeText("synthetic-only")
+        XCTAssertTrue(app.buttons["login.submit"].isEnabled)
+        capture("login-keyboard")
+    }
+
     func testGradebookWhatIfAndCollapsedInbox() {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing"]

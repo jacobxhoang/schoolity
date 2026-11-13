@@ -89,19 +89,16 @@ struct LoginView: View {
     @State private var reveal = false
     @FocusState private var focus: Field?
     private enum Field { case username, password }
+    private var canSubmit: Bool { !username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !password.isEmpty && !store.isLoading && !store.signingOut }
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Image(systemName: "graduationcap.fill").font(.largeTitle).accessibilityHidden(true)
-                        Text("Schoolity").font(.largeTitle.bold())
-                    }
-                    .padding(.vertical, 24)
-                    .listRowBackground(Color.clear)
+            LoginCanvas(editing: focus != nil) {
+                if let error = store.loginError {
+                    Label(error, systemImage: "exclamationmark.circle")
+                        .font(.subheadline).accessibilityAddTraits(.updatesFrequently)
                 }
-                Section {
+                VStack(spacing: 12) {
                     TextField("Username", text: $username, prompt: Text("Username").foregroundStyle(Color.primary.opacity(0.65)))
                         .textContentType(.username)
                         .textInputAutocapitalization(.never)
@@ -110,6 +107,7 @@ struct LoginView: View {
                         .focused($focus, equals: .username)
                         .onSubmit { focus = .password }
                         .accessibilityIdentifier("login.username")
+                        .modifier(CredentialFieldStyle(focused: focus == .username))
                     HStack {
                         Group {
                             if reveal { TextField("Password", text: $password, prompt: Text("Password").foregroundStyle(Color.primary.opacity(0.65))) }
@@ -128,27 +126,23 @@ struct LoginView: View {
                         .buttonStyle(.borderless)
                         .accessibilityLabel(reveal ? "Hide password" : "Show password")
                     }
+                    .modifier(CredentialFieldStyle(focused: focus == .password))
                 }
                 .disabled(store.isLoading || store.signingOut)
-                Section {
                     Button(action: signIn) {
                         HStack {
                             Spacer()
                             if store.isLoading || store.signingOut { ProgressView().tint(Color(uiColor: .systemBackground)) }
                             else { Text("Sign in").fontWeight(.semibold) }
                             Spacer()
-                        }.frame(minHeight: 44)
+                        }.frame(maxWidth: .infinity, minHeight: 56)
                     }
-                    .listRowBackground(Color.primary)
-                    .foregroundStyle(Color(uiColor: .systemBackground))
-                    .disabled(username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || password.isEmpty || store.isLoading || store.signingOut)
+                    .buttonStyle(.plain)
+                    .background(canSubmit || store.isLoading ? Color.primary : SchoolityStyle.fieldFill, in: RoundedRectangle(cornerRadius: SchoolityStyle.controlRadius))
+                    .foregroundStyle(canSubmit || store.isLoading ? Color(uiColor: .systemBackground) : SchoolityStyle.muted)
+                    .disabled(!canSubmit)
                     .accessibilityIdentifier("login.submit")
-                }
-                if let error = store.loginError {
-                    Section { Label(error, systemImage: "exclamationmark.circle").accessibilityAddTraits(.updatesFrequently) }
-                }
             }
-            .scrollDismissesKeyboard(.interactively)
         }
     }
 
@@ -163,13 +157,14 @@ struct LoginView: View {
 }
 
 struct WorkspaceView: View {
+    @State private var selectedTab = 1
     var body: some View {
-        TabView {
-            NavigationStack { OverviewView() }.tabItem { Label("Home", systemImage: "house") }
-            NavigationStack { GradebookView() }.tabItem { Label("Grades", systemImage: "chart.xyaxis.line") }
-            NavigationStack { ResourceView(resource: .schedule) }.tabItem { Label("Schedule", systemImage: "calendar") }
-            NavigationStack { ResourceView(resource: .mail) }.tabItem { Label("Inbox", systemImage: "tray") }
-            NavigationStack { ResourceView(resource: .documents) }.tabItem { Label("Documents", systemImage: "doc") }
+        TabView(selection: $selectedTab) {
+            NavigationStack { OverviewView() }.tabItem { Label("Home", systemImage: "house") }.tag(0)
+            NavigationStack { GradebookView() }.tabItem { Label("Grades", systemImage: "book.closed.fill") }.tag(1)
+            NavigationStack { ResourceView(resource: .schedule) }.tabItem { Label("Schedule", systemImage: "calendar") }.tag(2)
+            NavigationStack { ResourceView(resource: .mail) }.tabItem { Label("Inbox", systemImage: "tray") }.tag(3)
+            NavigationStack { ResourceView(resource: .documents) }.tabItem { Label("Documents", systemImage: "doc") }.tag(4)
         }
     }
 }

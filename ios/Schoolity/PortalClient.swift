@@ -5,6 +5,7 @@ import LocalAuthentication
 protocol SchoolPortal: AnyObject {
     var savedSignIn: SavedSessionInfo? { get }
     func restoreSession(context: LAContext?, requiresUnlock: Bool) throws -> Bool
+    func renewSession(context: LAContext) async throws -> Bool
     func forgetSession()
     func clear()
     func connected() async throws -> Bool
@@ -16,10 +17,12 @@ protocol SchoolPortal: AnyObject {
 
 enum PortalFailure: LocalizedError {
     case signedOut
+    case credentialsRejected
     case message(String)
     var errorDescription: String? {
         switch self {
         case .signedOut: return "Your session ended. Sign in again."
+        case .credentialsRejected: return "Your district didn’t accept these credentials. Check your username and password, then try again."
         case .message(let message): return message
         }
     }
@@ -27,7 +30,7 @@ enum PortalFailure: LocalizedError {
     static func response(status: Int, signingIn: Bool, message: String?) -> PortalFailure {
         if status == 401 {
             return signingIn
-                ? .message("Your district didn’t accept these credentials. Check your username and password, then try again.")
+                ? .credentialsRejected
                 : .signedOut
         }
         return .message(message ?? "Schoolity couldn’t load this request. Try again.")
@@ -49,6 +52,8 @@ final class PortalClient: SchoolPortal {
     static let baseURL = URL(string: "https://schoolity-jet.vercel.app")!
     // Never retrieve a saved cookie until local authentication has completed.
     private var token: SavedSession?
+    private var identity = UUID()
+    private var memoryEpoch = UUID()
     var savedSignIn: SavedSessionInfo? { SessionVault.info() }
     private let session: URLSession
     private let redirects = PortalRedirects()
@@ -64,19 +69,37 @@ final class PortalClient: SchoolPortal {
     }
 
     func clear() {
-        token = nil
+        identity = UUID()
+        forgetSession()
         SessionVault.clear()
     }
 
-    func forgetSession() { token = nil }
+    func forgetSession() { token = nil; memoryEpoch = UUID() }
+
+    private func expireSession() {
+        token = nil
+        if SessionVault.info()?.canRenew != true { SessionVault.clear() }
+    }
 
     func restoreSession(context: LAContext?, requiresUnlock: Bool) throws -> Bool {
         guard let saved = try SessionVault.load(context: context) else { clear(); return false }
         if let info = SessionVault.info(), info.legacy || (requiresUnlock && !info.requiresUnlock) {
             try SessionVault.save(saved, requiresUnlock: requiresUnlock)
         }
-        token = saved
+        token = saved.isValid ? SavedSession(value: saved.value, expires: saved.expires) : nil
         return true
+    }
+
+    func renewSession(context: LAContext) async throws -> Bool {
+        guard let saved = try SessionVault.load(context: context), saved.canRenew,
+              let username = saved.username, let password = saved.password else { return false }
+        do {
+            try await signIn(username: username, password: password, protectSession: true)
+            return true
+        } catch PortalFailure.credentialsRejected {
+            clear()
+            throw PortalFailure.credentialsRejected
+        }
     }
 
     private func send(_ body: [String: Any], path: String = "api/portal") async throws -> (Data, HTTPURLResponse) {
@@ -96,7 +119,7 @@ final class PortalClient: SchoolPortal {
         }
         if response.statusCode == 401 {
             // An old in-flight request must not erase a later successful login.
-            if body["action"] as? String != "login", token?.value == requestSession { clear() }
+            if body["action"] as? String != "login", token?.value == requestSession { expireSession() }
         }
         guard (200..<300).contains(response.statusCode) else {
             let payload = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
@@ -106,28 +129,32 @@ final class PortalClient: SchoolPortal {
     }
 
     func connected() async throws -> Bool {
-        guard token?.isValid == true else { clear(); return false }
+        guard token?.isValid == true else { expireSession(); return false }
         let requestSession = token?.value
         let (data, _) = try await send(["action": "session"])
         struct Status: Decodable { let connected: Bool }
         let connected = try JSONDecoder().decode(Status.self, from: data).connected
-        if !connected, token?.value == requestSession { clear() }
+        if !connected, token?.value == requestSession { expireSession() }
         return connected
     }
 
     func signIn(username: String, password: String, protectSession: Bool) async throws {
+        let requestIdentity = identity
+        let requestMemory = memoryEpoch
         let (_, response) = try await send(["action": "login", "username": username, "password": password])
+        // A completed request must not restore an explicitly forgotten account.
+        guard requestIdentity == identity else { throw CancellationError() }
         let fields = response.allHeaderFields.reduce(into: [String: String]()) { result, pair in
             result[String(describing: pair.key)] = String(describing: pair.value)
         }
         guard let cookie = HTTPCookie.cookies(withResponseHeaderFields: fields, for: Self.baseURL)
             .first(where: { $0.name == "schoolity_session" }),
-              let expires = cookie.expiresDate, expires > Date() else {
+              !cookie.value.isEmpty, let expires = cookie.expiresDate, expires > Date() else {
             clear()
             throw PortalFailure.message("Schoolity couldn’t save this session. Try signing in again.")
         }
-        let saved = SavedSession(value: cookie.value, expires: expires)
-        token = saved
+        let saved = SavedSession(value: cookie.value, expires: expires, username: protectSession ? username : nil, password: protectSession ? password : nil)
+        if requestMemory == memoryEpoch { token = SavedSession(value: saved.value, expires: saved.expires) }
         do { try SessionVault.save(saved, requiresUnlock: protectSession) }
         catch {
             try? await signOut()

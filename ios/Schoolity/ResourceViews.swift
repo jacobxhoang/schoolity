@@ -29,6 +29,7 @@ struct ResourceView: View {
                 ProgressView("Loading \(resource.title.lowercased())…")
             }
         }
+        .listStyle(.inset)
         .navigationTitle(resource.title)
         .toolbar { ToolbarItem(placement: .topBarTrailing) { AccountButton() } }
         .task { await store.load(resource) }
@@ -68,7 +69,7 @@ struct ResourceView: View {
         } label: {
             VStack(alignment: .leading, spacing: 5) {
                 Text(item.title.isEmpty ? "Untitled message" : item.title).font(.headline).foregroundStyle(.primary)
-                if let author = item.author, !author.isEmpty { Text(author).font(.subheadline).foregroundStyle(.secondary) }
+                if let author = item.author, !author.isEmpty { Text(author).font(.footnote).foregroundStyle(SchoolityStyle.muted) }
             }.padding(.vertical, 8)
         }
     }

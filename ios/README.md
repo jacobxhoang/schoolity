@@ -4,11 +4,17 @@ Native SwiftUI app for iOS 17 and later. Includes required Anoka-Hennepin sign-i
 
 ## Saved sign-in and Face ID
 
-Sign in once with your school username and password. Schoolity saves the expiring session on this iPhone. On devices with a passcode, reopening the app unlocks that session with Face ID, Touch ID, or the device passcode, using Apple's authentication controls. Allow Face ID when iOS asks. If you cancel, the sign-in stays saved and you can retry. **Sign in again** removes the saved session and returns to school credentials.
+Sign in once with your school username and password. On a device with a passcode, Schoolity saves the session and credentials in a protected, device-only Keychain entry. Reopening the app uses Face ID, Touch ID, or the device passcode. If the school session expired, the same authenticated operation signs in again using the saved credentials. Allow Face ID when iOS asks. Cancelling keeps sign-in saved for retry. **Sign in again** and **Sign out** erase the saved session and credentials.
 
-Schoolity locks when sent to the background, clears the displayed records and temporary downloads, and unlocks again on return. The app also covers its content while inactive. Apple's own authentication prompt does not cause a new unlock loop. An expired or district-revoked session still needs another school login; Face ID cannot extend the district session.
+Schoolity locks when sent to the background, clears displayed records and temporary downloads, and unlocks on return. The app covers its main content while inactive. Apple's own authentication prompt does not cause an unlock loop. A rejected saved password returns to school credentials; transient network errors retain the protected entry for retry. Late network responses cannot activate a backgrounded workspace or restore an explicitly forgotten account.
 
 Existing saved sessions are upgraded to require local authentication on the first successful unlock. Devices without a passcode retain the original saved-sign-in behavior; setting up a passcode enables the protected flow on the next reopen. Protected sessions are never retrieved without successful local authentication, even if biometrics become unavailable. Face ID permission denial can fall back to the device passcode or school credentials. Removing the device passcode invalidates protected Keychain entries.
+
+Older installations stored only a session. Enter your school credentials once after updating to enable renewal; a password cannot be recovered from an old session. Devices without a passcode save only the expiring session, never the password.
+
+## Native interface
+
+The user requested [Pupil](https://github.com/Ziggydave1/Pupil) as a visual/behavioral reference while keeping black and white. The credential screen uses an original responsive cropped-ring composition, separate rounded fields and a bottom-aligned form. Grades open first, with compact native inset rows, course symbols and grade lines beneath course identity. The original Schoolity Face ID unlock screen remains unchanged. Charts, local calculators, Inbox, Schedule, Documents and Student ID retain their functions. Reduced Motion disables the ring's focus transition. No Pupil source code, images, branding, SwiftVue, or credential-storage dependencies are bundled.
 
 ## Build on GitHub (works from Windows)
 
@@ -49,7 +55,7 @@ Choose the `Schoolity` scheme and an iPhone simulator, then Run. For an actual i
 
 Native reads opt into `{ "normalized": true }` on `/api/portal`, receiving the same decoded display models as the web interface. Raw responses for existing web callers are unchanged. `/api/documents` still checks ownership and authenticates both document and inbox attachment downloads.
 
-Only the opaque Schoolity session, its expiration, and non-secret unlock metadata are saved in the iOS Keychain. Devices with a passcode use a `userPresence` access-control constraint and `WhenPasscodeSetThisDeviceOnly`; retrieving the cookie requires Apple's local authentication. Without a passcode the fallback is `WhenUnlockedThisDeviceOnly`. The cookie is not read during app/client initialization. Passwords, school records, and responses are not saved. Networking uses an ephemeral URLSession without a disk cache or cookie jar; redirects are refused. Sign-out and expired sessions clear visible records, the Keychain entry, and temporary downloaded copies. Files explicitly exported through Apple's share sheet remain wherever the user saved them. Downloaded files have iOS complete file protection.
+On devices with a passcode, the Keychain entry includes the opaque session, its expiration, and saved school credentials, protected with `userPresence` and `WhenPasscodeSetThisDeviceOnly`. Credentials are read only after successful local authentication and used only during sign-in; the in-memory active session contains no password. Non-secret metadata records whether renewal is possible. Without a passcode, `WhenUnlockedThisDeviceOnly` stores only the session. Neither cookie nor credentials are read during client initialization. School records/responses are not saved. Networking uses an ephemeral URLSession without disk cache or cookie jar; redirects are refused. The server forwards credentials without persisting passwords. Exported files remain where the user saved them; temporary downloads use complete file protection and clear on lock/sign-out.
 
 Internet access and a live Schoolity deployment are required. An expired district session requires another sign-in. Transient read failures retain the current screen and offer Retry. Estimates are independent calculations, not district grades; they never write back to school records. What-if edits last only while the course screen is open.
 

@@ -116,7 +116,8 @@ final class AppStore: ObservableObject {
         } catch {
             guard ticket == generation else { return }
             client.forgetSession()
-            if case PortalFailure.signedOut = error { handle(error) }
+            if case PortalFailure.credentialsRejected = error { client.clear(); reset(); loginError = error.localizedDescription }
+            else if case PortalFailure.signedOut = error { handle(error) }
             else { access = .locked; unlockError = error.localizedDescription }
         }
     }
@@ -126,8 +127,14 @@ final class AppStore: ObservableObject {
             reset(); loginError = "Your session ended. Sign in again."
             return
         }
-        let connected = try await client.connected()
+        var connected = false
+        do { connected = try await client.connected() }
+        catch PortalFailure.signedOut { connected = false }
         guard ticket == generation, !backgrounded else { return }
+        if !connected, requiresUnlock, let context, client.savedSignIn?.canRenew == true {
+            connected = try await client.renewSession(context: context)
+            guard ticket == generation, !backgrounded else { return }
+        }
         if connected { access = .signedIn; await refreshGrades() }
         else { client.clear(); reset(); loginError = "Your session ended. Sign in again." }
     }
@@ -268,7 +275,13 @@ final class AppStore: ObservableObject {
     }
 
     private func handle(_ error: Error) {
-        if case PortalFailure.signedOut = error { client.clear(); reset(); loginError = error.localizedDescription }
+        if case PortalFailure.signedOut = error {
+            if client.savedSignIn?.canRenew == true {
+                savedSessionNeedsUnlock = true
+                lockWorkspace()
+                unlockError = "Unlock to sign in again."
+            } else { client.clear(); reset(); loginError = error.localizedDescription }
+        }
     }
 
     private func reset() {
