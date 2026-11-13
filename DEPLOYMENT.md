@@ -14,7 +14,7 @@ The official Vercel adapter is selected when `VERCEL=1`. Local builds continue u
 
 ## Sessions and limits
 
-Vercel instances share sessions and login-attempt limits through Redis. Sessions expire after at most 30 minutes; signing out deletes the session. Passwords are never stored. Access tokens are held in the shared store, which requires HTTPS. Local development defaults to expiring in-memory storage. On Vercel, missing or unavailable shared storage blocks sign-in rather than falling back to unreliable instance memory.
+Vercel instances share sessions and login-attempt limits through Redis. Sessions follow the district token lifetime, capped at 30 days; signing out deletes the session. Passwords are never stored. Access tokens are held in the shared store, which requires HTTPS. Local development defaults to expiring in-memory storage. On Vercel, missing or unavailable shared storage blocks sign-in rather than falling back to unreliable instance memory.
 
 Document downloads above 4 MB are rejected with a message directing students to StudentVUE, keeping responses below Vercel's function response-size limit. Large files are not saved to disk. Function duration is configured for 60 seconds; the individual district requests retain their 15-second timeouts.
 
@@ -31,3 +31,5 @@ Automated tests cover the local/shared store behavior, revocation, fail-closed c
 The Vercel output was generated locally on Windows using a test-only directory-junction workaround for Windows symlink permissions. Vercel's Linux build environment uses the unmodified official adapter. This packaging check does not replace a real hosted deployment check.
 
 References: [SvelteKit Vercel adapter](https://svelte.dev/docs/kit/adapter-vercel), [Upstash REST API](https://upstash.com/docs/redis/features/restapi), [Vercel function limits](https://vercel.com/docs/functions/limitations).
+
+Sign-in uses a persistent, HTTP-only, Secure (on HTTPS), SameSite=Lax cookie. Refreshing, closing a tab, and returning from another site preserve a valid session. Cookie and storage expiry match the district-provided token lifetime, capped at 30 days; absent or invalid expiry falls back to 30 minutes. District revocation still requires signing in again. Passwords are not saved. Existing sessions need a fresh sign-in to receive the new cookie settings.

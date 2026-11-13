@@ -1,6 +1,7 @@
 import { request as httpsRequest } from 'node:https';
 import { lookup } from 'node:dns/promises';
 import { store } from './store.ts';
+import { sessionLifetime } from './session-policy.ts';
 import { randomBytes, createHash } from 'node:crypto';
 import { BlockList } from 'node:net';
 import { object, string } from '../portal-data.ts';
@@ -199,10 +200,11 @@ export async function signIn(
   district: string,
   username: string,
   password: string,
-): Promise<string> {
+  send = exchange,
+): Promise<{ id: string; maxAge: number }> {
   const base = districtAddress(district).href.replace(/\/$/, '');
   const auth = Buffer.from(`${username}:${password}`).toString('base64');
-  const result = await exchange(base, 'AttemptLogin', `Basic ${auth}`, {
+  const result = await send(base, 'AttemptLogin', `Basic ${auth}`, {
     userID: null,
     password: null,
     userType: 'Student',
@@ -215,18 +217,14 @@ export async function signIn(
       401,
     );
   const id = randomBytes(32).toString('base64url');
+  const maxAge = sessionLifetime(result.expires_in);
   const entry: Session = {
     base,
     token: result.access_token,
-    expires:
-      Date.now() + Math.min(Number(result.expires_in) || 1800, 1800) * 1000,
+    expires: Date.now() + maxAge * 1000,
   };
-  await store.set(
-    'session:' + id,
-    JSON.stringify(entry),
-    Math.max(1, Math.ceil((entry.expires - Date.now()) / 1000)),
-  );
-  return id;
+  await store.set('session:' + id, JSON.stringify(entry), maxAge);
+  return { id, maxAge };
 }
 export async function read(
   session: Session,

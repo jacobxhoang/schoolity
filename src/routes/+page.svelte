@@ -1105,9 +1105,10 @@
           <p>
             Your username and password pass through this app's server once to
             sign in to your district. Schoolity holds the resulting access token
-            in memory locally or in a shared store on Vercel for up to 30
-            minutes. Your browser receives an HTTP-only session cookie. Your
-            password is not saved in the browser or on the server.
+            in memory locally or in a shared store on Vercel until the district
+            session expires (up to 30 days). Your browser receives an HTTP-only
+            session cookie. Your password is not saved in the browser or on the
+            server.
           </p>
           <h3>Where your information lives</h3>
           <p>

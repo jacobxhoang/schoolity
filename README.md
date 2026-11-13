@@ -28,7 +28,7 @@ The workspace includes a gradebook, original weighted/points-based calculations,
 
 Course detail keeps the district grade beside the Schoolity estimate, with a visible grade-history graph above the what-if controls and assignments. Calculation details stay under “About estimates.” What-if mode announces score changes, supports removing individual hypothetical assignments, and explains unavailable target calculations. Course navigation supports browser Back/Forward; refresh failures retain the current workspace and offer Retry. Login includes password reveal. Mobile navigation supports keyboard focus trapping, Escape, and focus restoration.
 
-Your password is used during sign-in and is not saved. Access tokens are stored for up to 30 minutes in server memory locally, or in a shared session store on Vercel. The browser receives an HTTP-only, same-site cookie. Page and API responses are marked no-store. The color theme is the only local-storage preference. A hosting operator can access credentials and school information while forwarding requests.
+Your password is used during sign-in and is not saved. Access tokens are stored for the district session’s lifetime (up to 30 days) in server memory locally, or in a shared session store on Vercel. The browser receives an HTTP-only, SameSite=Lax cookie. Page and API responses are marked no-store. The color theme is the only local-storage preference. A hosting operator can access credentials and school information while forwarding requests.
 
 ## Verification and limits
 

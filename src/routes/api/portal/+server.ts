@@ -10,6 +10,7 @@ import {
 } from '$lib/server/portal';
 import { object } from '$lib/portal-data';
 import { DISTRICT_URL } from '$lib/config';
+import { sessionCookieOptions } from '$lib/server/session-policy';
 export const POST: RequestHandler = async ({
   request,
   cookies,
@@ -59,13 +60,11 @@ export const POST: RequestHandler = async ({
         );
       const next = await signIn(DISTRICT_URL, input.username, input.password);
       await endSession(id);
-      cookies.set('schoolity_session', next, {
-        path: '/',
-        httpOnly: true,
-        sameSite: 'strict',
-        secure: url.protocol === 'https:',
-        maxAge: 1800,
-      });
+      cookies.set(
+        'schoolity_session',
+        next.id,
+        sessionCookieOptions(url, next.maxAge),
+      );
       return json({ ok: true }, { headers });
     }
     const session = await findSession(id);
