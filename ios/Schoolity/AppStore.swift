@@ -107,7 +107,10 @@ final class AppStore: ObservableObject {
                 throw PortalFailure.signedOut
             }
             return url
-        } catch { handle(error); throw error }
+        } catch {
+            if ticket == generation { handle(error) }
+            throw error
+        }
     }
 
     func signOut() async {

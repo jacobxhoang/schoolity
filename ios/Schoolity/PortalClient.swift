@@ -44,6 +44,7 @@ final class PortalClient {
     }
 
     private func send(_ body: [String: Any], path: String = "api/portal") async throws -> (Data, HTTPURLResponse) {
+        let requestSession = token?.value
         var request = URLRequest(url: Self.baseURL.appendingPathComponent(path))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -57,7 +58,11 @@ final class PortalClient {
         guard let response = response as? HTTPURLResponse else {
             throw PortalFailure.message("Schoolity returned an invalid response. Try again.")
         }
-        if response.statusCode == 401 { clear(); throw PortalFailure.signedOut }
+        if response.statusCode == 401 {
+            // An old in-flight request must not erase a later successful login.
+            if token?.value == requestSession { clear() }
+            throw PortalFailure.signedOut
+        }
         guard (200..<300).contains(response.statusCode) else {
             let payload = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
             throw PortalFailure.message(payload?["error"] as? String ?? "Schoolity couldn’t load this request. Try again.")

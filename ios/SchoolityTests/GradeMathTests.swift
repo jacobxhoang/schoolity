@@ -2,7 +2,7 @@ import XCTest
 @testable import Schoolity
 
 final class GradeMathTests: XCTestCase {
-    private func course(categories: [Category] = []) -> Course {
+    private func course(categories: [GradeCategory] = []) -> Course {
         Course(id: "test", name: "Test", teacher: "", room: "", period: "", official: nil,
                categories: categories, assignments: [
                 Assignment(id: "practice", title: "Practice", category: "Practice", earned: 20, possible: 20, due: "10/1/2026"),
@@ -12,7 +12,7 @@ final class GradeMathTests: XCTestCase {
 
     func testPointsAndWeightedGrades() throws {
         XCTAssertEqual(try XCTUnwrap(GradeMath.calculate(course())), 60 / 70 * 100.0, accuracy: 0.0001)
-        let weighted = course(categories: [Category(name: "Practice", weight: 30), Category(name: "Tests", weight: 70)])
+        let weighted = course(categories: [GradeCategory(name: "Practice", weight: 30), GradeCategory(name: "Tests", weight: 70)])
         XCTAssertEqual(try XCTUnwrap(GradeMath.calculate(weighted)), 86, accuracy: 0.0001)
         XCTAssertEqual(try XCTUnwrap(GradeMath.target(weighted, category: "Tests", possible: 50, goal: 93)), 50, accuracy: 0.0001)
     }
@@ -36,7 +36,7 @@ final class GradeMathTests: XCTestCase {
     }
 
     func testEmptyWeightedCategoriesRedistribute() throws {
-        var value = course(categories: [Category(name: "Practice", weight: 30), Category(name: "Tests", weight: 70)])
+        var value = course(categories: [GradeCategory(name: "Practice", weight: 30), GradeCategory(name: "Tests", weight: 70)])
         value.assignments.removeLast()
         XCTAssertEqual(try XCTUnwrap(GradeMath.calculate(value)), 100)
     }
@@ -69,5 +69,10 @@ final class GradeMathTests: XCTestCase {
         let cookie = try XCTUnwrap(HTTPCookie.cookies(withResponseHeaderFields: ["Set-Cookie": "schoolity_session=opaque-test-token; Max-Age=1800; Path=/; HttpOnly; Secure; SameSite=Lax"], for: URL(string: "https://schoolity-jet.vercel.app")!).first)
         XCTAssertEqual(cookie.name, "schoolity_session")
         XCTAssertGreaterThan(try XCTUnwrap(cookie.expiresDate), Date())
+    }
+
+    func testScoreEditingNeverIntroducesThousandsSeparators() {
+        XCTAssertEqual(GradeMath.input(1200.5), "1200.5")
+        XCTAssertEqual(GradeMath.input(0), "0")
     }
 }

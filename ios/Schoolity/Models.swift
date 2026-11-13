@@ -11,7 +11,7 @@ struct Assignment: Codable, Identifiable, Equatable {
     var hypothetical: Bool?
 }
 
-struct Category: Codable, Equatable {
+struct GradeCategory: Codable, Equatable {
     var name: String
     var weight: Double
 }
@@ -23,7 +23,7 @@ struct Course: Codable, Identifiable, Equatable {
     var room: String
     var period: String
     var official: Double?
-    var categories: [Category]
+    var categories: [GradeCategory]
     var assignments: [Assignment]
 }
 
@@ -151,6 +151,10 @@ enum GradeMath {
     }
 
     static func points(_ score: Double) -> String { score.formatted(.number.precision(.fractionLength(0...2))) }
+
+    static func input(_ score: Double) -> String {
+        score.formatted(.number.grouping(.never).precision(.fractionLength(0...8)).locale(Locale(identifier: "en_US_POSIX")))
+    }
 
     static func letter(_ score: Double?) -> String {
         guard let score, score.isFinite else { return "—" }

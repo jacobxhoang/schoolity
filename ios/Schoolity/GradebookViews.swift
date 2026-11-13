@@ -222,8 +222,8 @@ struct ScoreEditor: View {
                 }
             }
             .onAppear {
-                earned = assignment.earned.map(GradeMath.points) ?? ""
-                possible = GradeMath.points(assignment.possible)
+                earned = assignment.earned.map(GradeMath.input) ?? ""
+                possible = GradeMath.input(assignment.possible)
             }
         }
     }
