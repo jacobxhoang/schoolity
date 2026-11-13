@@ -32,7 +32,7 @@ Your password is used during sign-in and is not saved. Access tokens are stored 
 
 ## Verification and limits
 
-Calculator, data mapping, connection validation, fixed district configuration, and removal of the attendance resource have automated coverage. Real Anoka account login still requires verification. District grading policies may differ from estimates. Inbox is read-only and limited to 50 messages. Authenticated document downloads are implemented with account-membership checks and strict file decoding; live district download compatibility still needs verification. Message attachments, calendar sync, and persistent offline caching are not implemented. No actual student credentials were used during development tests.
+Calculator, data mapping, connection validation, fixed district configuration, and removal of the attendance resource have automated coverage. Real Anoka account login still requires verification. District grading policies may differ from estimates. Inbox is read-only and limited to 50 messages. Authenticated document downloads are implemented with account-membership checks and strict file decoding; live district download compatibility still needs verification. Inbox attachments can be downloaded from expanded messages using the authenticated mail API; live district compatibility still needs verification. Calendar sync and persistent offline caching are not implemented. No actual student credentials were used during development tests.
 
 ## Original implementation
 

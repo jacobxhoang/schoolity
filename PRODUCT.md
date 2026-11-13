@@ -36,7 +36,7 @@ An independent student dashboard for one district, combining a school portal wit
 - Calculator: points and weighted-category calculations, hypothetical score editing, hypothetical assignments, reset, and target-score estimates.
 - School data comes from the district's mobile JSON API through Schoolity's server. Read adapters exist for grades, student identity, schedule, inbox, and document listings.
 - Schoolity does not change district records. Inbox is read-only and currently loads up to 50 messages.
-- Message attachments, calendar synchronization, persistent offline school-data caching, and notifications are not implemented. Do not portray them as working features.
+- Calendar synchronization, persistent offline school-data caching, and notifications are not implemented. Do not portray them as working features.
 - District-specific rounding, dropped scores, standards-based grading, and custom policies may differ from Schoolity's estimates. Preserve the distinction between district-reported and calculated grades.
 - The server receives credentials during sign-in but does not save passwords. It holds access tokens in memory locally or in shared Redis storage on Vercel for the district session’s lifetime (up to 30 days) and uses an HTTP-only, SameSite=Lax browser session cookie. Restarting a local server invalidates its in-memory sessions.
 - Anonymous HTML shows the login screen. School-data requests require a valid server session. Responses are marked no-store; displayed school data is held in page memory. Only the color-theme preference is saved in local storage.
@@ -60,6 +60,7 @@ An independent student dashboard for one district, combining a school portal wit
 - No testimonials, customer counts, performance benchmarks, pricing, or endorsement assets have been supplied.
 - Do not put student credentials, real grades, personal messages, or other student records into product context, screenshots for public distribution, or sample fixtures.
 
+- Inbox attachments are listed inside expanded messages and use an authenticated, parent-message-checked download endpoint. Live district compatibility remains to be verified.
 - Document downloads use the authenticated district content API; per-file progress and retries are available. Course search was removed at the user's request.
 
 ## Product Principles

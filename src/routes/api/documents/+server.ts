@@ -1,7 +1,10 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { findSession, PortalError } from '$lib/server/portal';
-import { downloadDocument } from '$lib/server/documents';
+import {
+  downloadDocument,
+  downloadMailAttachment,
+} from '$lib/server/documents';
 import { object } from '$lib/portal-data';
 
 export const POST: RequestHandler = async ({ request, cookies, url }) => {
@@ -32,7 +35,16 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
     } catch {
       throw new PortalError('Invalid request.', 400);
     }
-    const file = await downloadDocument(session, input.id);
+    if (
+      input.kind !== undefined &&
+      input.kind !== 'document' &&
+      input.kind !== 'mail'
+    )
+      throw new PortalError('Unsupported download type.', 400);
+    const file =
+      input.kind === 'mail'
+        ? await downloadMailAttachment(session, input.messageId, input.id)
+        : await downloadDocument(session, input.id);
     const ascii = file.filename.replace(/[^\x20-\x7e]/g, '_');
     const encoded = encodeURIComponent(file.filename).replace(
       /['()*]/g,

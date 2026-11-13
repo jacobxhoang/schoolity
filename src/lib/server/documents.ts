@@ -70,3 +70,79 @@ export async function downloadDocument(
     own.filename ?? 'document',
   );
 }
+
+export async function downloadMailAttachment(
+  session: Session,
+  messageId: unknown,
+  id: unknown,
+  load = read,
+  call = exchange,
+) {
+  if (
+    typeof messageId !== 'string' ||
+    typeof id !== 'string' ||
+    !messageId.trim() ||
+    !id.trim() ||
+    messageId.length > 200 ||
+    id.length > 200 ||
+    /[\x00-\x1f]/.test(messageId + id)
+  )
+    throw new PortalError('Choose a mail attachment to download.', 400);
+  const inbox = events(await load(session, 'mail', undefined), 'mail');
+  const message = inbox.find(
+    (m) => m.id?.toLowerCase() === messageId.toLowerCase(),
+  );
+  const attachment = message?.attachments?.find(
+    (a) => a.id.toLowerCase() === id.toLowerCase(),
+  );
+  if (!message || !attachment)
+    throw new PortalError(
+      'This attachment is no longer available in your inbox. Refresh your messages.',
+      404,
+    );
+  const response = await call(
+    session.base,
+    'GetSynergyMailGetAttachment',
+    `Bearer ${session.token}`,
+    {
+      childIntID: 0,
+      languageCode: '1',
+      smMessageGU: message.id,
+      smAttachmentGU: attachment.id,
+      attachmentGU: attachment.id,
+    },
+  );
+  if (response.error)
+    throw new PortalError(
+      'The district could not download this attachment. Try again.',
+    );
+  const data = object(response.data);
+  let raw: unknown = data.attachmentXML ?? data;
+  if (typeof raw === 'string') {
+    try {
+      raw = JSON.parse(raw);
+    } catch {
+      // Extract just the base64 field from XML envelopes, without resolving entities.
+      const text = raw as string;
+      const base64 =
+        !/<!DOCTYPE|<!ENTITY/i.test(text) &&
+        text.match(
+          /<(?:\w+:)?Base64Code\s*>([A-Za-z0-9+/=\s]+)<\/(?:\w+:)?Base64Code\s*>/i,
+        )?.[1];
+      if (!base64)
+        throw new PortalError(
+          'The district returned an unsupported attachment format. Open it in StudentVUE.',
+        );
+      raw = { base64Code: base64 };
+    }
+  }
+  const wrapper = object(raw);
+  const file = object(wrapper.AttachmentXML ?? wrapper);
+  return decodeDocument(
+    {
+      base64Code: file.base64Code ?? file.Base64Code,
+      fileName: file.fileName ?? file.documentName ?? file._DocumentName,
+    },
+    attachment.filename,
+  );
+}

@@ -41,6 +41,7 @@ export interface EventItem {
   author?: string;
   id?: string;
   filename?: string;
+  attachments?: { id: string; filename: string }[];
   title: string;
   detail: string;
   date: string;

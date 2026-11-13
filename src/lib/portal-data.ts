@@ -86,6 +86,19 @@ export function events(payload: unknown, kind: string): EventItem[] {
   const data = object(payload);
   if (kind === 'mail')
     return rows(data.inboxItemListings).map((m) => ({
+      id: string(m.smMessageGU ?? m.smMsgPersonGU),
+      attachments: rows(m.attachments)
+        .filter(
+          (a) =>
+            string(a.smAttachmentGU) ||
+            string(a.documentName) ||
+            string(a.fileName),
+        )
+        .map((a) => ({
+          id: string(a.smAttachmentGU),
+          filename:
+            string(a.documentName) || string(a.fileName) || 'Attachment',
+        })),
       title: string(m.subject),
       author: rows(m.from)
         .map((sender) => string(sender.details1).trim())

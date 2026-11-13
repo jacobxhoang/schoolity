@@ -1346,3 +1346,35 @@ td strong {
     margin-left: 0;
   }
 }
+
+.mail-attachments {
+  margin-top: 20px;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+.mail-attachments h3 {
+  font-size: 14px;
+}
+.mail-attachments ul {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+}
+.mail-attachments li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 8px 0;
+}
+.attachment-name {
+  flex: 1;
+  min-width: 120px;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.mail-attachments .document-error {
+  flex-basis: 100%;
+  margin: 0;
+  max-width: 75ch;
+}

@@ -336,17 +336,26 @@
   }
   let downloading = $state<Record<string, boolean>>({});
   let downloadErrors = $state<Record<string, string>>({});
-  async function downloadFile(item: EventItem) {
-    if (!item.id || downloading[item.id]) return;
+  const downloadKey = (id: string, messageId?: string) =>
+    messageId ? 'mail:' + messageId + ':' + id : id;
+  async function downloadFile(
+    item: Pick<EventItem, 'id' | 'filename'>,
+    messageId?: string,
+  ) {
+    if (!item.id || downloading[downloadKey(item.id, messageId)]) return;
     const id = item.id,
+      key = downloadKey(item.id, messageId),
       version = generation;
-    downloading = { ...downloading, [id]: true };
-    downloadErrors = { ...downloadErrors, [id]: '' };
+    downloading = { ...downloading, [key]: true };
+    downloadErrors = { ...downloadErrors, [key]: '' };
     try {
       const response = await fetch('/api/documents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({
+          id,
+          ...(messageId ? { kind: 'mail', messageId } : {}),
+        }),
         cache: 'no-store',
       });
       if (!response.ok) {
@@ -377,10 +386,11 @@
       if (version === generation)
         downloadErrors = {
           ...downloadErrors,
-          [id]: e instanceof Error ? e.message : 'Download failed. Try again.',
+          [key]: e instanceof Error ? e.message : 'Download failed. Try again.',
         };
     } finally {
-      if (version === generation) downloading = { ...downloading, [id]: false };
+      if (version === generation)
+        downloading = { ...downloading, [key]: false };
     }
   }
   function clearWorkspace() {
@@ -979,6 +989,44 @@
                     <div class="mail-content">
                       <small>{item.date}</small>
                       <p>{item.detail || 'No message content.'}</p>
+                      {#if item.attachments?.length}<section
+                          class="mail-attachments"
+                          aria-label="Message attachments"
+                        >
+                          <h3>Attachments</h3>
+                          <ul>
+                            {#each item.attachments as attachment}<li>
+                                <span class="attachment-name"
+                                  >{attachment.filename}</span
+                                ><button
+                                  class="primary small"
+                                  aria-label={'Download ' + attachment.filename}
+                                  disabled={!item.id ||
+                                    !attachment.id ||
+                                    downloading[
+                                      downloadKey(attachment.id, item.id)
+                                    ]}
+                                  onclick={() =>
+                                    downloadFile(attachment, item.id)}
+                                  >{downloading[
+                                    downloadKey(attachment.id, item.id)
+                                  ]
+                                    ? 'Downloading…'
+                                    : !item.id || !attachment.id
+                                      ? 'Unavailable'
+                                      : 'Download'}</button
+                                >
+                                {#if downloadErrors[downloadKey(attachment.id, item.id)]}<p
+                                    class="document-error"
+                                    role="alert"
+                                  >
+                                    {downloadErrors[
+                                      downloadKey(attachment.id, item.id)
+                                    ]}
+                                  </p>{/if}
+                              </li>{/each}
+                          </ul>
+                        </section>{/if}
                     </div>
                   </details>{/key}{:else}<article class="record-card">
                   <span class="record-icon"
@@ -1029,7 +1077,7 @@
           </section>
           <p class="calculation-note">
             {tab === 'mail'
-              ? 'Latest 50 messages. Attachments unavailable.'
+              ? 'Latest 50 messages.'
               : tab === 'documents'
                 ? ''
                 : 'Calendar sync unavailable.'}
