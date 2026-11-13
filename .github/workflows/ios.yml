@@ -102,8 +102,6 @@ jobs:
             -only-testing:SchoolityTests -parallel-testing-enabled NO \
             CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual \
             | tee build/unit-tests.log
-          codesign --display --entitlements - --xml DerivedData/Build/Products/Debug-iphonesimulator/Schoolity.app > build/simulator-entitlements.plist
-          /usr/libexec/PlistBuddy -c 'Print :application-identifier' build/simulator-entitlements.plist
       - name: Run native interaction and screenshot tests
         run: |
           set -euo pipefail
