@@ -49,8 +49,9 @@ struct CourseRow: View {
             HStack(alignment: .firstTextBaseline, spacing: 12) {
                 Text(GradeMath.letter(course.official))
                     .font(.headline)
+                    .foregroundStyle(SchoolityStyle.accent)
                     .padding(.horizontal, 9).padding(.vertical, 4)
-                    .background(Color.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+                    .background(SchoolityStyle.accent.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
                 Text(GradeMath.percent(course.official)).font(.callout.weight(.semibold))
             }.monospacedDigit()
         }.padding(.vertical, 8)
@@ -160,9 +161,9 @@ struct GradeHistoryView: View {
             } else {
                 Chart(points) { point in
                     LineMark(x: .value("Graded assignment", point.id), y: .value("Grade", point.score))
-                        .foregroundStyle(Color.primary)
+                        .foregroundStyle(SchoolityStyle.accent)
                     PointMark(x: .value("Graded assignment", point.id), y: .value("Grade", point.score))
-                        .foregroundStyle(Color.primary).symbolSize(points.count > 30 ? 6 : 18)
+                        .foregroundStyle(SchoolityStyle.accent).symbolSize(points.count > 30 ? 6 : 18)
                 }
                 .chartYScale(domain: min(0, points.map(\.score).min() ?? 0)...max(100, points.map(\.score).max() ?? 100))
                 .chartXAxis(.hidden)

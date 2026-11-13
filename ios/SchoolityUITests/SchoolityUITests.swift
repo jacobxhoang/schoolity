@@ -113,6 +113,16 @@ final class SchoolityUITests: XCTestCase {
         XCTAssertTrue(app.tabBars.buttons["Grades"].waitForExistence(timeout: 5))
     }
 
+    func testSavedSignInOpensGradesAutomatically() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-locked", "--ui-unlock-success", "--ui-auto-unlock"]
+        app.launch()
+        XCTAssertTrue(app.staticTexts["Algebra II"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["login.unlock"].exists)
+        XCTAssertEqual(app.tabBars.buttons.count, 4)
+        capture("automatic-sign-in")
+    }
+
     func testCancelledUnlockKeepsRetryAndPasswordAvailable() {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-locked"]

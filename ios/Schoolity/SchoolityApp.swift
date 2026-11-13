@@ -24,7 +24,7 @@ struct SchoolityApp: App {
                 case .signedIn: WorkspaceView()
                 }
             }
-            .tint(.primary)
+            .tint(SchoolityStyle.accent)
             .environmentObject(store)
             .task { if scenePhase == .active { await store.start() } }
             .privacySensitive()
@@ -51,7 +51,7 @@ struct SavedSignInView: View {
             Form {
                 Section {
                     VStack(alignment: .leading, spacing: 12) {
-                        Image(systemName: store.unlockSymbol).font(.largeTitle).accessibilityHidden(true)
+                        Image(systemName: store.unlockSymbol).font(.largeTitle).foregroundStyle(SchoolityStyle.accent).accessibilityHidden(true)
                         Text("Schoolity").font(.largeTitle.bold())
                     }
                     .padding(.vertical, 24)
@@ -66,7 +66,7 @@ struct SavedSignInView: View {
                             Spacer()
                         }.frame(minHeight: 44)
                     }
-                    .listRowBackground(Color.primary)
+                    .listRowBackground(SchoolityStyle.accent)
                     .foregroundStyle(Color(uiColor: .systemBackground))
                     .disabled(store.isUnlocking)
                     .accessibilityIdentifier("login.unlock")
@@ -96,7 +96,7 @@ struct LoginView: View {
             Form {
                 Section {
                     VStack(alignment: .leading, spacing: 12) {
-                        Image(systemName: "graduationcap.fill").font(.largeTitle).accessibilityHidden(true)
+                        Image(systemName: "graduationcap.fill").font(.largeTitle).foregroundStyle(SchoolityStyle.accent).accessibilityHidden(true)
                         Text("Schoolity").font(.largeTitle.bold())
                     }
                     .padding(.vertical, 24)
@@ -140,7 +140,7 @@ struct LoginView: View {
                             Spacer()
                         }.frame(minHeight: 44)
                     }
-                    .listRowBackground(Color.primary)
+                    .listRowBackground(SchoolityStyle.accent)
                     .foregroundStyle(Color(uiColor: .systemBackground))
                     .disabled(username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || password.isEmpty || store.isLoading || store.signingOut)
                     .accessibilityIdentifier("login.submit")

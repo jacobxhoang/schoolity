@@ -55,6 +55,7 @@ final class AppStore: ObservableObject {
         if ProcessInfo.processInfo.arguments.contains("--ui-locked") {
             testingSavedSignIn = true
             access = .locked
+            if ProcessInfo.processInfo.arguments.contains("--ui-auto-unlock") { await unlockSavedSignIn() }
             return
         }
         if ProcessInfo.processInfo.arguments.contains("--ui-testing") {
@@ -76,6 +77,7 @@ final class AppStore: ObservableObject {
         savedSessionNeedsUnlock = info.requiresUnlock || unlocker.available
         if savedSessionNeedsUnlock {
             access = .locked
+            await unlockSavedSignIn()
             return
         }
         let ticket = generation
@@ -156,8 +158,8 @@ final class AppStore: ObservableObject {
     }
 
     func enterForeground() async {
-        // Returning from Local Authentication is not a new app open. Saved
-        // sign-in always waits for the student's tap before reading Keychain.
+        // Local Authentication only makes the app inactive. Require a real
+        // background transition before starting another automatic attempt.
         guard backgrounded else { return }
         backgrounded = false
         // A passcode may have been configured while Schoolity was backgrounded.
@@ -165,6 +167,7 @@ final class AppStore: ObservableObject {
             savedSessionNeedsUnlock = true
             lockWorkspace()
         }
+        if access == .locked { await unlockSavedSignIn() }
     }
 
     func usePasswordInstead() {
