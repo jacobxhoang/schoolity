@@ -9,6 +9,15 @@ enum PortalFailure: LocalizedError {
         case .message(let message): return message
         }
     }
+
+    static func response(status: Int, signingIn: Bool, message: String?) -> PortalFailure {
+        if status == 401 {
+            return signingIn
+                ? .message("Your district didn’t accept these credentials. Check your username and password, then try again.")
+                : .signedOut
+        }
+        return .message(message ?? "Schoolity couldn’t load this request. Try again.")
+    }
 }
 
 private final class PortalRedirects: NSObject, URLSessionTaskDelegate {
@@ -60,12 +69,11 @@ final class PortalClient {
         }
         if response.statusCode == 401 {
             // An old in-flight request must not erase a later successful login.
-            if token?.value == requestSession { clear() }
-            throw PortalFailure.signedOut
+            if body["action"] as? String != "login", token?.value == requestSession { clear() }
         }
         guard (200..<300).contains(response.statusCode) else {
             let payload = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-            throw PortalFailure.message(payload?["error"] as? String ?? "Schoolity couldn’t load this request. Try again.")
+            throw PortalFailure.response(status: response.statusCode, signingIn: body["action"] as? String == "login", message: payload?["error"] as? String)
         }
         return (data, response)
     }

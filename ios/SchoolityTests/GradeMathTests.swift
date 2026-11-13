@@ -78,4 +78,13 @@ final class GradeMathTests: XCTestCase {
         XCTAssertEqual(GradeMath.input(1200.5), "1200.5")
         XCTAssertEqual(GradeMath.input(0), "0")
     }
+
+    func testRejectedCredentialsAndExpiredSessionsHaveDifferentRecovery() {
+        let login = PortalFailure.response(status: 401, signingIn: true, message: nil)
+        XCTAssertTrue(login.localizedDescription.contains("username and password"))
+        let expired = PortalFailure.response(status: 401, signingIn: false, message: nil)
+        if case .signedOut = expired {} else { XCTFail("An expired school-data session must return to sign-in") }
+        let retry = PortalFailure.response(status: 502, signingIn: false, message: "Try again shortly.")
+        XCTAssertEqual(retry.localizedDescription, "Try again shortly.")
+    }
 }
