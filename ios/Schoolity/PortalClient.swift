@@ -105,6 +105,7 @@ final class PortalClient: SchoolPortal {
 
     private func send(_ body: [String: Any], path: String = "api/portal") async throws -> (Data, HTTPURLResponse) {
         let requestSession = token?.value
+        let requestMemory = memoryEpoch
         var request = URLRequest(url: Self.baseURL.appendingPathComponent(path))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -120,7 +121,7 @@ final class PortalClient: SchoolPortal {
         }
         if response.statusCode == 401 {
             // An old in-flight request must not erase a later successful login.
-            if body["action"] as? String != "login", token?.value == requestSession { expireSession() }
+            if body["action"] as? String != "login", requestMemory == memoryEpoch, token?.value == requestSession { expireSession() }
         }
         guard (200..<300).contains(response.statusCode) else {
             let payload = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
@@ -132,10 +133,11 @@ final class PortalClient: SchoolPortal {
     func connected() async throws -> Bool {
         guard token?.isValid == true else { expireSession(); return false }
         let requestSession = token?.value
+        let requestMemory = memoryEpoch
         let (data, _) = try await send(["action": "session"])
         struct Status: Decodable { let connected: Bool }
         let connected = try JSONDecoder().decode(Status.self, from: data).connected
-        if !connected, token?.value == requestSession { expireSession() }
+        if !connected, requestMemory == memoryEpoch, token?.value == requestSession { expireSession() }
         return connected
     }
 
