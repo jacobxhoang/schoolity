@@ -4,3 +4,9 @@ build/
 .vercel/
 .env*
 !.env.example
+ios/*.xcodeproj/
+ios/DerivedData/
+ios/build/
+ios/TestResults/
+**/xcuserdata/
+*.xcuserstate

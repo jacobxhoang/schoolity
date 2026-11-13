@@ -2,6 +2,8 @@
 
 An independently implemented student dashboard for Anoka-Hennepin. Attendance has been removed. A valid StudentVUE login is required to access the workspace. There is no demo entry point.
 
+The native SwiftUI iPhone app is in [`ios/`](ios/README.md). The **iOS** GitHub Actions workflow compiles the app on macOS, runs simulator tests, and uploads unsigned build artifacts. See the [iPhone build instructions](ios/README.md) for Xcode, signing, and installation requirements.
+
 ## Run locally
 
 Use Node.js 22.18 or newer within the 22.x release line, matching the Vercel runtime.

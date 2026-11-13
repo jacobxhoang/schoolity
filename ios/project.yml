@@ -1,0 +1,48 @@
+name: Schoolity
+options:
+  bundleIdPrefix: com.schoolity
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    GENERATE_INFOPLIST_FILE: YES
+    CODE_SIGN_STYLE: Automatic
+    TARGETED_DEVICE_FAMILY: "1"
+targets:
+  Schoolity:
+    type: application
+    platform: iOS
+    sources: [Schoolity]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.schoolity.app
+        INFOPLIST_KEY_CFBundleDisplayName: Schoolity
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.education
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+  SchoolityTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [SchoolityTests]
+    dependencies:
+      - target: Schoolity
+  SchoolityUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [SchoolityUITests]
+    dependencies:
+      - target: Schoolity
+schemes:
+  Schoolity:
+    build:
+      targets:
+        Schoolity: all
+    test:
+      targets: [SchoolityTests, SchoolityUITests]
+      gatherCoverageData: true

@@ -4,7 +4,7 @@
 
 ## Platform
 
-web
+web and native iPhone (SwiftUI, iOS 17+)
 
 ## Users
 
@@ -32,6 +32,7 @@ An independent student dashboard for one district, combining a school portal wit
 ## Capabilities and Constraints
 
 - Existing stack: SvelteKit, Svelte 5, TypeScript, Vite, and a Node adapter, with original CSS and SVG components.
+- Native iPhone source lives in `ios/`, using SwiftUI, Swift Charts, Keychain sessions, and the existing authenticated Schoolity server. GitHub Actions compiles unsigned archives and simulator builds; Apple device/distribution signing is separate. Native views use system navigation, semantic monochrome colors, rounded inset lists, and Dynamic Type. There is no separate iPad interface.
 - Gradebook: reporting-period selection, course details, assignment scores, and calculated grade trends.
 - Calculator: points and weighted-category calculations, hypothetical score editing, hypothetical assignments, reset, and target-score estimates.
 - School data comes from the district's mobile JSON API through Schoolity's server. Read adapters exist for grades, student identity, schedule, inbox, and document listings.

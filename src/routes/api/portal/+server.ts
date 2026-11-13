@@ -8,7 +8,7 @@ import {
   read,
   signIn,
 } from '$lib/server/portal';
-import { object } from '$lib/portal-data';
+import { nativeData, object } from '$lib/portal-data';
 import { DISTRICT_URL } from '$lib/config';
 import { sessionCookieOptions } from '$lib/server/session-policy';
 export const POST: RequestHandler = async ({
@@ -77,8 +77,9 @@ export const POST: RequestHandler = async ({
       );
     if (typeof input.resource !== 'string')
       throw new PortalError('Select a resource.', 400);
+    const data = await read(session, input.resource, input.term);
     return json(
-      { data: await read(session, input.resource, input.term) },
+      { data: input.normalized === true ? nativeData(data, input.resource) : data },
       { headers },
     );
   } catch (error) {

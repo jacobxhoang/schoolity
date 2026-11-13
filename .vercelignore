@@ -5,3 +5,5 @@ build
 .vercel
 .env*
 .impeccable
+ios
+.github

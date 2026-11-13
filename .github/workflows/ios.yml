@@ -1,0 +1,146 @@
+name: iOS
+
+on:
+  push:
+    branches: [main]
+    paths: ["ios/**", ".github/workflows/ios.yml", "src/lib/portal-data.ts", "src/routes/api/**"]
+  pull_request:
+    paths: ["ios/**", ".github/workflows/ios.yml", "src/lib/portal-data.ts", "src/routes/api/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compile-and-test:
+    name: Compile Swift app and run iPhone tests
+    runs-on: macos-15
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: ios
+        shell: bash
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Select installed stable Xcode
+        run: |
+          set -euo pipefail
+          XCODE_PATH=$(python3 - <<'PY'
+          import glob, re
+          paths = []
+          for path in glob.glob('/Applications/Xcode_*.app'):
+              match = re.fullmatch(r'/Applications/Xcode_([0-9.]+)\.app', path)
+              if match:
+                  paths.append((tuple(map(int, match[1].split('.'))), path))
+          if not paths:
+              raise SystemExit('No stable Xcode installed')
+          print(max(paths)[1])
+          PY
+          )
+          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
+          xcodebuild -version
+          xcrun swift --version
+      - name: Generate Xcode project
+        run: |
+          set -euo pipefail
+          command -v xcodegen >/dev/null || brew install xcodegen
+          xcodegen generate --spec project.yml
+      - name: Compile unsigned iPhone archive
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          xcodebuild archive -project Schoolity.xcodeproj -scheme Schoolity \
+            -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath build/Schoolity.xcarchive \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            | tee build/archive.log
+          ditto -c -k --sequesterRsrc --keepParent build/Schoolity.xcarchive build/Schoolity-unsigned.xcarchive.zip
+      - name: Select and boot an available iPhone
+        run: |
+          set -euo pipefail
+          xcrun simctl list devices available --json > build/devices.json
+          DEVICE_ID=$(python3 - <<'PY'
+          import json, re
+          devices = json.load(open('build/devices.json'))['devices']
+          matches = []
+          for runtime, entries in devices.items():
+              if '.iOS-' not in runtime:
+                  continue
+              version = tuple(map(int, re.findall(r'\d+', runtime.split('.iOS-')[1])))
+              for device in entries:
+                  if device.get('isAvailable') and device['name'].startswith('iPhone'):
+                      matches.append((version, device['name'], device['udid']))
+          if not matches:
+              raise SystemExit('No iPhone simulator installed on this runner')
+          print(max(matches)[2])
+          PY
+          )
+          echo "SIMULATOR_ID=$DEVICE_ID" >> "$GITHUB_ENV"
+          xcrun simctl boot "$DEVICE_ID" || true
+          xcrun simctl bootstatus "$DEVICE_ID" -b
+          xcrun simctl status_bar "$DEVICE_ID" override --time '9:41' --dataNetwork wifi --wifiMode active --wifiBars 3 --batteryState charged --batteryLevel 100
+          xcrun simctl ui "$DEVICE_ID" appearance light
+      - name: Run calculator, session and decoding tests
+        run: |
+          set -euo pipefail
+          xcodebuild test -project Schoolity.xcodeproj -scheme Schoolity \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -derivedDataPath DerivedData -resultBundlePath TestResults/Unit.xcresult \
+            -only-testing:SchoolityTests CODE_SIGNING_ALLOWED=NO \
+            | tee build/unit-tests.log
+      - name: Run native interaction and screenshot tests
+        run: |
+          set -euo pipefail
+          xcodebuild test -project Schoolity.xcodeproj -scheme Schoolity \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -derivedDataPath DerivedData -resultBundlePath TestResults/Light.xcresult \
+            -only-testing:SchoolityUITests CODE_SIGNING_ALLOWED=NO \
+            | tee build/ui-light.log
+      - name: Check Dark Mode and large text
+        run: |
+          set -euo pipefail
+          xcrun simctl ui "$SIMULATOR_ID" appearance dark
+          xcrun simctl ui "$SIMULATOR_ID" content_size accessibility-extra-extra-extra-large
+          xcodebuild test -project Schoolity.xcodeproj -scheme Schoolity \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -derivedDataPath DerivedData -resultBundlePath TestResults/Dark.xcresult \
+            -only-testing:SchoolityUITests/testLoginHasNoAnonymousEntry CODE_SIGNING_ALLOWED=NO \
+            | tee build/ui-dark.log
+          xcrun simctl ui "$SIMULATOR_ID" content_size large
+      - name: Package simulator app and screenshots
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -d DerivedData/Build/Products/Debug-iphonesimulator/Schoolity.app ]; then
+            ditto -c -k --sequesterRsrc --keepParent DerivedData/Build/Products/Debug-iphonesimulator/Schoolity.app build/Schoolity-simulator.zip
+          fi
+          for result in TestResults/*.xcresult; do
+            [ -d "$result" ] || continue
+            name=$(basename "$result" .xcresult)
+            xcrun xcresulttool export attachments --path "$result" --output-path "build/screenshots/$name" || true
+          done
+      - name: Upload compiled apps
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: Schoolity-iOS-${{ github.run_number }}
+          path: ios/build/*.zip
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Upload test evidence and build logs
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: Schoolity-iOS-tests-${{ github.run_number }}
+          path: |
+            ios/TestResults/
+            ios/build/screenshots/
+            ios/build/*.log
+          if-no-files-found: warn
+          retention-days: 7

@@ -137,3 +137,11 @@ export function events(payload: unknown, kind: string): EventItem[] {
     }));
   return [];
 }
+
+// Opt-in, stable display models for the native client. The web client's raw
+// response contract stays unchanged; authentication still precedes this mapping.
+export function nativeData(payload: unknown, resource: string): unknown {
+  if (resource === 'grades') return grades(payload);
+  if (resource === 'profile') return profile(payload);
+  return events(payload, resource);
+}
