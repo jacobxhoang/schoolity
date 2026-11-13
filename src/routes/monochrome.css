@@ -442,8 +442,7 @@ form label,
 .dark .grade-label {
   color: var(--muted);
 }
-.dark .course-card,
-.dark .schedule-sync {
+.dark .course-card {
   border-color: #303030;
 }
 @media (max-width: 1100px) {
@@ -574,7 +573,6 @@ input::placeholder {
   :is(
     .page-heading p,
     .what-if p,
-    .schedule-sync p,
     form label,
     .login-description,
     .login-privacy,
@@ -714,13 +712,6 @@ input::placeholder {
 }
 .term-line select {
   font-size: 14px;
-  max-width: 100%;
-}
-.schedule-sync {
-  border-color: #e5e5e5;
-  border-radius: var(--radius);
-}
-.schedule-sync p {
   max-width: 100%;
 }
 .course-card {
@@ -993,8 +984,8 @@ td strong {
 
 .resource-freshness {
   color: var(--muted);
-  font-size: 12px;
-  margin-bottom: 16px;
+  font-size: 11px;
+  margin-bottom: 8px;
 }
 .breadcrumb > span {
   color: var(--muted);
@@ -1333,17 +1324,17 @@ td strong {
 }
 .document-copy strong {
   display: block;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 550;
-  margin: 7px 0;
+  margin: 2px 0;
 }
 .document-copy > span {
   display: block;
-  font-size: 13px;
-  line-height: 1.7;
+  font-size: 12px;
+  line-height: 1.5;
   color: var(--muted);
 }
 .document-status {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--muted);
 }
