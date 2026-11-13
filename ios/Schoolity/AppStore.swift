@@ -22,6 +22,7 @@ final class AppStore: ObservableObject {
     private var generation = UUID()
     private var started = false
     private var backgrounded = false
+    private var savedSessionNeedsUnlock = false
     #if DEBUG
     private var testingSavedSignIn = false
     #endif
@@ -70,7 +71,8 @@ final class AppStore: ObservableObject {
             reset()
             return
         }
-        if info.requiresUnlock || unlocker.available {
+        savedSessionNeedsUnlock = info.requiresUnlock || unlocker.available
+        if savedSessionNeedsUnlock {
             access = .locked
             await unlockSavedSignIn()
             return
@@ -130,7 +132,13 @@ final class AppStore: ObservableObject {
 
     func enterBackground() {
         backgrounded = true
-        guard !signingOut, let info = client.savedSignIn, info.requiresUnlock || unlocker.available else { return }
+        // Keychain may already be unavailable when the phone locks. Never
+        // depend on another Keychain read to decide whether the UI must lock.
+        guard !signingOut, savedSessionNeedsUnlock || access == .locked || isUnlocking else { return }
+        lockWorkspace()
+    }
+
+    private func lockWorkspace() {
         unlocker.cancel()
         client.forgetSession()
         clearWorkspace()
@@ -144,6 +152,11 @@ final class AppStore: ObservableObject {
         // background/foreground transition may trigger another automatic scan.
         guard backgrounded else { return }
         backgrounded = false
+        // A passcode may have been configured while Schoolity was backgrounded.
+        if access == .signedIn, !savedSessionNeedsUnlock, unlocker.available {
+            savedSessionNeedsUnlock = true
+            lockWorkspace()
+        }
         if access == .locked { await unlockSavedSignIn() }
     }
 
@@ -160,9 +173,11 @@ final class AppStore: ObservableObject {
         guard !isLoading else { return }
         isLoading = true
         loginError = nil
+        let protectSession = unlocker.available
         do {
-            try await client.signIn(username: username.trimmingCharacters(in: .whitespacesAndNewlines), password: password, protectSession: unlocker.available)
+            try await client.signIn(username: username.trimmingCharacters(in: .whitespacesAndNewlines), password: password, protectSession: protectSession)
             generation = UUID()
+            savedSessionNeedsUnlock = protectSession
             access = .signedIn
             if backgrounded { enterBackground() }
         } catch { loginError = error.localizedDescription }
@@ -242,6 +257,7 @@ final class AppStore: ObservableObject {
 
     private func reset() {
         clearWorkspace()
+        savedSessionNeedsUnlock = false
         isUnlocking = false
         unlockError = nil
         access = .signedOut

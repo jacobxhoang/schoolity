@@ -26,11 +26,11 @@ struct SchoolityApp: App {
             }
             .tint(.primary)
             .environmentObject(store)
-            .task { await store.start() }
+            .task { if scenePhase == .active { await store.start() } }
             .privacySensitive()
             .onChange(of: scenePhase) { _, phase in
                 if phase == .background { store.enterBackground() }
-                if phase == .active { Task { await store.enterForeground() } }
+                if phase == .active { Task { await store.enterForeground(); await store.start() } }
             }
             .overlay {
                 if scenePhase != .active {

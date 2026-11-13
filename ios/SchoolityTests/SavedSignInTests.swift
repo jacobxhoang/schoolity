@@ -54,6 +54,36 @@ final class SavedSignInTests: XCTestCase {
     }
 
     @MainActor
+    func testLockDoesNotDependOnKeychainMetadataBeingReadableInBackground() async {
+        let portal = TestPortal()
+        let store = AppStore(client: portal, unlocker: TestUnlocker())
+        await store.start()
+        XCTAssertEqual(store.access, .signedIn)
+        portal.savedSignIn = nil // Models temporarily unavailable Keychain metadata.
+        store.enterBackground()
+        XCTAssertEqual(store.access, .locked)
+        XCTAssertNil(store.gradebook)
+        XCTAssertNil(store.profile)
+        XCTAssertGreaterThan(portal.forgetCalls, 0)
+    }
+
+    @MainActor
+    func testSettingUpPasscodeEnablesProtectedUnlockOnReturn() async {
+        let portal = TestPortal()
+        portal.savedSignIn = SavedSessionInfo(expires: .distantFuture, requiresUnlock: false)
+        let unlock = TestUnlocker()
+        unlock.available = false
+        let store = AppStore(client: portal, unlocker: unlock)
+        await store.start()
+        store.enterBackground()
+        unlock.available = true
+        await store.enterForeground()
+        XCTAssertEqual(unlock.calls, 1)
+        XCTAssertTrue(portal.protectRestoredSession)
+        XCTAssertEqual(store.access, .signedIn)
+    }
+
+    @MainActor
     func testExpiredSavedSessionRequiresSchoolPasswordWithoutFaceID() async {
         let portal = TestPortal()
         portal.savedSignIn = SavedSessionInfo(expires: .distantPast, requiresUnlock: true)
