@@ -50,7 +50,7 @@ struct LoginView: View {
                     .listRowBackground(Color.clear)
                 }
                 Section {
-                    TextField("Username", text: $username)
+                    TextField("Username", text: $username, prompt: Text("Username").foregroundStyle(Color.primary.opacity(0.65)))
                         .textContentType(.username)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
@@ -60,8 +60,8 @@ struct LoginView: View {
                         .accessibilityIdentifier("login.username")
                     HStack {
                         Group {
-                            if reveal { TextField("Password", text: $password) }
-                            else { SecureField("Password", text: $password) }
+                            if reveal { TextField("Password", text: $password, prompt: Text("Password").foregroundStyle(Color.primary.opacity(0.65))) }
+                            else { SecureField("Password", text: $password, prompt: Text("Password").foregroundStyle(Color.primary.opacity(0.65))) }
                         }
                         .textContentType(.password)
                         .textInputAutocapitalization(.never)
