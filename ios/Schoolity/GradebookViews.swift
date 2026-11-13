@@ -60,20 +60,37 @@ struct GradebookView: View {
 }
 
 struct CourseRow: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     let course: Course
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 16) {
-            VStack(alignment: .leading, spacing: 5) {
-                Text(course.name).font(.headline).fixedSize(horizontal: false, vertical: true)
-                if !course.teacher.isEmpty { Text(course.teacher).font(.subheadline).foregroundStyle(.secondary) }
+        Group {
+            if typeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 12) {
+                    identity
+                    HStack(alignment: .firstTextBaseline, spacing: 16) {
+                        Text(GradeMath.letter(course.official)).font(.title2.bold())
+                        Text(GradeMath.percent(course.official)).font(.subheadline).foregroundStyle(.secondary)
+                    }.monospacedDigit()
+                }
+            } else {
+                HStack(alignment: .firstTextBaseline, spacing: 16) {
+                    identity
+                    Spacer(minLength: 0)
+                    VStack(alignment: .trailing, spacing: 5) {
+                        Text(GradeMath.letter(course.official)).font(.title2.bold())
+                        Text(GradeMath.percent(course.official)).font(.subheadline).foregroundStyle(.secondary)
+                    }.monospacedDigit().fixedSize()
+                }
             }
-            Spacer(minLength: 0)
-            VStack(alignment: .trailing, spacing: 5) {
-                Text(GradeMath.letter(course.official)).font(.title2.bold())
-                Text(GradeMath.percent(course.official)).font(.subheadline).foregroundStyle(.secondary)
-            }.monospacedDigit().fixedSize()
         }.padding(.vertical, 8)
         .accessibilityElement(children: .combine)
+    }
+
+    private var identity: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(course.name).font(.headline).fixedSize(horizontal: false, vertical: true)
+            if !course.teacher.isEmpty { Text(course.teacher).font(.subheadline).foregroundStyle(.secondary) }
+        }.frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

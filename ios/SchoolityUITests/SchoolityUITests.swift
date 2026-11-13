@@ -56,6 +56,8 @@ final class SchoolityUITests: XCTestCase {
         let course = app.staticTexts["Algebra II"]
         XCTAssertTrue(course.waitForExistence(timeout: 5))
         capture("accessible-gradebook")
+        app.swipeUp()
+        capture("accessible-gradebook-row")
         if !course.isHittable { app.swipeUp() }
         course.tap()
         XCTAssertTrue(app.staticTexts["District grade"].waitForExistence(timeout: 5))
