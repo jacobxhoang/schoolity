@@ -27,7 +27,6 @@
     events,
     schedule as readSchedule,
   } from '$lib/portal-data';
-  import { calendarFile, calendarFilename } from '$lib/calendar';
   import './app.css';
   import './monochrome.css';
   const navigation = [
@@ -75,6 +74,18 @@
   );
   const currentEstimate = $derived(
     activeCourse ? calculate(activeCourse) : null,
+  );
+  const categoryOptions = $derived(
+    activeCourse
+      ? [
+          ...new Set(
+            [
+              ...activeCourse.categories.map((c) => c.name),
+              ...activeCourse.assignments.map((a) => a.category),
+            ].filter(Boolean),
+          ),
+        ]
+      : [],
   );
   const scenarioAnnouncement = $derived(
     hypothetical
@@ -286,7 +297,7 @@
   }
   function editAssignment(
     id: string,
-    key: 'earned' | 'possible' | 'title',
+    key: 'earned' | 'possible' | 'title' | 'category',
     value: string,
   ) {
     if (!activeCourse) return;
@@ -296,11 +307,14 @@
         ? {
             ...a,
             [key]:
-              key === 'title'
+              key === 'title' || key === 'category'
                 ? value
                 : value === '' && key === 'earned'
                   ? null
                   : Math.max(0, Number(value) || 0),
+            ...(key === 'earned' || key === 'possible'
+              ? { emptyScores: false }
+              : {}),
           }
         : a,
     );
@@ -318,10 +332,11 @@
       id: crypto.randomUUID(),
       title: 'What-if assignment',
       category: course.categories[0]?.name ?? 'Practice',
-      earned: 90,
+      earned: null,
       possible: 100,
       due: new Date().toISOString().slice(0, 10),
       hypothetical: true,
+      emptyScores: true,
     });
     edits = { ...edits, [course.id]: course };
   }
@@ -453,21 +468,6 @@
   function changeScheduleTerm(value: string) {
     schedule = { ...schedule, currentTerm: Number(value) };
     notice = '';
-  }
-  function downloadSchedule() {
-    const term = selectedScheduleTerm;
-    if (!term?.classes.length) return;
-    const link = document.createElement('a'),
-      url = URL.createObjectURL(
-        new Blob([calendarFile(term)], { type: 'text/calendar;charset=utf-8' }),
-      );
-    link.href = url;
-    link.download = calendarFilename(term);
-    document.body.append(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    notice = `${term.name} schedule downloaded for your calendar.`;
   }
   function focusDialog(node: HTMLElement) {
     const previous = document.activeElement as HTMLElement | null;
@@ -794,7 +794,21 @@
                           >Excluded from calculation</small
                         >{/if}</td
                     ><td data-label="Category"
-                      ><span class="subtle-tag">{a.category}</span></td
+                      >{#if hypothetical}<select
+                          class="category-select"
+                          aria-label={`Category for ${a.title}`}
+                          value={a.category}
+                          onchange={(e) =>
+                            editAssignment(
+                              a.id,
+                              'category',
+                              e.currentTarget.value,
+                            )}
+                          >{#each categoryOptions as category}<option
+                              value={category}>{category}</option
+                            >{/each}</select
+                        >{:else}<span class="subtle-tag">{a.category}</span
+                        >{/if}</td
                     ><td data-label="Due">{dateLabel(a.due)}</td><td
                       data-label="Score"
                       >{#if hypothetical}<div class="score-inputs">
@@ -802,7 +816,7 @@
                             aria-label={`Points earned for ${a.title}`}
                             type="number"
                             min="0"
-                            value={a.earned ?? ''}
+                            value={a.emptyScores ? '' : (a.earned ?? '')}
                             placeholder="—"
                             oninput={(e) =>
                               editAssignment(
@@ -814,7 +828,7 @@
                             aria-label={`Points possible for ${a.title}`}
                             type="number"
                             min="0"
-                            value={a.possible}
+                            value={a.emptyScores ? '' : a.possible}
                             oninput={(e) =>
                               editAssignment(
                                 a.id,
@@ -958,21 +972,6 @@
                 >{selectedScheduleTerm?.classes.length ?? 0} classes</span
               >
             </div>
-            <section class="schedule-sync" aria-labelledby="calendar-sync-title">
-              <div>
-                <h2 id="calendar-sync-title">Calendar sync</h2>
-                <p>
-                  Download this term’s schedule as a calendar file. Classes
-                  repeat weekly; when the district does not include class times,
-                  they appear as all-day events.
-                </p>
-              </div>
-              <button
-                class="primary small"
-                disabled={!selectedScheduleTerm?.classes.length}
-                onclick={downloadSchedule}>Download calendar</button
-              >
-            </section>
           {/if}
           {#if refreshTimes[tab]}<p class="resource-freshness">
               Last updated {new Date(refreshTimes[tab]).toLocaleTimeString([], {
@@ -1041,7 +1040,7 @@
                   aria-busy={!!item.id && !!downloading[item.id]}
                   onclick={() => downloadFile(item)}
                 >
-                  <span class="record-icon"><Icon name="file" size={22} /></span
+                  <span class="record-icon"><Icon name="file" size={18} /></span
                   ><span class="document-copy"
                     ><small>{item.date}</small><strong>{item.title}</strong
                     ><span>{item.detail}</span></span
@@ -1064,7 +1063,7 @@
                         : tab === 'mail'
                           ? 'mail'
                           : 'file'}
-                      size={22}
+                      size={18}
                     /></span
                   >
                   <div>
@@ -1095,13 +1094,9 @@
                 {/if}
               </div>{/if}
           </section>
-          <p class="calculation-note">
-            {tab === 'mail'
-              ? 'Latest 50 messages.'
-              : tab === 'documents'
-                ? ''
-                : 'Calendar downloads repeat weekly for the selected term.'}
-          </p>
+          {#if tab === 'mail'}<p class="calculation-note">
+              Latest 50 messages.
+            </p>{/if}
         {/if}
       </main>
     </div>
@@ -1221,9 +1216,7 @@
             feature coverage is still being verified across district responses.
             Grade estimates may differ from district rules. This first version
             includes gradebook, calculator, schedule, inbox, and document-list
-            adapters, document downloads, and schedule calendar downloads.
-            Calendar files are created in your browser from the schedule shown
-            here.
+            adapters, and document downloads.
           </p>
         </details>
         <button class="primary" onclick={() => (privacyOpen = false)}
