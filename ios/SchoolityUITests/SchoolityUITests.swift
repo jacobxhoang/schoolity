@@ -46,4 +46,36 @@ final class SchoolityUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Bring your practice problems on Monday. We’ll review chapters 4 & 5 together."].waitForExistence(timeout: 5))
         capture("inbox-expanded")
     }
+
+    func testAccessibilityGradebookAndCourse() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing"]
+        app.launch()
+        XCTAssertTrue(app.tabBars.buttons["Grades"].waitForExistence(timeout: 10))
+        app.tabBars.buttons["Grades"].tap()
+        let course = app.staticTexts["Algebra II"]
+        XCTAssertTrue(course.waitForExistence(timeout: 5))
+        capture("accessible-gradebook")
+        if !course.isHittable { app.swipeUp() }
+        course.tap()
+        XCTAssertTrue(app.staticTexts["District grade"].waitForExistence(timeout: 5))
+        capture("accessible-course")
+    }
+
+    func testScheduleDocumentsAndAccount() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing"]
+        app.launch()
+        XCTAssertTrue(app.tabBars.buttons["Schedule"].waitForExistence(timeout: 10))
+        app.tabBars.buttons["Schedule"].tap()
+        XCTAssertTrue(app.staticTexts["Period 1"].waitForExistence(timeout: 5))
+        capture("schedule")
+        app.tabBars.buttons["Documents"].tap()
+        XCTAssertTrue(app.buttons.containing(.staticText, identifier: "Sample report").firstMatch.waitForExistence(timeout: 5))
+        capture("documents")
+        app.buttons["Account"].tap()
+        XCTAssertTrue(app.staticTexts["Sample Student"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Sign out"].exists)
+        capture("account")
+    }
 }

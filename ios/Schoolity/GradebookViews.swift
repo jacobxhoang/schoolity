@@ -34,7 +34,7 @@ struct GradebookView: View {
             if let book = store.gradebook {
                 if !book.terms.isEmpty {
                     Section {
-                        Picker("Reporting period", selection: Binding(get: { book.currentTerm }, set: { term in
+                        Picker("Term", selection: Binding(get: { book.currentTerm }, set: { term in
                             Task { await store.refreshGrades(term: term) }
                         })) {
                             ForEach(book.terms) { Text($0.name).tag($0.id) }

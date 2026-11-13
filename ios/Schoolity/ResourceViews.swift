@@ -15,7 +15,7 @@ struct ResourceView: View {
             }
             if let items = store.records[resource] {
                 if items.isEmpty {
-                    ContentUnavailableView("No \(resource.title.lowercased())", systemImage: resource.symbol,
+                    ContentUnavailableView(resource == .mail ? "No messages" : "No \(resource.title.lowercased())", systemImage: resource.symbol,
                                            description: Text("Nothing to show from your district yet."))
                 }
                 ForEach(Array(items.enumerated()), id: \.offset) { index, item in

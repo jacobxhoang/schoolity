@@ -113,8 +113,11 @@ jobs:
           xcodebuild test -project Schoolity.xcodeproj -scheme Schoolity \
             -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
             -derivedDataPath DerivedData -resultBundlePath TestResults/Dark.xcresult \
-            -only-testing:SchoolityUITests/testLoginHasNoAnonymousEntry -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO \
+            -only-testing:SchoolityUITests/SchoolityUITests/testLoginHasNoAnonymousEntry \
+            -only-testing:SchoolityUITests/SchoolityUITests/testAccessibilityGradebookAndCourse \
+            -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO \
             | tee build/ui-dark.log
+          grep -Eq 'Executed [1-9][0-9]* tests?' build/ui-dark.log
           xcrun simctl ui "$SIMULATOR_ID" content_size large
       - name: Package simulator app and screenshots
         if: always()
