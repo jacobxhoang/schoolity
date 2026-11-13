@@ -1,4 +1,4 @@
-import { events, object, rows, string } from '../portal-data.ts';
+import { events, object, rows, string, displayText } from '../portal-data.ts';
 import { exchange, read, PortalError, type Session } from './portal.ts';
 
 export function decodeDocument(payload: unknown, fallback: string) {
@@ -21,7 +21,7 @@ export function decodeDocument(payload: unknown, fallback: string) {
       413,
     );
   const filename =
-    (string(document.fileName) || fallback || 'document')
+    (displayText(document.fileName) || fallback || 'document')
       .split(/[\\/]/)
       .at(-1)!
       .replace(/[\x00-\x1f\x7f<>:"|?*]/g, '_')

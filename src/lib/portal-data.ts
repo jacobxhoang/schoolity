@@ -1,4 +1,5 @@
 import type { Course, GradeData, Profile, EventItem } from './model';
+import { decodeHTMLStrict } from 'entities';
 export type JsonObject = Record<string, unknown>;
 export function object(value: unknown): JsonObject {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -14,6 +15,10 @@ export function string(value: unknown): string {
   return typeof value === 'string' || typeof value === 'number'
     ? String(value)
     : '';
+}
+// Decode display text only. IDs, tokens, URLs and numeric data stay untouched.
+export function displayText(value: unknown): string {
+  return decodeHTMLStrict(string(value)).replace(/\u00a0/g, ' ');
 }
 export function number(value: unknown): number | null {
   if (value === null || value === undefined || value === '') return null;
@@ -42,22 +47,22 @@ export function grades(payload: unknown): GradeData {
       mark = marks[0] ?? {};
     return {
       id: string(c.courseID ?? c.courseId) || `course-${i}`,
-      name: string(c.courseName) || string(c.title),
-      teacher: string(c.staff),
-      room: string(c.room),
-      period: string(c.period),
+      name: displayText(c.courseName) || displayText(c.title),
+      teacher: displayText(c.staff),
+      room: displayText(c.room),
+      period: displayText(c.period),
       color: palette[i % palette.length],
       official: number(mark.calculatedScoreRaw),
       categories: rows(mark.gradeCalculationSummary)
         .filter((x) => string(x.type).toUpperCase() !== 'TOTAL')
         .map((x) => ({
-          name: string(x.type),
+          name: displayText(x.type),
           weight: Number.parseFloat(string(x.weight)) || 0,
         })),
       assignments: rows(mark.assignments).map((a, j) => ({
         id: string(a.gradebookID ?? a.gradebookId) || `task-${j}`,
-        title: string(a.measure),
-        category: string(a.type),
+        title: displayText(a.measure),
+        category: displayText(a.type),
         earned: number(a.point ?? a.scoreCalValue ?? a.score),
         possible: number(a.pointPossible ?? a.scoreMaxValue) ?? 0,
         due: string(a.dueDate),
@@ -70,15 +75,15 @@ export function grades(payload: unknown): GradeData {
     currentTerm: number(term.index)!,
     terms: rows(g.reportingPeriods).map((t) => ({
       id: number(t.index) ?? 0,
-      name: string(t.gradePeriod),
+      name: displayText(t.gradePeriod),
     })),
   };
 }
 export function profile(payload: unknown): Profile {
   const p = object(payload);
   return {
-    name: string(p.formattedName) || 'Student',
-    school: string(p.schoolName) || 'Your school',
+    name: displayText(p.formattedName) || 'Student',
+    school: displayText(p.schoolName) || 'Your school',
     grade: string(p.grade),
   };
 }
@@ -97,33 +102,37 @@ export function events(payload: unknown, kind: string): EventItem[] {
         .map((a) => ({
           id: string(a.smAttachmentGU),
           filename:
-            string(a.documentName) || string(a.fileName) || 'Attachment',
+            displayText(a.documentName) ||
+            displayText(a.fileName) ||
+            'Attachment',
         })),
-      title: string(m.subject),
+      title: displayText(m.subject),
       author: rows(m.from)
-        .map((sender) => string(sender.details1).trim())
+        .map((sender) => displayText(sender.details1).trim())
         .filter(Boolean)
         .join(', '),
-      detail: string(m.messageText)
-        .replace(/<[^>]*>/g, ' ')
-        .replace(/&nbsp;/g, ' ')
-        .replace(/&amp;/g, '&'),
+      detail: displayText(
+        string(m.messageText)
+          .replace(/<br\s*\/?\s*>/gi, '\n')
+          .replace(/<\/(?:p|div|li)>/gi, '\n')
+          .replace(/<[^>]*>/g, ' '),
+      ),
       date: string(m.sendDateTimeFormattedShort ?? m.sendDateTime),
     }));
   if (kind === 'schedule')
     return rows(data.classLists ?? data.classListing ?? data.classes).map(
       (c) => ({
-        title: string(c.courseTitle ?? c.courseName),
-        detail: `${string(c.teacher ?? c.staff)} · Room ${string(c.roomName ?? c.room)}`,
+        title: displayText(c.courseTitle ?? c.courseName),
+        detail: `${displayText(c.teacher ?? c.staff)} · Room ${displayText(c.roomName ?? c.room)}`,
         date: `Period ${string(c.period)}`,
       }),
     );
   if (kind === 'documents')
     return rows(data.studentDocumentDatas).map((d) => ({
       id: string(d.documentGU),
-      filename: string(d.documentFileName),
-      title: string(d.documentComment) || string(d.documentFileName),
-      detail: string(d.documentType),
+      filename: displayText(d.documentFileName),
+      title: displayText(d.documentComment) || displayText(d.documentFileName),
+      detail: displayText(d.documentType),
       date: string(d.documentDate),
     }));
   return [];
