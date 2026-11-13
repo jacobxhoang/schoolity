@@ -99,15 +99,19 @@ jobs:
           xcodebuild test -project Schoolity.xcodeproj -scheme Schoolity \
             -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
             -derivedDataPath DerivedData -resultBundlePath TestResults/Unit.xcresult \
-            -only-testing:SchoolityTests -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO \
+            -only-testing:SchoolityTests -parallel-testing-enabled NO \
+            CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual \
             | tee build/unit-tests.log
+          codesign --display --entitlements - --xml DerivedData/Build/Products/Debug-iphonesimulator/Schoolity.app > build/simulator-entitlements.plist
+          /usr/libexec/PlistBuddy -c 'Print :application-identifier' build/simulator-entitlements.plist
       - name: Run native interaction and screenshot tests
         run: |
           set -euo pipefail
           xcodebuild test -project Schoolity.xcodeproj -scheme Schoolity \
             -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
             -derivedDataPath DerivedData -resultBundlePath TestResults/Light.xcresult \
-            -only-testing:SchoolityUITests -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO \
+            -only-testing:SchoolityUITests -parallel-testing-enabled NO \
+            CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual \
             | tee build/ui-light.log
       - name: Check Dark Mode and large text
         run: |
@@ -121,7 +125,8 @@ jobs:
             -only-testing:SchoolityUITests/SchoolityUITests/testAccessibilityGradebookAndCourse \
             -only-testing:SchoolityUITests/SchoolityUITests/testSavedSignInCanUnlock \
             -only-testing:SchoolityUITests/SchoolityUITests/testStudentIDShowsBarcodeAndDistrictNumber \
-            -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO \
+            -parallel-testing-enabled NO \
+            CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual \
             | tee build/ui-dark.log
           grep -Eq 'Executed [1-9][0-9]* tests?' build/ui-dark.log
           xcrun simctl ui "$SIMULATOR_ID" content_size large

@@ -4,6 +4,25 @@ import LocalAuthentication
 
 final class SavedSignInTests: XCTestCase {
     @MainActor
+    func testUnknownDiscoveryOnSessionRejectionKeepsCredentialsForAuthenticatedRetry() async {
+        let portal = TestPortal()
+        let store = AppStore(client: portal, unlocker: TestUnlocker())
+        await store.start()
+        portal.savedSignIn = SavedSessionInfo(expires: .distantFuture, requiresUnlock: true, legacy: true)
+        portal.readError = PortalFailure.signedOut
+        await store.refreshGrades()
+        XCTAssertEqual(store.access, .locked)
+        XCTAssertNotNil(portal.savedSignIn)
+        XCTAssertNil(store.gradebook)
+        portal.readError = nil
+        portal.connectionResult = false
+        portal.renewalResult = true
+        await store.unlockSavedSignIn()
+        XCTAssertEqual(portal.renewalCalls, 1)
+        XCTAssertEqual(store.access, .signedIn)
+    }
+
+    @MainActor
     func testFirstSchoolLoginRequestsLocalAuthenticationAndReadsSavedEntry() async {
         let portal = TestPortal()
         portal.savedSignIn = nil
@@ -397,6 +416,7 @@ private final class TestPortal: SchoolPortal {
     var restoredWithContext = false
     var protectRestoredSession = false
     var restorationError: Error?
+    var readError: Error?
     var connectionResult = true
     var delayConnection = false
     var onConnection: (() -> Void)?
@@ -434,6 +454,7 @@ private final class TestPortal: SchoolPortal {
     }
     func signOut() async throws { clear() }
     func read<T: Decodable>(_ resource: String, term: Int?) async throws -> T {
+        if let readError { throw readError }
         let json = resource == "grades" ? #"{"courses":[],"terms":[],"currentTerm":0}"# : #"{"name":"Sample Student","school":"Sample School","grade":"11"}"#
         return try JSONDecoder().decode(T.self, from: Data(json.utf8))
     }

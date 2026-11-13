@@ -22,7 +22,7 @@ The original Schoolity credential form and saved-sign-in screen are retained, no
 
 Open the repository's **Actions → iOS → Run workflow** on `main`. Pushes to `main` that change the iOS app or its server contract also compile automatically. After the tests pass, download **Schoolity.ipa** from the [latest release](https://github.com/verityhoangjacob67/schoolity/releases/latest).
 
-The macOS job generates the Xcode project, compiles a Release archive for iPhone, and runs unit and native UI tests. A separate release job publishes **only Schoolity.ipa** as the app download, tagged `ios-build-<run>.<attempt>` and marked Latest. The tag targets the tested commit; reruns create a fresh release. The app's build number follows the workflow run number.
+The macOS job generates the Xcode project, compiles an unsigned Release archive for iPhone, and runs unit and native UI tests. Simulator test builds use local ad-hoc signing and simulator-only Keychain entitlements, so tests exercise real Keychain save/reopen/delete and old-entry migration rather than only mocked storage. This local simulator signature does not sign the release IPA for a physical iPhone. A separate release job publishes **only Schoolity.ipa** as the app download, tagged `ios-build-<run>.<attempt>` and marked Latest. The tag targets the tested commit; reruns create a fresh release. The app's build number follows the workflow run number.
 
 Pull requests and manual builds of other branches compile/test without publishing. Build jobs have read-only repository access; only the main-branch release job receives permission to create a release. No Apple credentials or repository secrets are needed.
 

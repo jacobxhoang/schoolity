@@ -138,7 +138,9 @@ final class AppStore: ObservableObject {
         do { connected = try await client.connected() }
         catch PortalFailure.signedOut { connected = false }
         guard ticket == generation, !backgrounded else { return }
-        if !connected, requiresUnlock, let context, client.savedSignIn?.canRenew == true {
+        if !connected, requiresUnlock, let context {
+            // Inspect the authenticated entry, not potentially unavailable
+            // discovery metadata, to decide whether credentials can renew it.
             connected = try await client.renewSession(context: context)
             guard ticket == generation, !backgrounded else { return }
         }
@@ -300,7 +302,7 @@ final class AppStore: ObservableObject {
 
     private func handle(_ error: Error) {
         if case PortalFailure.signedOut = error {
-            if client.savedSignIn?.canRenew == true {
+            if let info = client.savedSignIn, info.canRenew == true || info.legacy {
                 savedSessionNeedsUnlock = true
                 lockWorkspace()
                 unlockError = "Unlock to sign in again."

@@ -20,6 +20,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.schoolity.app
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]": CI/Simulator.entitlements
         INFOPLIST_KEY_CFBundleDisplayName: Schoolity
         INFOPLIST_KEY_NSFaceIDUsageDescription: Unlock your saved Schoolity sign-in with Face ID.
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.education

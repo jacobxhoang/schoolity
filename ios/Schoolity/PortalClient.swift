@@ -78,7 +78,7 @@ final class PortalClient: SchoolPortal {
 
     private func expireSession() {
         token = nil
-        if SessionVault.info()?.canRenew != true { SessionVault.clear() }
+        if let info = SessionVault.info(), !info.legacy, info.canRenew == false { SessionVault.clear() }
     }
 
     func restoreSession(context: LAContext?, requiresUnlock: Bool) throws -> Bool {
