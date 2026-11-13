@@ -16,7 +16,7 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
       !request.headers.get('content-type')?.startsWith('application/json')
     )
       throw new PortalError('A same-origin JSON request is required.', 403);
-    const session = findSession(cookies.get('schoolity_session'));
+    const session = await findSession(cookies.get('schoolity_session'));
     if (!session)
       throw new PortalError(
         'Your session has ended. Sign in again to download.',

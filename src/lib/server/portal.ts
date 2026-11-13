@@ -1,6 +1,7 @@
 import { request as httpsRequest } from 'node:https';
 import { lookup } from 'node:dns/promises';
-import { randomBytes } from 'node:crypto';
+import { store } from './store.ts';
+import { randomBytes, createHash } from 'node:crypto';
 import { BlockList } from 'node:net';
 import { object, string } from '../portal-data.ts';
 export class PortalError extends Error {
@@ -157,28 +158,48 @@ export interface Session {
   token: string;
   expires: number;
 }
-const sessions = new Map<string, Session>();
-export function findSession(id: string | undefined): Session | undefined {
-  const entry = id ? sessions.get(id) : undefined;
-  if (entry && entry.expires > Date.now()) return entry;
-  if (id) sessions.delete(id);
-  return undefined;
+export async function findSession(
+  id: string | undefined,
+): Promise<Session | undefined> {
+  if (!id || !/^[A-Za-z0-9_-]{43}$/.test(id)) return undefined;
+  try {
+    const raw = await store.get('session:' + id);
+    if (!raw) return undefined;
+    const entry = JSON.parse(raw) as Session;
+    if (entry.expires > Date.now()) return entry;
+    await store.delete('session:' + id);
+    return undefined;
+  } catch {
+    throw new PortalError('Session storage is unavailable. Try again.', 503);
+  }
 }
-export function endSession(id: string | undefined): void {
-  if (id) sessions.delete(id);
+export async function endSession(id: string | undefined): Promise<void> {
+  if (id && /^[A-Za-z0-9_-]{43}$/.test(id)) await store.delete('session:' + id);
+}
+export async function limitLogin(ip: string) {
+  try {
+    const count = await store.increment(
+      'login:' + createHash('sha256').update(ip).digest('hex'),
+      600,
+    );
+    if (count > 10)
+      throw new PortalError(
+        'Too many login attempts. Try again in ten minutes.',
+        429,
+      );
+  } catch (e) {
+    if (e instanceof PortalError) throw e;
+    throw new PortalError(
+      'Sign-in storage is unavailable. Configure shared storage and try again.',
+      503,
+    );
+  }
 }
 export async function signIn(
   district: string,
   username: string,
   password: string,
 ): Promise<string> {
-  for (const [key, s] of sessions)
-    if (s.expires < Date.now()) sessions.delete(key);
-  if (sessions.size >= 1000)
-    throw new PortalError(
-      'This instance is at its session limit. Try again later.',
-      503,
-    );
   const base = districtAddress(district).href.replace(/\/$/, '');
   const auth = Buffer.from(`${username}:${password}`).toString('base64');
   const result = await exchange(base, 'AttemptLogin', `Basic ${auth}`, {
@@ -194,12 +215,17 @@ export async function signIn(
       401,
     );
   const id = randomBytes(32).toString('base64url');
-  sessions.set(id, {
+  const entry: Session = {
     base,
     token: result.access_token,
     expires:
       Date.now() + Math.min(Number(result.expires_in) || 1800, 1800) * 1000,
-  });
+  };
+  await store.set(
+    'session:' + id,
+    JSON.stringify(entry),
+    Math.max(1, Math.ceil((entry.expires - Date.now()) / 1000)),
+  );
   return id;
 }
 export async function read(

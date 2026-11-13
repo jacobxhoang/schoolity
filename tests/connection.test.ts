@@ -62,7 +62,7 @@ test('district connections exclude private and reserved IPv4 and IPv6 destinatio
   assert.equal(publicAddress('8.8.8.8'), true);
   assert.equal(publicAddress('2606:4700:4700::1111'), true);
 });
-test('missing and unknown session cookies do not authenticate', () => {
-  assert.equal(findSession(undefined), undefined);
-  assert.equal(findSession('not-a-session'), undefined);
+test('missing and unknown session cookies do not authenticate', async () => {
+  assert.equal(await findSession(undefined), undefined);
+  assert.equal(await findSession('not-a-session'), undefined);
 });

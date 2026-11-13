@@ -1105,16 +1105,16 @@
           <p>
             Your username and password pass through this app's server once to
             sign in to your district. Schoolity holds the resulting access token
-            in server memory for up to 30 minutes. Your browser receives an
-            HTTP-only session cookie. Your password is not saved in the browser
-            or on the server.
+            in memory locally or in a shared store on Vercel for up to 30
+            minutes. Your browser receives an HTTP-only session cookie. Your
+            password is not saved in the browser or on the server.
           </p>
           <h3>Where your information lives</h3>
           <p>
             Grades and other school records are held in this page's memory. API
             responses are marked no-store. The only preference saved in local
-            storage is the color theme. A hosting operator can access data
-            passing through its server.
+            storage is the color theme. Hosting and session-store operators can
+            access data passing through its server.
           </p>
           <h3>About this version</h3>
           <p>

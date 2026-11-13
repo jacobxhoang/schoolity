@@ -4,7 +4,7 @@ An independently implemented student dashboard for Anoka-Hennepin. Attendance ha
 
 ## Run locally
 
-Use Node.js 22.18+ (Node 24+ recommended).
+Use Node.js 22.18 or newer within the 22.x release line, matching the Vercel runtime.
 
 ```
 npm install
@@ -20,7 +20,7 @@ npm run build
 npm start
 ```
 
-For the production Node server set HOST=127.0.0.1, PORT=5180, and ORIGIN=http://127.0.0.1:5180 locally. Use HTTPS and the correct ORIGIN for deployment. Sessions live in server memory and are invalidated on restart; multiple replicas require a shared secure session store.
+For the production Node server set HOST=127.0.0.1, PORT=5180, and ORIGIN=http://127.0.0.1:5180 locally. Use HTTPS and the correct ORIGIN for deployment. Local sessions live in server memory. On Vercel, sessions and login limits use shared Upstash Redis storage. See [DEPLOYMENT.md](DEPLOYMENT.md) for project settings, required environment variables, and verification.
 
 ## Features and privacy
 
@@ -28,7 +28,7 @@ The workspace includes a gradebook, original weighted/points-based calculations,
 
 Course detail keeps the district grade beside the Schoolity estimate, with a visible grade-history graph above the what-if controls and assignments. Calculation details stay under “About estimates.” What-if mode announces score changes, supports removing individual hypothetical assignments, and explains unavailable target calculations. Course navigation supports browser Back/Forward; refresh failures retain the current workspace and offer Retry. Login includes password reveal. Mobile navigation supports keyboard focus trapping, Escape, and focus restoration.
 
-Your password is used during sign-in and is not saved. Access tokens are stored in server memory for up to 30 minutes. The browser receives an HTTP-only, same-site cookie. Page and API responses are marked no-store. The color theme is the only local-storage preference. A hosting operator can access credentials and school information while forwarding requests.
+Your password is used during sign-in and is not saved. Access tokens are stored for up to 30 minutes in server memory locally, or in a shared session store on Vercel. The browser receives an HTTP-only, same-site cookie. Page and API responses are marked no-store. The color theme is the only local-storage preference. A hosting operator can access credentials and school information while forwarding requests.
 
 ## Verification and limits
 

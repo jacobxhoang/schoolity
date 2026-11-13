@@ -38,9 +38,9 @@ An independent student dashboard for one district, combining a school portal wit
 - Schoolity does not change district records. Inbox is read-only and currently loads up to 50 messages.
 - Message attachments, calendar synchronization, persistent offline school-data caching, and notifications are not implemented. Do not portray them as working features.
 - District-specific rounding, dropped scores, standards-based grading, and custom policies may differ from Schoolity's estimates. Preserve the distinction between district-reported and calculated grades.
-- The server receives credentials during sign-in but does not save passwords. It holds access tokens in memory for at most 30 minutes and uses an HTTP-only, same-site browser session cookie. Restarting the server invalidates sessions.
+- The server receives credentials during sign-in but does not save passwords. It holds access tokens in memory locally or in shared Redis storage on Vercel for at most 30 minutes and uses an HTTP-only, same-site browser session cookie. Restarting a local server invalidates its in-memory sessions.
 - Anonymous HTML shows the login screen. School-data requests require a valid server session. Responses are marked no-store; displayed school data is held in page memory. Only the color-theme preference is saved in local storage.
-- Current session storage supports one server instance. Distributed hosting needs a secure shared session mechanism. Public deployment and the long-term hosting model are undecided.
+- Vercel deployment uses shared Upstash Redis sessions and login limits; local development uses in-memory sessions. Deployment settings are in DEPLOYMENT.md.
 - The project license is not yet selected. Dependency licenses remain applicable. Do not claim formal clean-room provenance or legal clearance; the implementer previously inspected the reference repositories.
 
 ## Brand Commitments

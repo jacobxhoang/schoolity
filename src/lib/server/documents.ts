@@ -15,6 +15,11 @@ export function decodeDocument(payload: unknown, fallback: string) {
       'The district did not return a usable document. Try again.',
     );
   const bytes = Buffer.from(encoded, 'base64');
+  if (process.env.VERCEL && bytes.length > 4_000_000)
+    throw new PortalError(
+      'This file is too large for this deployment. Download it from StudentVUE.',
+      413,
+    );
   const filename =
     (string(document.fileName) || fallback || 'document')
       .split(/[\\/]/)

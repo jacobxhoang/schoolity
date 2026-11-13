@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import {
   endSession,
+  limitLogin,
   findSession,
   PortalError,
   read,
@@ -9,7 +10,6 @@ import {
 } from '$lib/server/portal';
 import { object } from '$lib/portal-data';
 import { DISTRICT_URL } from '$lib/config';
-const attempts = new Map<string, { count: number; until: number }>();
 export const POST: RequestHandler = async ({
   request,
   cookies,
@@ -35,27 +35,12 @@ export const POST: RequestHandler = async ({
     }
     const id = cookies.get('schoolity_session');
     if (input.action === 'logout') {
-      endSession(id);
+      await endSession(id);
       cookies.delete('schoolity_session', { path: '/' });
       return json({ ok: true }, { headers });
     }
     if (input.action === 'login') {
-      for (const [key, value] of attempts)
-        if (value.until < Date.now()) attempts.delete(key);
-      const ip = getClientAddress();
-      const attempt = attempts.get(ip) ?? {
-        count: 0,
-        until: Date.now() + 600_000,
-      };
-      if (attempt.count >= 10)
-        throw new PortalError(
-          'Too many login attempts. Try again in ten minutes.',
-          429,
-        );
-      if (attempts.size > 10000)
-        throw new PortalError('Please try again later.', 503);
-      attempt.count++;
-      attempts.set(ip, attempt);
+      await limitLogin(getClientAddress());
       if (
         typeof input.username !== 'string' ||
         typeof input.password !== 'string' ||
@@ -73,7 +58,7 @@ export const POST: RequestHandler = async ({
           400,
         );
       const next = await signIn(DISTRICT_URL, input.username, input.password);
-      endSession(id);
+      await endSession(id);
       cookies.set('schoolity_session', next, {
         path: '/',
         httpOnly: true,
@@ -83,7 +68,7 @@ export const POST: RequestHandler = async ({
       });
       return json({ ok: true }, { headers });
     }
-    const session = findSession(id);
+    const session = await findSession(id);
     if (input.action === 'session')
       return json({ connected: !!session }, { headers });
     if (!session)

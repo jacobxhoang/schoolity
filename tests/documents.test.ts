@@ -79,3 +79,23 @@ test('filenames cannot inject paths or response headers', () => {
   );
   assert.equal(result.filename, 'report___.pdf');
 });
+test('Vercel downloads fail with a useful error before exceeding function response limits', () => {
+  const previous = process.env.VERCEL;
+  process.env.VERCEL = '1';
+  try {
+    assert.throws(
+      () =>
+        decodeDocument(
+          { base64Code: Buffer.alloc(4_000_001).toString('base64') },
+          'large.pdf',
+        ),
+      (e) =>
+        e instanceof PortalError &&
+        e.status === 413 &&
+        e.message.includes('StudentVUE'),
+    );
+  } finally {
+    if (previous === undefined) delete process.env.VERCEL;
+    else process.env.VERCEL = previous;
+  }
+});
