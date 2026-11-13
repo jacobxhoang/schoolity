@@ -202,6 +202,15 @@ final class AppStore: ObservableObject {
             try await client.signIn(username: username.trimmingCharacters(in: .whitespacesAndNewlines), password: password, protectSession: protectSession)
             generation = UUID()
             savedSessionNeedsUnlock = protectSession
+            if protectSession {
+                // Request the system permission now, then read the saved entry
+                // back under authentication before showing any school records.
+                access = .locked
+                isLoading = false
+                if backgrounded { lockWorkspace(); return }
+                await unlockSavedSignIn()
+                return
+            }
             access = .signedIn
             if backgrounded { enterBackground() }
         } catch { loginError = error.localizedDescription }

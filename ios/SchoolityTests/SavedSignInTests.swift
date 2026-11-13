@@ -4,6 +4,54 @@ import LocalAuthentication
 
 final class SavedSignInTests: XCTestCase {
     @MainActor
+    func testFirstSchoolLoginRequestsLocalAuthenticationAndReadsSavedEntry() async {
+        let portal = TestPortal()
+        portal.savedSignIn = nil
+        let unlock = TestUnlocker()
+        let store = AppStore(client: portal, unlocker: unlock)
+        await store.start()
+        await store.signIn(username: "sample", password: "synthetic-only")
+        XCTAssertEqual(unlock.calls, 1)
+        XCTAssertEqual(portal.restoreCalls, 1)
+        XCTAssertTrue(portal.restoredWithContext)
+        XCTAssertEqual(store.access, .signedIn)
+        XCTAssertNotNil(store.gradebook)
+    }
+
+    @MainActor
+    func testCancellingFaceIDOnFirstLoginKeepsSavedCredentialsForRetry() async {
+        let portal = TestPortal()
+        portal.savedSignIn = nil
+        let unlock = TestUnlocker()
+        unlock.cancelAuthentication = true
+        let store = AppStore(client: portal, unlocker: unlock)
+        await store.start()
+        await store.signIn(username: "sample", password: "synthetic-only")
+        XCTAssertEqual(store.access, .locked)
+        XCTAssertEqual(unlock.calls, 1)
+        XCTAssertEqual(portal.restoreCalls, 0)
+        XCTAssertEqual(portal.savedSignIn?.canRenew, true)
+        XCTAssertNil(store.gradebook)
+        unlock.cancelAuthentication = false
+        await store.unlockSavedSignIn()
+        XCTAssertEqual(store.access, .signedIn)
+    }
+
+    @MainActor
+    func testFirstLoginDoesNotShowRecordsWhenSavedEntryCannotBeRead() async {
+        let portal = TestPortal()
+        portal.savedSignIn = nil
+        portal.restorationError = KeychainStorageFailure(status: -25308)
+        let store = AppStore(client: portal, unlocker: TestUnlocker())
+        await store.start()
+        await store.signIn(username: "sample", password: "synthetic-only")
+        XCTAssertEqual(store.access, .locked)
+        XCTAssertNotNil(store.unlockError)
+        XCTAssertNotNil(portal.savedSignIn)
+        XCTAssertNil(store.gradebook)
+    }
+
+    @MainActor
     func testBackgroundDuringPasscodeFreeStartupRestartsOnReturn() async {
         let portal = TestPortal()
         portal.savedSignIn = SavedSessionInfo(expires: .distantFuture, requiresUnlock: false)
@@ -348,6 +396,7 @@ private final class TestPortal: SchoolPortal {
     var forgetCalls = 0
     var restoredWithContext = false
     var protectRestoredSession = false
+    var restorationError: Error?
     var connectionResult = true
     var delayConnection = false
     var onConnection: (() -> Void)?
@@ -367,6 +416,7 @@ private final class TestPortal: SchoolPortal {
     }
     func restoreSession(context: LAContext?, requiresUnlock: Bool) throws -> Bool {
         restoreCalls += 1
+        if let restorationError { throw restorationError }
         restoredWithContext = context != nil
         protectRestoredSession = requiresUnlock
         return true
