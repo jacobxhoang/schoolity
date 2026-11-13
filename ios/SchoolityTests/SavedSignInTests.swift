@@ -4,6 +4,37 @@ import LocalAuthentication
 
 final class SavedSignInTests: XCTestCase {
     @MainActor
+    func testBackgroundDuringPasscodeFreeStartupRestartsOnReturn() async {
+        let portal = TestPortal()
+        portal.savedSignIn = SavedSessionInfo(expires: .distantFuture, requiresUnlock: false)
+        portal.delayConnection = true
+        let pending = expectation(description: "Startup session check pending")
+        portal.onConnection = { pending.fulfill() }
+        let unlock = TestUnlocker()
+        unlock.available = false
+        let store = AppStore(client: portal, unlocker: unlock)
+        let startup = Task { await store.start() }
+        await fulfillment(of: [pending], timeout: 3)
+        let oldCheck = portal.connectionContinuation
+        store.enterBackground()
+        XCTAssertEqual(store.access, .checking)
+        XCTAssertNotNil(portal.savedSignIn)
+        portal.delayConnection = false
+        portal.onConnection = nil
+        await store.enterForeground()
+        XCTAssertEqual(store.access, .signedIn)
+        XCTAssertNotNil(store.gradebook)
+        XCTAssertEqual(portal.connectionCalls, 2)
+        XCTAssertEqual(unlock.calls, 0)
+        // A late failure from before backgrounding must not undo the new login.
+        oldCheck?.resume(returning: false)
+        await startup.value
+        XCTAssertEqual(store.access, .signedIn)
+        XCTAssertNotNil(store.gradebook)
+        XCTAssertNotNil(portal.savedSignIn)
+    }
+
+    @MainActor
     func testCancelledAutomaticSignInWaitsForRetryAndRetainsCredentials() async {
         let portal = TestPortal()
         portal.savedSignIn = SavedSessionInfo(expires: .distantPast, requiresUnlock: true, canRenew: true)

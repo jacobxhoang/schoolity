@@ -148,6 +148,13 @@ final class AppStore: ObservableObject {
 
     func enterBackground() {
         backgrounded = true
+        // A session check can still be pending on a passcode-free device.
+        // Discard that attempt; foregrounding restarts it with a fresh ticket.
+        if access == .checking {
+            client.forgetSession()
+            clearWorkspace()
+            return
+        }
         // Keychain may already be unavailable when the phone locks. Never
         // depend on another Keychain read to decide whether the UI must lock.
         guard !signingOut, savedSessionNeedsUnlock || access == .locked || isUnlocking else { return }
@@ -174,6 +181,7 @@ final class AppStore: ObservableObject {
             lockWorkspace()
         }
         if access == .locked { await unlockSavedSignIn() }
+        else if access == .checking, started { await restore() }
     }
 
     func usePasswordInstead() {
