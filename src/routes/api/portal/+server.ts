@@ -5,7 +5,7 @@ import {
   read,
   readHistorySubject,
 } from '$lib/server/portal';
-import { nativeData, object } from '$lib/portal-data';
+import { nativeData, object, schedule } from '$lib/portal-data';
 import { DISTRICT_URL } from '$lib/config';
 import { browserAuth } from '$lib/server/browser-auth';
 import { readRecords } from '$lib/records';
@@ -64,15 +64,21 @@ export const POST: RequestHandler = async ({
     if (typeof input.resource !== 'string')
       throw new PortalError('Select a resource.', 400);
     const resource = input.resource;
+    // Keep the existing native schedule shape for installed clients. The
+    // term-aware shape is opt-in under a new resource name.
+    const source = resource === 'schedule-terms' ? 'schedule' : resource;
     const data = await browserAuth.withSession(context, (session) => resource === 'history-subject'
       ? readHistorySubject(session, input.subject)
-      : read(session, resource, input.term));
-    return json(
-      { data: input.normalized === true && resource !== 'history-subject'
-        ? ['student', 'history', 'attendance'].includes(resource) ? readRecords(resource, data) : nativeData(data, resource)
-        : data },
-      { headers },
-    );
+      : read(session, source, input.term));
+    const normalized = input.normalized === true && resource !== 'history-subject';
+    const payload = !normalized
+      ? data
+      : resource === 'schedule-terms'
+        ? schedule(data)
+        : ['student', 'history', 'attendance'].includes(resource)
+          ? readRecords(resource, data)
+          : nativeData(data, resource);
+    return json({ data: payload }, { headers });
   } catch (error) {
     return json(
       {

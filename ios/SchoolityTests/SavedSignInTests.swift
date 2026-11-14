@@ -458,5 +458,8 @@ private final class TestPortal: SchoolPortal {
         let json = resource == "grades" ? #"{"courses":[],"terms":[],"currentTerm":0}"# : #"{"name":"Sample Student","school":"Sample School","grade":"11"}"#
         return try JSONDecoder().decode(T.self, from: Data(json.utf8))
     }
+    func readHistorySubject(_ id: String) async throws -> SubjectDetails {
+        SubjectDetails(columns: ["Course"], completed: [], inProgress: [])
+    }
     func download(id: String, filename: String, messageID: String?) async throws -> URL { throw PortalFailure.signedOut }
 }
