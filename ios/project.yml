@@ -16,6 +16,11 @@ targets:
   Schoolity:
     type: application
     platform: iOS
+    info:
+      path: Schoolity-Info.plist
+      properties:
+        BGTaskSchedulerPermittedIdentifiers: [com.schoolity.app.grades]
+        UIBackgroundModes: [fetch]
     sources:
       - path: Schoolity
         excludes: [Resources]

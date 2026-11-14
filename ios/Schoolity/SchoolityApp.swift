@@ -1,10 +1,12 @@
 import SwiftUI
+import BackgroundTasks
 
 @main
 struct SchoolityApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var store = AppStore()
     @StateObject private var customization = CustomizationStore()
+    @ObservedObject private var gradeNotifications = GradeNotifications.shared
     var body: some Scene {
         WindowGroup {
             ZStack {
@@ -30,10 +32,26 @@ struct SchoolityApp: App {
             .environmentObject(customization)
             .accentColor(Color("ActionAccent"))
             .task { if scenePhase == .active { await store.start() } }
+            .task(id: gradeNotifications.enabled && scenePhase == .active && store.access == .signedIn) {
+                guard gradeNotifications.enabled, scenePhase == .active, store.access == .signedIn else { return }
+                await gradeNotifications.refreshPermission()
+                while !Task.isCancelled {
+                    await store.checkForGradedAssignments()
+                    do { try await Task.sleep(for: .seconds(120)) }
+                    catch { return }
+                }
+            }
             .onChange(of: scenePhase) { _, phase in
-                if phase == .background { store.enterBackground() }
+                if phase == .background {
+                    store.enterBackground()
+                    if store.access == .signedIn { gradeNotifications.scheduleRefresh() }
+                }
                 if phase == .active { Task { await store.enterForeground(); await store.start() } }
             }
+        }
+        .backgroundTask(.appRefresh(GradeNotifications.refreshID)) {
+            await gradeNotifications.scheduleRefresh()
+            await store.checkForGradedAssignments()
         }
     }
 }

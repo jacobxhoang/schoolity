@@ -79,6 +79,14 @@ The app ships a local JavaScriptCore parser bundle derived from the same pure da
 
 Estimates never write to school records. Hypothetical changes last only while the course screen is open. Live district compatibility and Face ID behavior still require private testing on a signed iPhone.
 
+## Graded assignment notifications
+
+Enable **Account → Settings → Notifications → Graded assignments** and allow iOS notification permission. Existing assignments establish a silent baseline. Subsequent ungraded-to-graded assignments (including zero scores) and newly published graded assignments generate one local alert with the course, assignment, and score. Hypothetical and excluded assignments never notify. Account and reporting-period baselines are separate; repeated refreshes, score corrections, and temporary omissions do not repeat an alert. Disabling clears the baseline and pending/delivered alerts; signing out clears alerts and cancels background requests.
+
+While the app is active, checks run every two minutes against the current district reporting period, independently of the period being viewed. iOS background app refresh can also check using the active in-memory district session. It is opportunistic, not real-time push: iOS chooses timing, and Background App Refresh settings, Low Power Mode, session expiry, or app termination can stop checks. A new process never bypasses Face ID to read credentials; reopen and unlock Schoolity to resume. No Vercel or notification server is used.
+
+Only hashed assignment/account/period identifiers and previously-graded flags are persisted for duplicate detection, with file protection until the first device unlock. Course names, assignment names, and scores are not written to this baseline. Alert content is managed by iOS under the student's notification/preview settings. Notification delivery and background timing still need verification on a signed physical iPhone.
+
 ## Verification
 
 Unit coverage includes points/weighted calculations, excluded and ungraded work, zero and extra credit, category redistribution, target scores, chronology, decoded API models, session expiry, and filename safety. UI tests use original synthetic records in DEBUG builds only; Release has no test/demo entry point. Tests cover login gating, gradebook/chart navigation, hypothetical editing, collapsed messages/senders, schedule, documents, student information, account, and light/dark screenshots. Unit coverage also decodes the term-aware schedule, student information, course history, attendance and subject-detail payloads. At the largest accessibility text size in Dark Mode, screenshots cover Login, the gradebook, course details, Schedule, and the Records screens; the Schedule and Records captures also run at the default size.

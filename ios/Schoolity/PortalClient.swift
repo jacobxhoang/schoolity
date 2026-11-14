@@ -4,6 +4,7 @@ import LocalAuthentication
 @MainActor
 protocol SchoolPortal: AnyObject {
     var savedSignIn: SavedSessionInfo? { get }
+    var notificationAccountID: String? { get }
     func restoreSession(context: LAContext?, requiresUnlock: Bool) throws -> Bool
     func renewSession(context: LAContext) async throws -> Bool
     func forgetSession()
@@ -14,6 +15,10 @@ protocol SchoolPortal: AnyObject {
     func read<T: Decodable>(_ resource: String, term: Int?) async throws -> T
     func readHistorySubject(_ id: String) async throws -> SubjectDetails
     func download(id: String, filename: String, messageID: String?) async throws -> URL
+}
+
+extension SchoolPortal {
+    var notificationAccountID: String? { nil }
 }
 
 enum PortalFailure: LocalizedError {

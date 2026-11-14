@@ -116,6 +116,7 @@ final class SchoolityUITests: XCTestCase {
         reveal(picker, in: app)
         picker.buttons["Breakdown"].tap()
         reveal(app.staticTexts["Category breakdown"], in: app)
+        XCTAssertFalse(app.buttons["Add hypothetical score"].exists)
         capture("course-breakdown")
         reveal(picker, in: app, towardTop: true)
         picker.buttons["Assignments"].tap()
@@ -158,7 +159,10 @@ final class SchoolityUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Grade Colors"].exists)
         XCTAssertTrue(app.staticTexts["Class Names and Icons"].exists)
         XCTAssertTrue(app.staticTexts["Accent Color"].exists)
+        reveal(app.switches["settings.gradeNotifications"], in: app)
+        XCTAssertEqual(app.switches["settings.gradeNotifications"].value as? String, "0")
         capture("customization-settings")
+        reveal(app.staticTexts["Grade Colors"], in: app, towardTop: true)
         app.staticTexts["Grade Colors"].tap()
         let enabled = app.switches["Use custom grade colors"]
         XCTAssertTrue(enabled.waitForExistence(timeout: 5))

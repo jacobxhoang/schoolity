@@ -1,5 +1,6 @@
 import Foundation
 import LocalAuthentication
+import CryptoKit
 
 private final class DistrictRedirects: NSObject, URLSessionTaskDelegate {
     func urlSession(_ session: URLSession, task: URLSessionTask,
@@ -17,6 +18,7 @@ final class DistrictPortal: SchoolPortal {
     private var identity = UUID()
     private var memoryEpoch = UUID()
     var savedSignIn: SavedSessionInfo? { SessionVault.info() }
+    var notificationAccountID: String? { token?.accountID }
     private let session: URLSession
     private let redirects = DistrictRedirects()
 
@@ -37,7 +39,11 @@ final class DistrictPortal: SchoolPortal {
     }
 
     func restoreSession(context: LAContext?, requiresUnlock: Bool) throws -> Bool {
-        guard let saved = try SessionVault.load(context: context) else { clear(); return false }
+        guard var saved = try SessionVault.load(context: context) else { clear(); return false }
+        if saved.accountID == nil, let username = saved.username {
+            saved.accountID = GradingSnapshot.hash(username.lowercased())
+            try SessionVault.save(saved, requiresUnlock: requiresUnlock)
+        }
         if let info = savedSignIn, info.legacy || (requiresUnlock && !info.requiresUnlock) {
             try SessionVault.save(saved, requiresUnlock: requiresUnlock)
         }
@@ -134,7 +140,8 @@ final class DistrictPortal: SchoolPortal {
             .map { "\($0.name)=\($0.value)" }.joined(separator: "; ")
         let saved = SavedSession(value: value, expires: Date().addingTimeInterval(lifetime),
                                  username: protectSession ? username : nil, password: protectSession ? password : nil,
-                                 district: true, webCookie: cookies.isEmpty ? nil : cookies)
+                                 district: true, webCookie: cookies.isEmpty ? nil : cookies,
+                                 accountID: SHA256.hash(data: Data(username.lowercased().utf8)).map { String(format: "%02x", $0) }.joined())
         guard account == identity, epoch == memoryEpoch else { throw CancellationError() }
         try SessionVault.save(saved, requiresUnlock: protectSession)
         token = saved.withoutCredentials

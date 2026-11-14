@@ -9,8 +9,9 @@ struct SavedSession: Codable {
     var password: String?
     var district: Bool?
     var webCookie: String?
+    var accountID: String?
     var withoutCredentials: SavedSession {
-        SavedSession(value: value, expires: expires, district: district, webCookie: webCookie)
+        SavedSession(value: value, expires: expires, district: district, webCookie: webCookie, accountID: accountID)
     }
     var isValid: Bool { !value.isEmpty && expires > Date() }
     var canRenew: Bool { !(username ?? "").isEmpty && !(password ?? "").isEmpty }
