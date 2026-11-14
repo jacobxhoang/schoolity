@@ -20,6 +20,7 @@ struct GradebookView: View {
                 Section {
                     ForEach(book.courses) { course in
                         NavigationLink { CourseDetailView(course: course).id("\(book.currentTerm)-\(course.id)") } label: { CourseRow(course: course) }
+                            .accessibilityIdentifier("course-\(course.id)")
                     }
                     if book.courses.isEmpty { ContentUnavailableView("No courses", systemImage: "books.vertical", description: Text("Try another reporting period.")) }
                 }
@@ -32,6 +33,7 @@ struct GradebookView: View {
                             } label: {
                                 RecentAssignmentRow(item: item)
                             }
+                            .accessibilityIdentifier("recent-\(item.course.id)-\(item.assignment.id)")
                         }
                     }
                 }
