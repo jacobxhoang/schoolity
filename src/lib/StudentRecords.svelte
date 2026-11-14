@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { RecordPage, GraduationRequirement, SubjectDetails } from './records';
+  import { studentText, type RecordPage, type GraduationRequirement, type SubjectDetails } from './records';
   import Icon from './Icon.svelte';
   let { page, loadSubject }: { page: RecordPage; loadSubject: (id: string) => Promise<SubjectDetails> } = $props();
   let year = $state(''), school = $state('');
@@ -37,12 +37,24 @@
 </script>
 
 {#if page.kind === 'student'}
+  {#if page.notice}<p class="notice" role="status">{page.notice}</p>{/if}
   {#each page.sections as section}
     <section class="student-record-section" aria-label={section.title}>
       <h2>{section.title}</h2>
       <dl class="student-info-fields">
-        {#each section.fields as field}<div><dt>{field.label}</dt><dd>{field.value}</dd></div>{/each}
+        {#each section.fields as field}<div><dt>{field.label}</dt><dd>{studentText(field.value) || 'Not provided'}</dd></div>{/each}
       </dl>
+      {#each section.groups ?? [] as group}
+        <div class="student-info-group"><h3>{group.title}</h3><dl class="student-info-fields">
+          {#each group.fields as field}<div><dt>{field.label}</dt><dd>{studentText(field.value) || 'Not provided'}</dd></div>{/each}
+        </dl></div>
+      {/each}
+      {#if section.table}<div class="table-wrap student-info-table"><table>
+        <caption class="sr-only">{section.title}</caption>
+        <thead><tr>{#each section.table.columns as column}<th>{column}</th>{/each}</tr></thead>
+        <tbody>{#each section.table.rows as row}<tr>{#each row as value, index}<td data-label={section.table.columns[index]}>{studentText(value) || 'Not provided'}</td>{/each}</tr>{/each}</tbody>
+      </table></div>{/if}
+      {#if section.note}<p class="student-info-note">{studentText(section.note)}</p>{/if}
     </section>
   {:else}<p class="records-empty">No student information was returned by your district. Try refreshing.</p>{/each}
 {:else if page.kind === 'history'}
