@@ -30,7 +30,6 @@ struct ResourceView: View {
         }
         .listStyle(.inset)
         .navigationTitle(resource.title)
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { AccountButton() } }
         .task { await store.load(resource) }
         .refreshable { await store.load(resource, refresh: true) }
         .quickLookPreview($previewURL)

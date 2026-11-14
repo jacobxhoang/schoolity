@@ -161,7 +161,7 @@ struct WorkspaceView: View {
     @EnvironmentObject private var store: AppStore
     @EnvironmentObject private var customization: CustomizationStore
     private enum WorkspaceTab: Hashable {
-        case grades, schedule, inbox, records, settings
+        case grades, schedule, inbox, records, account
     }
     @State private var selectedTab: WorkspaceTab = .grades
     var body: some View {
@@ -170,7 +170,7 @@ struct WorkspaceView: View {
             NavigationStack { ScheduleView() }.tabItem { Label("Schedule", systemImage: "list.bullet.rectangle.portrait.fill") }.tag(WorkspaceTab.schedule)
             NavigationStack { ResourceView(resource: .mail) }.tabItem { Label("Inbox", systemImage: "tray") }.tag(WorkspaceTab.inbox)
             NavigationStack { RecordsView() }.tabItem { Label("Records", systemImage: "list.bullet.rectangle") }.tag(WorkspaceTab.records)
-            NavigationStack { CustomizationView() }.tabItem { Label("Settings", systemImage: "gearshape.fill") }.tag(WorkspaceTab.settings)
+            NavigationStack { AccountDetailsView() }.tabItem { Label("Account", systemImage: "person.crop.circle") }.tag(WorkspaceTab.account)
         }
         .task { await store.preloadWorkspace() }
         .tint(customization.accentColor)
@@ -178,52 +178,42 @@ struct WorkspaceView: View {
     }
 }
 
-struct AccountButton: View {
+struct AccountDetailsView: View {
     @EnvironmentObject private var store: AppStore
-    @State private var showAccount = false
     var body: some View {
-        Button { showAccount = true } label: { Image(systemName: "person.crop.circle").frame(minWidth: 44, minHeight: 44) }
-            .accessibilityLabel("Account")
-            .sheet(isPresented: $showAccount) {
-                NavigationStack {
-                    List {
-                        if let profile = store.profile {
-                            Section {
-                                HStack(spacing: 14) {
-                                    Image(systemName: "person.crop.circle.fill")
-                                        .font(.system(size: 48)).foregroundStyle(SchoolityStyle.accent)
-                                        .accessibilityHidden(true)
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(profile.name).font(.title3.weight(.semibold))
-                                        Text(profile.school).font(.footnote).foregroundStyle(.secondary)
-                                    }
-                                }.padding(.vertical, 8)
-                                if !profile.grade.isEmpty { InformationRow(title: "Grade", value: profile.grade, symbol: "graduationcap.fill") }
-                            }
+        List {
+            if let profile = store.profile {
+                Section {
+                    HStack(spacing: 14) {
+                        Image(systemName: "person.crop.circle.fill")
+                            .font(.system(size: 48)).foregroundStyle(SchoolityStyle.accent)
+                            .accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(profile.name).font(.title3.weight(.semibold))
+                            Text(profile.school).font(.footnote).foregroundStyle(.secondary)
                         }
-                        Section("Student ID") { StudentIDSection() }
-                        Section {
-                            NavigationLink {
-                                CustomizationView()
-                            } label: {
-                                Label("Settings", systemImage: "gearshape.fill")
-                            }
-                            .accessibilityIdentifier("account.settings")
-                        }
-                        Section {
-                            Button("Sign out", role: .destructive) { Task { await store.signOut() } }
-                        }
-                    }
-                    .listStyle(.inset)
-                    .task { await store.loadProfile(refresh: store.profile?.studentId == nil) }
-                    .refreshable { await store.loadProfile(refresh: true) }
-                    .privacySensitive()
-                    .navigationTitle("Account")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showAccount = false } } }
+                    }.padding(.vertical, 8)
+                    if !profile.grade.isEmpty { InformationRow(title: "Grade", value: profile.grade, symbol: "graduationcap.fill") }
                 }
-                .presentationDetents([.large])
             }
+            Section("Student ID") { StudentIDSection() }
+            Section {
+                NavigationLink {
+                    CustomizationView()
+                } label: {
+                    Label("Settings", systemImage: "gearshape.fill")
+                }
+            }
+            Section {
+                Button("Sign out", role: .destructive) { Task { await store.signOut() } }
+            }
+        }
+        .listStyle(.inset)
+        .task { await store.loadProfile(refresh: store.profile?.studentId == nil) }
+        .refreshable { await store.loadProfile(refresh: true) }
+        .privacySensitive()
+        .navigationTitle("Account")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

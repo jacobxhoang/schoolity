@@ -47,10 +47,7 @@ private struct GradebookContent: View, Equatable {
         .navigationTitle("Gradebook")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 8) {
-                    if isLoading && book != nil { ProgressView().accessibilityLabel("Updating grades") }
-                    AccountButton()
-                }
+                if isLoading && book != nil { ProgressView().accessibilityLabel("Updating grades") }
             }
         }
         .refreshable { await refresh(nil) }
