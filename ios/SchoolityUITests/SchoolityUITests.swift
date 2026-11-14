@@ -71,7 +71,14 @@ final class SchoolityUITests: XCTestCase {
         app.buttons["Add hypothetical score"].tap()
         XCTAssertTrue(app.textFields["Assignment title"].waitForExistence(timeout: 5))
         app.buttons["Cancel"].tap()
-        XCTAssertTrue(app.staticTexts["Hypothetical estimate"].waitForExistence(timeout: 5))
+        // Opening actions scrolls the short SE display below the summary.
+        // Bring the summary back into the lazy list before checking its state.
+        let estimate = app.staticTexts["Hypothetical estimate"]
+        XCTAssertTrue(app.buttons["Add hypothetical score"].waitForExistence(timeout: 5))
+        for _ in 0..<4 where !estimate.exists {
+            app.collectionViews.firstMatch.swipeDown()
+        }
+        XCTAssertTrue(estimate.waitForExistence(timeout: 5))
         app.tabBars.buttons["Inbox"].tap()
         XCTAssertTrue(app.staticTexts["Next week’s review"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Sample Teacher"].exists)
