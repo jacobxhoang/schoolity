@@ -26,6 +26,7 @@ struct KeychainStorageFailure: LocalizedError {
     var errorDescription: String? { "Couldn’t access your saved sign-in on this iPhone. Try again." }
 }
 
+@MainActor
 enum SessionVault {
     private static let store = KeychainSessionStore(service: "com.schoolity.app.session")
     static func info() -> SavedSessionInfo? { store.info() }
@@ -34,7 +35,7 @@ enum SessionVault {
     static func clear() { store.clear() }
 }
 
-struct KeychainSessionStore {
+struct KeychainSessionStore: Sendable {
     let service: String
     private var query: [String: Any] {
         [kSecClass as String: kSecClassGenericPassword,

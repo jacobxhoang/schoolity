@@ -79,6 +79,7 @@
     schedule = $state<ScheduleData>({ terms: [], currentTerm: 0 });
   let generation = 0;
   const resourceLoads = new Map<string, Promise<void>>();
+  const resourceFailures = new Map<string, string>();
   const subjectCache = new Map<string, SubjectDetails>();
   let subjectPreload: Promise<void> | null = null;
   let recordPages = $state<Record<string, RecordPage>>({});
@@ -177,6 +178,7 @@
     body: Record<string, unknown>,
     background = false,
   ): Promise<Record<string, unknown>> {
+    const version = generation;
     try {
       return await requestWorkspacePortal(body);
     } catch (e) {
@@ -184,6 +186,7 @@
         e instanceof RequestFailure &&
         e.status === 401 &&
         body.action !== 'login' &&
+        version === generation &&
         !background
       ) {
         authenticated = false;
@@ -301,7 +304,7 @@
             await loadHistorySubject(requirement.id, true).catch(() => {});
         }
       } finally {
-        subjectPreload = null;
+        if (version === generation) subjectPreload = null;
       }
     })();
   }
@@ -312,8 +315,13 @@
     const running = resourceLoads.get(id);
     if (running) {
       if (mode === 'background') return running;
+      const version = generation;
       busy = true;
-      return running.finally(() => (busy = false));
+      return running.then(() => {
+        if (version !== generation || tab !== id) return;
+        error = resourceFailures.get(id) ?? '';
+        if (error) retryAction = () => loadResource(id);
+      }).finally(() => { if (version === generation) busy = false; });
     }
     const task = fetchResource(id, mode).finally(() => {
       if (resourceLoads.get(id) === task) resourceLoads.delete(id);
@@ -327,6 +335,7 @@
   ): Promise<void> {
     const version = generation;
     const foreground = mode === 'foreground';
+    resourceFailures.delete(id);
     if (foreground) {
       busy = true;
       error = '';
@@ -355,6 +364,8 @@
         preloadHistorySubjects();
       }
     } catch (e) {
+      if (version === generation)
+        resourceFailures.set(id, e instanceof Error ? e.message : 'Could not load this information.');
       if (foreground && version === generation && tab === id) {
         error =
           e instanceof Error ? e.message : 'Could not load this information.';
@@ -552,6 +563,7 @@
     retryAction = null;
     busy = false;
     resourceLoads.clear();
+    resourceFailures.clear();
     subjectCache.clear();
     subjectPreload = null;
   }

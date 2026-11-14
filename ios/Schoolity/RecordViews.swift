@@ -7,25 +7,44 @@ struct RecordsView: View {
                 NavigationLink {
                     StudentInfoView()
                 } label: {
-                    Label("Student Info", systemImage: "person.text.rectangle")
+                    RecordDestinationLabel(title: "Student Info", detail: "School, contacts, and transportation", symbol: "person.text.rectangle")
                 }
                 NavigationLink {
                     AttendanceView()
                 } label: {
-                    Label("Attendance", systemImage: "checkmark.circle")
+                    RecordDestinationLabel(title: "Attendance", detail: "Absences and period details", symbol: "checkmark.circle")
                 }
                 NavigationLink {
                     CourseHistoryView()
                 } label: {
-                    Label("Course History", systemImage: "clock.arrow.circlepath")
+                    RecordDestinationLabel(title: "Course History", detail: "Credits and graduation progress", symbol: "clock.arrow.circlepath")
                 }
             } footer: {
                 Text("District-reported records. Schoolity does not change them.")
             }
         }
-        .listStyle(.inset)
+        .listStyle(.insetGrouped)
         .navigationTitle("Records")
         .toolbar { ToolbarItem(placement: .topBarTrailing) { AccountButton() } }
+    }
+}
+
+private struct RecordDestinationLabel: View {
+    let title: String
+    let detail: String
+    let symbol: String
+
+    var body: some View {
+        Label {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).font(.headline)
+                Text(detail).font(.subheadline).foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 6)
+        } icon: {
+            Image(systemName: symbol).foregroundStyle(SchoolityStyle.accent)
+        }
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -79,7 +98,7 @@ struct StudentInfoView: View {
                 }
             }
         }
-        .listStyle(.inset)
+        .listStyle(.insetGrouped)
         .navigationTitle("Student Info")
         .task { await store.loadRecord(.student) }
         .refreshable { await store.loadRecord(.student, refresh: true) }
@@ -227,7 +246,7 @@ struct AttendanceView: View {
                 }
             }
         }
-        .listStyle(.inset)
+        .listStyle(.insetGrouped)
         .navigationTitle("Attendance")
         .task { await store.loadRecord(.attendance) }
         .refreshable { await store.loadRecord(.attendance, refresh: true) }
@@ -387,7 +406,7 @@ struct CourseHistoryView: View {
                 }
             }
         }
-        .listStyle(.inset)
+        .listStyle(.insetGrouped)
         .navigationTitle("Course History")
         .task { await store.loadRecord(.history) }
         .refreshable {
@@ -438,6 +457,7 @@ struct CourseHistoryView: View {
         do {
             details[key] = try await store.historySubject(id: requirement.id)
         } catch {
+            guard !PortalFailure.isCancellation(error) else { return }
             detailErrors[key] = error.localizedDescription
         }
     }

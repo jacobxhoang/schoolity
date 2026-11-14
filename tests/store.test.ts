@@ -1,6 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Store } from '../src/lib/server/store.ts';
+
+test('a full local store permits updates but rejects additional keys', async () => {
+  const store = new Store({});
+  for (let i = 0; i < 10000; i++) await store.set(`key:${i}`, 'value', 30);
+  await store.set('key:0', 'updated', 30);
+  assert.equal(await store.get('key:0'), 'updated');
+  await assert.rejects(store.set('overflow', 'value', 30), /busy/);
+});
 test('local sessions can be saved and revoked without external services', async () => {
   const store = new Store({});
   await store.set('session:test', 'value', 30);

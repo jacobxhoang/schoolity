@@ -64,7 +64,7 @@ export class Store {
       return;
     }
     this.clean();
-    if (this.memory.size >= 10000)
+    if (this.memory.size >= 10000 && !this.memory.has(key))
       throw new Error('Session storage is busy. Try again later.');
     this.memory.set(key, { value, expires: Date.now() + seconds * 1000 });
   }

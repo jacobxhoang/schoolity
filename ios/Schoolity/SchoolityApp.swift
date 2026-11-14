@@ -164,14 +164,17 @@ struct LoginView: View {
 }
 
 struct WorkspaceView: View {
-    @State private var selectedTab = 1
+    private enum WorkspaceTab: Hashable {
+        case grades, schedule, inbox, documents, records
+    }
+    @State private var selectedTab: WorkspaceTab = .grades
     var body: some View {
         TabView(selection: $selectedTab) {
-            NavigationStack { GradebookView() }.tabItem { Label("Grades", systemImage: "book.closed.fill") }.tag(1)
-            NavigationStack { ScheduleView() }.tabItem { Label("Schedule", systemImage: "calendar") }.tag(2)
-            NavigationStack { ResourceView(resource: .mail) }.tabItem { Label("Inbox", systemImage: "tray") }.tag(3)
-            NavigationStack { ResourceView(resource: .documents) }.tabItem { Label("Documents", systemImage: "doc") }.tag(4)
-            NavigationStack { RecordsView() }.tabItem { Label("Records", systemImage: "list.bullet.rectangle") }.tag(5)
+            NavigationStack { GradebookView() }.tabItem { Label("Grades", systemImage: "book.closed.fill") }.tag(WorkspaceTab.grades)
+            NavigationStack { ScheduleView() }.tabItem { Label("Schedule", systemImage: "calendar") }.tag(WorkspaceTab.schedule)
+            NavigationStack { ResourceView(resource: .mail) }.tabItem { Label("Inbox", systemImage: "tray") }.tag(WorkspaceTab.inbox)
+            NavigationStack { ResourceView(resource: .documents) }.tabItem { Label("Documents", systemImage: "doc") }.tag(WorkspaceTab.documents)
+            NavigationStack { RecordsView() }.tabItem { Label("Records", systemImage: "list.bullet.rectangle") }.tag(WorkspaceTab.records)
         }
     }
 }

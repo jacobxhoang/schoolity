@@ -28,7 +28,7 @@ struct ResourceView: View {
                 ProgressView("Loading \(resource.title.lowercased())…")
             }
         }
-        .listStyle(.inset)
+        .listStyle(.insetGrouped)
         .navigationTitle(resource.title)
         .toolbar { ToolbarItem(placement: .topBarTrailing) { AccountButton() } }
         .task { await store.load(resource) }
@@ -96,7 +96,10 @@ struct ResourceView: View {
         Task {
             defer { pendingDownload = nil }
             do { previewURL = try await store.download(id: id, filename: filename, messageID: messageID) }
-            catch { downloadError = error.localizedDescription }
+            catch {
+                guard !PortalFailure.isCancellation(error) else { return }
+                downloadError = error.localizedDescription
+            }
         }
     }
 }

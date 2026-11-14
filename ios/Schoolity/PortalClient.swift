@@ -36,6 +36,10 @@ enum PortalFailure: LocalizedError {
         }
         return .message(message ?? "Schoolity couldn’t load this request. Try again.")
     }
+
+    static func isCancellation(_ error: Error) -> Bool {
+        error is CancellationError || (error as? URLError)?.code == .cancelled
+    }
 }
 
 private final class PortalRedirects: NSObject, URLSessionTaskDelegate {
@@ -105,8 +109,10 @@ final class PortalClient: SchoolPortal {
     }
 
     private func send(_ body: [String: Any], path: String = "api/portal") async throws -> (Data, HTTPURLResponse) {
+        try Task.checkCancellation()
         let requestSession = token?.value
         let requestMemory = memoryEpoch
+        let requestIdentity = identity
         var request = URLRequest(url: Self.baseURL.appendingPathComponent(path))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -117,6 +123,13 @@ final class PortalClient: SchoolPortal {
         }
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         let (data, response) = try await session.data(for: request)
+        try Task.checkCancellation()
+        // Actor isolation does not prevent reentrancy across this await.
+        // Ignore both successes and failures from a forgotten/replaced session.
+        guard requestIdentity == identity else { throw CancellationError() }
+        if body["action"] as? String != "login" {
+            guard requestMemory == memoryEpoch, token?.value == requestSession else { throw CancellationError() }
+        }
         guard let response = response as? HTTPURLResponse else {
             throw PortalFailure.message("Schoolity returned an invalid response. Try again.")
         }
