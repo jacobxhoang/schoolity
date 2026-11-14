@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { Store, store } from '../src/lib/server/store.ts';
 import { RememberedLogins, rememberedLoginKey, REMEMBER_SECONDS } from '../src/lib/server/remembered-login.ts';
 import { BrowserAuth, SESSION_COOKIE, REMEMBER_COOKIE, type AuthContext } from '../src/lib/server/browser-auth.ts';
-import { signIn, findSession, endSession, bindRememberedSession, PortalError } from '../src/lib/server/portal.ts';
+import { signIn, findSession, endSession, bindRememberedSession, read, readHistorySubject, PortalError } from '../src/lib/server/portal.ts';
 
 const testKey = Buffer.alloc(32, 7).toString('base64');
 const credentials = { username: 'synthetic-student', password: 'synthetic-password-only' };
@@ -61,6 +61,25 @@ function fixture(t: TestContext) {
   t.after(async () => { for (const id of sessions) await endSession(id); for (const key of keys) await store.delete(key); });
   return { auth, remembered, state, sessions, keys };
 }
+
+test('history preloading keeps both native and remembered browser sign-ins active', async (t) => {
+  for (const remember of [false, true]) {
+    const { auth, state } = fixture(t);
+    const { context, values } = jar();
+    await auth.login(context, credentials.username, credentials.password, remember);
+    const original = values.get(SESSION_COOKIE);
+    await assert.rejects(auth.withSession(context, session => read(session, 'history', undefined)),
+      (e: unknown) => e instanceof PortalError && e.status === 502);
+    await assert.rejects(auth.withSession(context, session => readHistorySubject(session, 'math')),
+      (e: unknown) => e instanceof PortalError && e.status === 502);
+    assert.equal(state.logins, 1, 'A history failure must not repeatedly renew the account');
+    assert.equal(values.get(SESSION_COOKIE), original);
+    const grades = await auth.withSession(context, session => read(session, 'grades', undefined,
+      async () => ({ data: { traditionalGradebook: { courses: [] } } })));
+    assert.deepEqual(grades, { courses: [] });
+    assert.ok(await auth.restore(context));
+  }
+});
 
 test('remembered credentials are encrypted at rest and survive independent server instances', async () => {
   const storage = new Store({});
