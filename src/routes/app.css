@@ -379,30 +379,6 @@ main {
   font-size: 9px;
   color: #a5a5a5;
 }
-.schedule-sync {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 18px 20px;
-  margin-bottom: 19px;
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  background: var(--panel);
-}
-.schedule-sync h2 {
-  font-size: 14px;
-}
-.schedule-sync p {
-  margin-top: 6px;
-  max-width: 620px;
-  font-size: 10px;
-  line-height: 1.7;
-  color: #929292;
-}
-.schedule-sync button {
-  flex-shrink: 0;
-}
 .green-dot {
   width: 5px;
   height: 5px;
@@ -508,6 +484,15 @@ main {
   background: var(--surface);
   padding: 5px 7px;
   white-space: nowrap;
+}
+.category-select {
+  max-width: 160px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 11px;
 }
 .what-if {
   border: 1px solid #e0e0e0;
@@ -691,35 +676,37 @@ td small {
 .records-list {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 8px;
 }
 .record-card {
   display: flex;
   align-items: flex-start;
-  gap: 20px;
+  gap: 14px;
   border: 1px solid var(--border);
-  padding: 25px;
+  padding: 14px 16px;
   background: var(--panel);
-  border-radius: 9px;
+  border-radius: 8px;
 }
 .record-icon {
   background: var(--surface);
   color: #8e8e8e;
-  padding: 12px;
-  border-radius: 10px;
+  padding: 8px;
+  border-radius: 8px;
 }
 .record-card small {
   font-size: 10px;
   color: #a1a1a1;
 }
 .record-card h3 {
-  margin: 7px 0;
-  font-size: 16px;
+  margin: 2px 0 0;
+  font-size: 14px;
+  line-height: 1.4;
 }
 .record-card p {
+  margin-top: 2px;
   font-size: 12px;
   color: #979797;
-  line-height: 1.8;
+  line-height: 1.5;
   max-width: 760px;
   white-space: pre-line;
 }
@@ -1119,21 +1106,12 @@ form .primary {
   .modal-backdrop {
     padding: 16px;
   }
-  .schedule-sync {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 14px;
-    padding: 16px;
-  }
-  .schedule-sync button {
-    width: 100%;
-  }
   .record-card {
-    padding: 20px;
-    gap: 14px;
+    padding: 12px;
+    gap: 10px;
   }
   .record-card h3 {
-    font-size: 14px;
+    font-size: 13px;
   }
   .record-card p {
     font-size: 11px;

@@ -26,7 +26,7 @@ For the production Node server set HOST=127.0.0.1, PORT=5180, and ORIGIN=http://
 
 ## Features and privacy
 
-The workspace includes a gradebook, original weighted/points-based calculations, hypothetical assignments, schedule terms with calendar downloads, and read adapters for inbox and document listings. Unauthenticated HTML renders the login screen; every school-data request checks the session cookie. Signing out clears the displayed school data.
+The workspace includes a gradebook, original weighted/points-based calculations, hypothetical assignments, schedule terms, and read adapters for inbox and document listings. Unauthenticated HTML renders the login screen; every school-data request checks the session cookie. Signing out clears the displayed school data.
 
 Course detail keeps the district grade beside the Schoolity estimate, with a visible grade-history graph above the what-if controls and assignments. Calculation details stay under “About estimates.” What-if mode announces score changes and supports removing individual hypothetical assignments. Course navigation supports browser Back/Forward; refresh failures retain the current workspace and offer Retry. Login includes password reveal. Mobile navigation supports keyboard focus trapping, Escape, and focus restoration.
 
@@ -34,7 +34,7 @@ The web client and server do not save passwords by default. When a student selec
 
 ## Verification and limits
 
-Calculator, data mapping, connection validation, fixed district configuration, schedule calendar generation, and removal of the attendance resource have automated coverage. Real Anoka account login still requires verification. District grading policies may differ from estimates. Inbox is read-only and limited to 50 messages. Authenticated document downloads are implemented with account-membership checks and strict file decoding; live district download compatibility still needs verification. Inbox attachments can be downloaded from expanded messages using the authenticated mail API; live district compatibility still needs verification. Schedule calendar downloads are generated in the browser from the selected term. The district does not include class times in its schedule listing, so classes export as weekly all-day events unless times are present; term dates are used as the recurrence window. A live calendar subscription feed, two-way sync, and persistent offline caching are not implemented. No actual student credentials were used during development tests.
+Calculator, data mapping, connection validation, fixed district configuration, schedule mapping, and removal of the attendance resource have automated coverage. Real Anoka account login still requires verification. District grading policies may differ from estimates. Inbox is read-only and limited to 50 messages. Authenticated document downloads are implemented with account-membership checks and strict file decoding; live district download compatibility still needs verification. Inbox attachments can be downloaded from expanded messages using the authenticated mail API; live district compatibility still needs verification. A live calendar subscription feed, two-way calendar sync, and persistent offline caching are not implemented. No actual student credentials were used during development tests.
 
 ## Original implementation
 
