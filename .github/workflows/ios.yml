@@ -187,6 +187,8 @@ jobs:
           cat > "$RUNNER_TEMP/release-notes.md" <<'NOTES'
           Native Schoolity iPhone app, built and tested automatically.
 
+          Connects directly to Anoka-Hennepin StudentVUE. No Schoolity/Vercel server is required. Internet access to the district is required. Older saved server sessions may require one new school sign-in.
+
           Download **Schoolity.ipa** below. This build is unsigned and requires Apple signing before installation.
           NOTES
           gh release create "$tag" release/Schoolity.ipa \
