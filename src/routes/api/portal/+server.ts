@@ -3,10 +3,12 @@ import type { RequestHandler } from './$types';
 import {
   PortalError,
   read,
+  readHistorySubject,
 } from '$lib/server/portal';
 import { nativeData, object } from '$lib/portal-data';
 import { DISTRICT_URL } from '$lib/config';
 import { browserAuth } from '$lib/server/browser-auth';
+import { readRecords } from '$lib/records';
 export const POST: RequestHandler = async ({
   request,
   cookies,
@@ -62,9 +64,13 @@ export const POST: RequestHandler = async ({
     if (typeof input.resource !== 'string')
       throw new PortalError('Select a resource.', 400);
     const resource = input.resource;
-    const data = await browserAuth.withSession(context, (session) => read(session, resource, input.term));
+    const data = await browserAuth.withSession(context, (session) => resource === 'history-subject'
+      ? readHistorySubject(session, input.subject)
+      : read(session, resource, input.term));
     return json(
-      { data: input.normalized === true ? nativeData(data, resource) : data },
+      { data: input.normalized === true && resource !== 'history-subject'
+        ? ['student', 'history', 'attendance'].includes(resource) ? readRecords(resource, data) : nativeData(data, resource)
+        : data },
       { headers },
     );
   } catch (error) {

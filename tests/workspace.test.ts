@@ -20,10 +20,8 @@ test('course navigation round-trips unusual district identifiers', () => {
     section: 'grades',
     course: null,
   });
-  assert.deepEqual(readLocation('#attendance'), {
-    section: 'grades',
-    course: null,
-  });
+  for (const section of ['attendance', 'student', 'history'])
+    assert.deepEqual(readLocation('#' + section), { section, course: null });
 });
 test('extra credit is included in chart bounds, with stable empty bounds', () => {
   assert.deepEqual(chartRange([86, 110, NaN]), { low: 0, high: 110 });

@@ -80,13 +80,13 @@ struct CourseDetailView: View {
         List {
             Section {
                 LabeledContent("District grade", value: GradeMath.percent(original.official)).font(.headline)
-                LabeledContent(changed ? "What-if estimate" : "Schoolity estimate", value: GradeMath.percent(GradeMath.calculate(course)))
+                LabeledContent(changed ? "Hypothetical estimate" : "Schoolity estimate", value: GradeMath.percent(GradeMath.calculate(course)))
                     .accessibilityAddTraits(.updatesFrequently)
                 GradeHistoryView(course: course)
             }
             Section {
                 Button { editor = Assignment(id: UUID().uuidString, title: "", category: categoryNames.first ?? "Assignments", earned: nil, possible: 10, due: "", hypothetical: true) } label: {
-                    Label("Add what-if score", systemImage: "plus")
+                    Label("Add hypothetical score", systemImage: "plus")
                 }.frame(minHeight: 44)
                 Button { showTarget = true } label: { Label("Find a target score", systemImage: "scope") }.frame(minHeight: 44)
                 if changed { Button("Reset changes", role: .destructive) { showReset = true }.frame(minHeight: 44) }
@@ -105,7 +105,7 @@ struct CourseDetailView: View {
                             }.font(.subheadline)
                             if !assignment.due.isEmpty { Text(assignment.due).font(.caption).foregroundStyle(.secondary) }
                             if assignment.excluded == true { Text("Not for grading").font(.caption).foregroundStyle(.secondary) }
-                            if assignment.hypothetical == true { Label("What-if", systemImage: "pencil").font(.caption).foregroundStyle(.secondary) }
+                            if assignment.hypothetical == true { Label("Hypothetical", systemImage: "pencil").font(.caption).foregroundStyle(.secondary) }
                         }.padding(.vertical, 8).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -119,7 +119,7 @@ struct CourseDetailView: View {
             }
             Section {
                 DisclosureGroup("About estimates") {
-                    Text("What-if changes stay on this screen and never change school records. Estimates may differ from district grading policies.")
+                    Text("Hypothetical changes stay on this screen and never change school records. Estimates may differ from district grading policies.")
                         .font(.subheadline).foregroundStyle(.secondary)
                     if !course.teacher.isEmpty { LabeledContent("Teacher", value: course.teacher) }
                     if !course.room.isEmpty { LabeledContent("Room", value: course.room) }
@@ -137,7 +137,7 @@ struct CourseDetailView: View {
             }
         }
         .sheet(isPresented: $showTarget) { TargetScoreView(course: course, categories: categoryNames) }
-        .confirmationDialog("Reset all what-if changes?", isPresented: $showReset, titleVisibility: .visible) {
+        .confirmationDialog("Reset all hypothetical changes?", isPresented: $showReset, titleVisibility: .visible) {
             Button("Reset changes", role: .destructive) { course = original }
         }
     }
@@ -193,12 +193,12 @@ struct ScoreEditor: View {
                     TextField("Assignment title", text: $assignment.title)
                     Picker("Category", selection: $assignment.category) { ForEach(categories, id: \.self) { Text($0).tag($0) } }
                 }
-                Section("What-if score") {
+                Section("Hypothetical score") {
                     TextField("Points earned", text: $earned).keyboardType(.decimalPad)
                     TextField("Points possible", text: $possible).keyboardType(.decimalPad)
                 }
             }
-            .navigationTitle("What-if score")
+            .navigationTitle("Hypothetical score")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }

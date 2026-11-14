@@ -8,11 +8,11 @@ test('Schoolity has a fixed Anoka district connection', () => {
   assert.equal(DISTRICT_HOST, 'synergyportal.anoka.k12.mn.us');
   assert.equal(DISTRICT_URL, 'https://synergyportal.anoka.k12.mn.us');
 });
-test('attendance is not an available district resource', async () => {
+test('unknown resources cannot reach the district', async () => {
   await assert.rejects(
     read(
       { base: DISTRICT_URL, token: 'unused', expires: Date.now() + 1000 },
-      'attendance',
+      'unsupported-resource',
       undefined,
     ),
     /not available/,

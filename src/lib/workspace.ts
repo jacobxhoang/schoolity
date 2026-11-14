@@ -7,6 +7,9 @@ const sections = new Set([
   "schedule",
   "mail",
   "documents",
+  "student",
+  "history",
+  "attendance",
 ]);
 export function readLocation(hash: string): LocationState {
   const parts = hash.replace(/^#/, "").split("/");

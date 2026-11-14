@@ -19,7 +19,7 @@
     {#if starting.official === null}<small>Not available</small>{/if}
   </div>
   <div class:scenario>
-    <span>{scenario ? 'What-if estimate' : 'Schoolity estimate'}</span><strong
+    <span>{scenario ? 'Hypothetical estimate' : 'Schoolity estimate'}</span><strong
       >{percentage(estimate)}</strong
     >{#if scenario}<small aria-label={scoreChange(estimate, baseline)}
         >{change === null

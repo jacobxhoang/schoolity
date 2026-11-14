@@ -4,6 +4,8 @@
     grid: 'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',
     book: 'M4 4h7a3 3 0 0 1 3 3v14a4 4 0 0 0-4-2H4z M14 7a3 3 0 0 1 3-3h4v15h-3a4 4 0 0 0-4 2',
     calendar: 'M5 5h14v16H5z M8 2v6 M16 2v6 M5 10h14',
+    person: 'M20 21v-2a7 7 0 0 0-14 0v2 M17 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0',
+    history: 'M3 3v6h6 M3 9a9 9 0 1 1 1 9 M12 7v5l3 2',
     clock: 'M12 8v5l3 2 M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0',
     check: 'm5 12 4 4L19 6',
     mail: 'M3 5h18v14H3z m0 0 9 8 9-8',

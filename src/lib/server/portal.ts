@@ -6,6 +6,7 @@ import { randomBytes, createHash } from 'node:crypto';
 import { BlockList } from 'node:net';
 import { object, profilePayload, string } from '../portal-data.ts';
 import { DISTRICT_URL } from '../config.ts';
+import { parseHistoryOverview, parseSubjectDetails } from './history.ts';
 export class PortalError extends Error {
   status: number;
   constructor(message: string, status = 502) {
@@ -45,10 +46,33 @@ export async function exchange(
   method: string,
   authorization: string,
   parameters: Record<string, unknown>,
+  captureCookies?: (cookie: string) => void,
 ): Promise<Record<string, unknown>> {
-  const destination = new URL(
-    `${base.replace(/\/$/, '')}/api/v1/mobile/PXPWebServices/${method}`,
-  );
+  const result = await districtRequest(base, `/api/v1/mobile/PXPWebServices/${method}`, {
+    Authorization: authorization,
+  }, JSON.stringify({ arguments: { request: JSON.stringify(parameters) } }));
+  try {
+    const data = object(JSON.parse(result.text));
+    if (result.cookie) captureCookies?.(result.cookie);
+    return data;
+  } catch {
+    throw new PortalError('Your district sent an unreadable response.');
+  }
+}
+export function cookieHeader(values: string[]): string {
+  return values.map((value) => value.split(';', 1)[0])
+    .filter((value) => /^[!#$%&'*+.^_`|~\w-]+=[^\s;,\x00-\x1f\x7f]*$/.test(value))
+    .join('; ').slice(0, 8192);
+}
+export async function districtRequest(
+  base: string,
+  path: string,
+  headers: Record<string, string>,
+  body?: string,
+): Promise<{ text: string; cookie: string }> {
+  const destination = new URL(path, base);
+  if (destination.origin !== DISTRICT_URL || !path.startsWith('/'))
+    throw new PortalError('Unsupported district address.', 400);
   const resolved = await lookup(destination.hostname, { all: true });
   if (!resolved.length || resolved.some((r) => !publicAddress(r.address)))
     throw new PortalError(
@@ -60,11 +84,11 @@ export async function exchange(
     const outgoing = httpsRequest(
       destination,
       {
-        method: 'POST',
+        method: body === undefined ? 'GET' : 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Accept: 'application/json',
-          Authorization: authorization,
+          Accept: body === undefined ? 'text/html' : 'application/json',
+          ...headers,
         },
         lookup: (_host, opts, cb) =>
           opts.all
@@ -76,10 +100,10 @@ export async function exchange(
           incoming.resume();
           reject(
             new PortalError(
-              incoming.statusCode === 401 || incoming.statusCode === 403
+              incoming.statusCode === 401 || incoming.statusCode === 403 || incoming.statusCode === 302
                 ? 'Your district rejected the login. Check your username and password.'
                 : `The district returned HTTP ${incoming.statusCode}.`,
-              incoming.statusCode === 401 || incoming.statusCode === 403
+              incoming.statusCode === 401 || incoming.statusCode === 403 || incoming.statusCode === 302
                 ? 401
                 : 502,
             ),
@@ -98,13 +122,8 @@ export async function exchange(
         });
         incoming.on('error', reject);
         incoming.on('end', () => {
-          try {
-            resolve(object(JSON.parse(Buffer.concat(pieces).toString('utf8'))));
-          } catch {
-            reject(
-              new PortalError('Your district sent an unreadable response.'),
-            );
-          }
+          resolve({ text: Buffer.concat(pieces).toString('utf8'),
+            cookie: cookieHeader(incoming.headers['set-cookie'] ?? []) });
         });
       },
     );
@@ -117,9 +136,7 @@ export async function exchange(
     );
     outgoing.on('close', () => clearTimeout(timer));
     outgoing.on('error', reject);
-    outgoing.end(
-      JSON.stringify({ arguments: { request: JSON.stringify(parameters) } }),
-    );
+    outgoing.end(body);
   });
 }
 export interface Session {
@@ -127,6 +144,7 @@ export interface Session {
   token: string;
   expires: number;
   rememberKey?: string;
+  webCookie?: string;
 }
 export async function findSession(
   id: string | undefined,
@@ -182,13 +200,14 @@ export async function signIn(
 ): Promise<{ id: string; maxAge: number }> {
   const base = DISTRICT_URL;
   const auth = Buffer.from(`${username}:${password}`).toString('base64');
+  let webCookie: string | undefined;
   const result = await send(base, 'AttemptLogin', `Basic ${auth}`, {
     userID: null,
     password: null,
     userType: 'Student',
     DeviceModel: 'Schoolity web',
     LoginClientData: `POST:/api/v1/mobile/PXPWebServices/AttemptLogin:${Date.now()}:${randomBytes(12).toString('hex')}`,
-  });
+  }, (cookie) => { webCookie = cookie; });
   if (typeof result.access_token !== 'string' || !result.access_token)
     throw new PortalError(
       'Login was not accepted. Check your username and password.',
@@ -200,6 +219,7 @@ export async function signIn(
     base,
     token: result.access_token,
     expires: Date.now() + maxAge * 1000,
+    ...(webCookie ? { webCookie } : {}),
   };
   await store.set('session:' + id, JSON.stringify(entry), maxAge);
   return { id, maxAge };
@@ -208,7 +228,19 @@ export async function read(
   session: Session,
   resource: string,
   term: unknown,
+  send = exchange,
+  page = districtRequest,
 ): Promise<unknown> {
+  if (resource === 'history') {
+    if (!session.webCookie)
+      throw new PortalError('Sign in again to load course history.', 401);
+    const response = await page(session.base, '/PXP2_CourseHistory.aspx?AGU=0', { Cookie: session.webCookie });
+    try { return parseHistoryOverview(response.text); }
+    catch (error) {
+      throw new PortalError(error instanceof Error ? error.message : 'Could not read course history.',
+        error instanceof Error && 'status' in error && error.status === 401 ? 401 : 502);
+    }
+  }
   const methods: Record<string, [string, Record<string, unknown>, string[]]> = {
     grades: [
       'Gradebook',
@@ -225,6 +257,8 @@ export async function read(
       {},
       ['studentInfoDetailXML', 'studentInfoXML'],
     ],
+    student: ['GetStudentInfoData', {}, ['studentInfoDetailXML', 'studentInfoXML']],
+    attendance: ['Attendance', {}, ['attendance']],
     schedule: [
       'StudentClassList',
       {
@@ -249,7 +283,7 @@ export async function read(
     (!Number.isInteger(term) || Number(term) < 0 || Number(term) > 100)
   )
     throw new PortalError('Invalid reporting period.', 400);
-  const response = await exchange(
+  const response = await send(
     session.base,
     spec[0],
     `Bearer ${session.token}`,
@@ -265,7 +299,7 @@ export async function read(
   if (!('data' in response))
     throw new PortalError('The district returned an unexpected response.');
   const data = object(response.data);
-  if (resource === 'profile') return profilePayload(data);
+  if (resource === 'profile' || resource === 'student') return profilePayload(data);
   for (const [index, key] of spec[2].entries()) {
     const value = data[key];
     if (value == null) continue;
@@ -279,4 +313,28 @@ export async function read(
     return value;
   }
   return data;
+}
+
+export async function readHistorySubject(session: Session, subject: unknown, page = districtRequest) {
+  if (typeof subject !== 'string' || !/^[A-Za-z0-9_-]{1,100}$/.test(subject))
+    throw new PortalError('Choose a subject area.', 400);
+  if (!session.webCookie) throw new PortalError('Sign in again to load subject classes.', 401);
+  const overview = await read(session, 'history', undefined, undefined, page) as ReturnType<typeof parseHistoryOverview>;
+  const own = overview.graduationRequirements.find(requirement => requirement.id === subject);
+  if (!own) throw new PortalError('This subject area is not available for your account. Refresh course history.', 404);
+  const response = await page(session.base, '/service/PXP2Communication.asmx/GetCourseHistoryDetails', {
+    Cookie: session.webCookie, AGU: '0', Origin: DISTRICT_URL,
+  }, JSON.stringify({ agu: '0', itemGU: own.id }));
+  try {
+    const envelope = object(object(JSON.parse(response.text)).d);
+    if (envelope.Error) {
+      if (object(envelope.Error).Message === 'INVALID_CONTEXT')
+        throw new PortalError('Your district web session ended. Sign in again.', 401);
+      throw new PortalError('The district could not load these subject classes. Try again.');
+    }
+    return parseSubjectDetails(envelope.Data);
+  } catch (error) {
+    if (error instanceof PortalError) throw error;
+    throw new PortalError(error instanceof Error ? error.message : 'Could not load subject classes. Try again.');
+  }
 }

@@ -25,7 +25,7 @@ An independent student dashboard for one district, combining a school portal wit
 - A valid StudentVUE login is required to enter the workspace. There is no anonymous demo entry point.
 - The district is fixed to `https://synergyportal.anoka.k12.mn.us` in the interface and server. Do not introduce district selection without a new product decision.
 - Core flow: sign in, open the gradebook, inspect a course and its assignments, explore hypothetical scores, and reset changes.
-- Additional current sections are schedule, inbox, and documents. Attendance was explicitly removed and must stay absent unless requested again.
+- Additional web sections are schedule, inbox, documents, student info, course history, and attendance. The user explicitly requested attendance again, superseding its earlier removal. Native navigation remains Grades, Schedule, Inbox, and Documents.
 - Current local app: `http://127.0.0.1:5180/`. Source application root is this directory; the sibling Student and GradeCompass checkouts are separate projects.
 - `npm run dev` launches the SvelteKit development server with hot reload on port 5180. `npm run build` produces a Node server; `npm start` runs that build. The production Node server needs its host, port, and origin configured. Check whether a server already owns the port before starting another.
 
@@ -82,3 +82,11 @@ An independent student dashboard for one district, combining a school portal wit
 - Long-term hosting, distribution, and project license.
 - Additional district grading policies and feature support after systematic live verification.
 - Product-specific accessibility requirements beyond accessible web implementation have not been specified; do not claim conformance certification.
+
+## Student record expansion
+
+The web Student Info page displays district-provided identity, school and contact fields. Course History reads district web-page JSON through the authenticated server session and provides year/school filters, marks and credits. Attendance reads the district mobile Attendance resource and preserves per-period status and reasons. Unknown formats produce retryable errors; absent data is not replaced with invented values or zero totals. All new records remain in page memory and clear on sign-out. District web cookies are kept server-side for course history; existing sessions may require sign-in again. These new adapters need private live-account verification. The calculator label is Hypothetical on web and iPhone.
+
+Course History leads with StudentVUE-style subject-area graduation progress bars, showing completed/in-progress credit segments plus district-reported required, completed, in-progress, and remaining credits. Course records and their filters remain in an expandable section below. Graduation requirements come from the authenticated district web page; never infer graduation requirements from marks or fill missing credit totals with zero.
+
+Subject-area labels expand inline to show district-associated Completed and In progress class lists. Details load on demand through GetCourseHistoryDetails with the requirement identifier, after verifying that identifier against the authenticated student's graduation requirements. Finalized marks identify completed courses (including F/P); blank marks identify pending courses, matching StudentVUE's grouping. Refresh clears cached subject details. Preserve loading, retry, empty states, keyboard controls, and mobile reflow.
