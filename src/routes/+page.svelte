@@ -6,7 +6,11 @@
   import GradeSummary from '$lib/GradeSummary.svelte';
   import StudentRecords from '$lib/StudentRecords.svelte';
   import { readRecords, type RecordPage, type SubjectDetails } from '$lib/records';
-  import { requestWorkspacePortal, RequestFailure } from '$lib/portal-request';
+  import {
+    requestPortal,
+    requestWorkspacePortal,
+    RequestFailure,
+  } from '$lib/portal-request';
   import {
     readLocation,
     courseLocation,
@@ -112,6 +116,7 @@
     password = $state(''),
     rememberSignIn = $state(false),
     loginBusy = $state(false),
+    restoring = $state(false),
     loginError = $state(untrack(() => sessionData.signInError ?? '')),
     hypothetical = $state(false);
   let edits = $state<Record<string, Course>>({}),
@@ -530,6 +535,40 @@
       loginBusy = false;
     }
   }
+  // A saved sign-in is renewed here, after the page has painted, instead of
+  // during server rendering where a slow district would delay the response.
+  async function restoreSavedSignIn() {
+    if (restoring || authenticated) return;
+    restoring = true;
+    loginError = '';
+    try {
+      const answer = await requestPortal({ action: 'session' });
+      if (answer.connected !== true) {
+        loginError =
+          'Your saved sign-in has ended. Enter your username and password.';
+        return;
+      }
+      cacheIdentity =
+        typeof answer.cacheIdentity === 'string' ? answer.cacheIdentity : null;
+      authenticated = true;
+      try {
+        const cached = readGradeCache(localStorage, cacheIdentity);
+        if (cached) {
+          data = cached.book;
+          lastRefresh = cached.savedAt;
+        }
+      } catch {
+        /* Normal network loading works without local storage. */
+      }
+      await load();
+      void preloadWorkspace();
+    } catch (e) {
+      loginError =
+        e instanceof Error ? e.message : 'Could not restore sign-in. Try again.';
+    } finally {
+      restoring = false;
+    }
+  }
   let downloading = $state<Record<string, boolean>>({});
   let downloadErrors = $state<Record<string, string>>({});
   const downloadKey = (id: string, messageId?: string) =>
@@ -740,10 +779,8 @@
       if (event.persisted && authenticated && !busy) void load();
     };
     window.addEventListener('pageshow', returned);
-    if (authenticated)
-      void load().then(() => {
-        void preloadWorkspace();
-      });
+    if (authenticated) void load().then(() => void preloadWorkspace());
+    else if (sessionData.retrySavedSignIn) void restoreSavedSignIn();
     return () => {
       motionQuery.removeEventListener('change', updateMotion);
       mq.removeEventListener('change', resize);
@@ -1476,7 +1513,13 @@
                 {#if loginError}<div class="form-error" role="alert">
                     {loginError}
                   </div>{/if}
-                <button class="primary login-submit" type="submit" disabled={loginBusy}
+                {#if restoring}<p class="remember-hint" role="status">
+                    Restoring your saved sign-in…
+                  </p>{/if}
+                <button
+                  class="primary login-submit"
+                  type="submit"
+                  disabled={loginBusy || restoring}
                   ><span>{loginBusy ? 'Signing in…' : 'Sign in'}</span><span
                     class="submit-arrow"
                     aria-hidden="true"><Icon name="arrow" size={15} /></span
@@ -1494,7 +1537,8 @@
               </p>
               {#if sessionData.retrySavedSignIn}<button
                   class="login-text-button"
-                  onclick={() => location.reload()}>Retry saved sign-in</button
+                  disabled={restoring}
+                  onclick={restoreSavedSignIn}>Retry saved sign-in</button
                 >{/if}
             </section>
           </div>

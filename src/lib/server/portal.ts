@@ -234,6 +234,60 @@ export async function signIn(
   await store.set('session:' + id, JSON.stringify(entry), maxAge);
   return { id, maxAge };
 }
+const HISTORY_CACHE_SECONDS = 120;
+type HistoryOverview = ReturnType<typeof parseHistoryOverview>;
+
+// The cache is a short-lived, session-scoped copy of the student's own
+// course-history overview; the key is a one-way hash of the district token.
+function historyCacheKey(session: Session): string {
+  return 'history:v1:' + createHash('sha256').update(session.token).digest('hex');
+}
+
+async function courseHistoryOverview(
+  session: Session,
+  page: typeof districtRequest,
+): Promise<HistoryOverview> {
+  if (!session.webCookie)
+    throw new PortalError('Missing district web session.', 401);
+  const response = await page(session.base, '/PXP2_CourseHistory.aspx?AGU=0', {
+    Cookie: session.webCookie,
+  });
+  const overview = parseHistoryOverview(response.text);
+  try {
+    await store.set(
+      historyCacheKey(session),
+      JSON.stringify(overview),
+      HISTORY_CACHE_SECONDS,
+    );
+  } catch {
+    // Caching is an optimisation; the fresh overview is still returned.
+  }
+  return overview;
+}
+
+// Requirement identifiers are validated against this overview before any
+// subject detail is requested. Reusing a just-loaded copy keeps a workspace
+// preload from downloading the district page once per subject area.
+async function cachedCourseHistoryOverview(
+  session: Session,
+  page: typeof districtRequest,
+): Promise<HistoryOverview> {
+  try {
+    const raw = await store.get(historyCacheKey(session));
+    if (raw) {
+      const cached = JSON.parse(raw) as HistoryOverview;
+      if (
+        Array.isArray(cached?.graduationRequirements) &&
+        Array.isArray(cached?.courseHistory)
+      )
+        return cached;
+    }
+  } catch {
+    // Fall through to the district when the store is unavailable.
+  }
+  return await courseHistoryOverview(session, page);
+}
+
 export async function read(
   session: Session,
   resource: string,
@@ -243,10 +297,7 @@ export async function read(
 ): Promise<unknown> {
   if (resource === 'history') {
     try {
-      if (!session.webCookie)
-        throw new PortalError('Missing district web session.', 401);
-      const response = await page(session.base, '/PXP2_CourseHistory.aspx?AGU=0', { Cookie: session.webCookie });
-      return parseHistoryOverview(response.text);
+      return await courseHistoryOverview(session, page);
     } catch (error) { throw historyFailure(error); }
   }
   const methods: Record<string, [string, Record<string, unknown>, string[]]> = {
@@ -340,7 +391,7 @@ export async function readHistorySubject(session: Session, subject: unknown, pag
     throw new PortalError('Choose a subject area.', 400);
   try {
     if (!session.webCookie) throw new PortalError('Missing district web session.', 401);
-    const overview = await read(session, 'history', undefined, undefined, page) as ReturnType<typeof parseHistoryOverview>;
+    const overview = await cachedCourseHistoryOverview(session, page);
     const own = overview.graduationRequirements.find(requirement => requirement.id === subject);
     if (!own) throw new PortalError('This subject area is not available for your account. Refresh course history.', 404);
     const response = await page(session.base, '/service/PXP2Communication.asmx/GetCourseHistoryDetails', {

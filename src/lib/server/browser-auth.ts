@@ -68,6 +68,15 @@ export class BrowserAuth {
     if (failed)
       throw new PortalError('Signed out on this browser, but server cleanup failed. Try again.', 503);
   }
+  // Rendering reads the current session only. Renewal contacts the district,
+  // so it belongs to an explicit request the client can show progress for.
+  async existing(
+    context: Pick<AuthContext, 'cookies'>,
+  ): Promise<Session | undefined> {
+    return await this.dependencies.findSession(
+      context.cookies.get(SESSION_COOKIE),
+    );
+  }
   private async renew(id: string): Promise<{ id: string; maxAge: number } | undefined> {
     const d = this.dependencies;
     const credentials = await d.remembered.read(id);

@@ -4,6 +4,7 @@ import { studentInformation, attendance, courseHistory } from '../src/lib/record
 import { parseHistoryPage, parseHistoryOverview, parseSubjectDetails } from '../src/lib/server/history.ts';
 import { cookieHeader, districtRequest, read, readHistorySubject, signIn, findSession, endSession, PortalError } from '../src/lib/server/portal.ts';
 import { DISTRICT_URL } from '../src/lib/config.ts';
+import { randomUUID } from 'node:crypto';
 
 const history = [{ Grade: '09', Terms: [{ SchoolName: 'Sample School', Year: '2025', TermName: 'T1', Courses: [
   { CourseID: 'math', CourseTitle: 'Math &amp; Science', Mark: 'P', CreditsAttempted: '0.5', CreditsCompleted: '0' },
@@ -84,7 +85,7 @@ test('new district resources use the fixed read methods and history needs server
 });
 
 test('history login pages and HTTP rejections are feature errors, while mobile authentication still expires', async () => {
-  const session = { base: DISTRICT_URL, token: 'synthetic', webCookie: 'expired', expires: Date.now() + 10000 };
+  const session = { base: DISTRICT_URL, token: 'synthetic-' + randomUUID(), webCookie: 'expired', expires: Date.now() + 10000 };
   for (const page of [
     async () => ({ text: '<input type="password">', cookie: '' }),
     async () => { throw new PortalError('District web login expired', 401); },
@@ -135,7 +136,7 @@ test('subject detail separates finalized and pending classes and strips cell mar
 });
 
 test('subject requests verify membership before the dedicated district detail call', async () => {
-  const session = {base:DISTRICT_URL,token:'synthetic',webCookie:'ASP.NET_SessionId=fixture',expires:Date.now()+10000};
+  const session = {base:DISTRICT_URL,token:'synthetic-'+randomUUID(),webCookie:'ASP.NET_SessionId=fixture',expires:Date.now()+10000};
   let calls = 0;
   const page = async (_base: string, path: string, headers: Record<string,string>, body?: string) => {
     calls++;
@@ -150,7 +151,8 @@ test('subject requests verify membership before the dedicated district detail ca
   assert.equal(calls,2);
   calls=0;
   await assert.rejects(readHistorySubject(session,'ANOTHER_SUBJECT',page), (e: unknown)=>e instanceof PortalError&&e.status===404);
-  assert.equal(calls,1);
+  // Membership is still checked, and the overview is reused, so this costs no district request.
+  assert.equal(calls,0);
   await assert.rejects(readHistorySubject(session,'../other',page), (e: unknown)=>e instanceof PortalError&&e.status===400);
   await assert.rejects(readHistorySubject({...session,webCookie:undefined},'E09',page), (e: unknown)=>e instanceof PortalError&&e.status===502);
   await assert.rejects(readHistorySubject(session,'E09',async (base,path,headers,body) => body === undefined
