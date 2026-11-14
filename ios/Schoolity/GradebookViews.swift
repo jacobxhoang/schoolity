@@ -59,13 +59,15 @@ private struct GradebookContent: View, Equatable {
 }
 
 struct CourseRow: View {
+    @EnvironmentObject private var customization: CustomizationStore
+    @State private var customizing = false
     @Environment(\.dynamicTypeSize) private var typeSize
     let course: Course
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 12) {
                 if !typeSize.isAccessibilitySize {
-                    Image(systemName: "studentdesk")
+                    Image(systemName: customization.symbol(for: course.name))
                         .font(.title2).frame(width: 30)
                         .accessibilityHidden(true)
                 }
@@ -75,15 +77,15 @@ struct CourseRow: View {
         }
         .padding(.vertical, 6)
         .accessibilityElement(children: .combine)
+        .contextMenu { Button("Customize class", systemImage: "paintbrush") { customizing = true } }
+        .sheet(isPresented: $customizing) { ClassAppearanceSheet(title: course.name) }
     }
 
     private var grade: some View {
         let score = course.official ?? GradeMath.calculate(course)
         return HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Text(GradeMath.letter(score)).foregroundStyle(SchoolityStyle.accent)
+            Text(GradeMath.letter(score)).foregroundStyle(customization.gradeColor(score))
             Text(GradeMath.percent(score))
-            Text(course.official == nil ? "Calculated" : "District grade")
-                .foregroundStyle(.secondary)
         }
         .font(.callout.weight(.semibold))
         .monospacedDigit()
@@ -93,7 +95,7 @@ struct CourseRow: View {
 
     private var identity: some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(course.name).font(.headline).fixedSize(horizontal: false, vertical: true)
+            Text(customization.name(for: course.name)).font(.headline).fixedSize(horizontal: false, vertical: true)
             let details = [course.teacher, course.room.isEmpty ? "" : "Room \(course.room)"].filter { !$0.isEmpty }.joined(separator: " | ")
             if !details.isEmpty { Text(details).font(.footnote).foregroundStyle(SchoolityStyle.muted) }
         }.frame(maxWidth: .infinity, alignment: .leading)
@@ -101,6 +103,7 @@ struct CourseRow: View {
 }
 
 struct CourseDetailView: View {
+    @EnvironmentObject private var customization: CustomizationStore
     let original: Course
     @State private var course: Course
     @State private var presentedSheet: Assignment?
@@ -150,15 +153,9 @@ struct CourseDetailView: View {
                     }
                 }
             }
-            Section {
-                DisclosureGroup("About estimates") {
-                    Text("Hypothetical changes stay on this screen and never change school records. Estimates may differ from district grading policies.")
-                        .font(.subheadline).foregroundStyle(.secondary)
-                }
-            }
         }
         .listStyle(.inset)
-        .navigationTitle(course.name)
+        .navigationTitle(customization.name(for: course.name))
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $presentedSheet) { assignment in
             ScoreEditor(assignment: assignment, categories: categoryNames, save: saveAssignment)
@@ -221,7 +218,9 @@ private struct HypotheticalAddButton: View {
 }
 
 struct GradeHistoryView: View, Equatable {
+    @EnvironmentObject private var customization: CustomizationStore
     let course: Course
+    static func == (lhs: Self, rhs: Self) -> Bool { lhs.course == rhs.course }
     var body: some View {
         let points = GradeMath.trend(course)
         VStack(alignment: .leading, spacing: 12) {
@@ -233,7 +232,7 @@ struct GradeHistoryView: View, Equatable {
                     LineMark(x: .value("Graded assignment", point.id), y: .value("Grade", point.score))
                         .foregroundStyle(SchoolityStyle.accent)
                     PointMark(x: .value("Graded assignment", point.id), y: .value("Grade", point.score))
-                        .foregroundStyle(SchoolityStyle.accent).symbolSize(points.count > 30 ? 6 : 18)
+                        .foregroundStyle(customization.gradeColor(point.score)).symbolSize(points.count > 30 ? 6 : 18)
                 }
                 .chartYScale(domain: min(0, points.map(\.score).min() ?? 0)...max(100, points.map(\.score).max() ?? 100))
                 .chartXAxis(.hidden)

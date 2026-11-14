@@ -4,6 +4,7 @@ import SwiftUI
 struct SchoolityApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var store = AppStore()
+    @StateObject private var customization = CustomizationStore()
     var body: some Scene {
         WindowGroup {
             ZStack {
@@ -26,6 +27,8 @@ struct SchoolityApp: App {
             }
             .tint(SchoolityStyle.accent)
             .environmentObject(store)
+            .environmentObject(customization)
+            .accentColor(Color("ActionAccent"))
             .task { if scenePhase == .active { await store.start() } }
             .privacySensitive()
             .onChange(of: scenePhase) { _, phase in
@@ -34,10 +37,7 @@ struct SchoolityApp: App {
             }
             .overlay {
                 if scenePhase != .active {
-                    ZStack {
-                        Color(uiColor: .systemBackground).ignoresSafeArea()
-                        Text("Schoolity").font(.largeTitle.bold())
-                    }.accessibilityHidden(true)
+                    Color(uiColor: .systemBackground).ignoresSafeArea().accessibilityHidden(true)
                 }
             }
         }
@@ -165,6 +165,7 @@ struct LoginView: View {
 
 struct WorkspaceView: View {
     @EnvironmentObject private var store: AppStore
+    @EnvironmentObject private var customization: CustomizationStore
     private enum WorkspaceTab: Hashable {
         case grades, schedule, inbox, documents, records
     }
@@ -178,6 +179,8 @@ struct WorkspaceView: View {
             NavigationStack { RecordsView() }.tabItem { Label("Records", systemImage: "list.bullet.rectangle") }.tag(WorkspaceTab.records)
         }
         .task { await store.preloadWorkspace() }
+        .tint(customization.accentColor)
+        .accentColor(customization.accentColor)
     }
 }
 
@@ -205,6 +208,14 @@ struct AccountButton: View {
                             }
                         }
                         Section("Student ID") { StudentIDSection() }
+                        Section {
+                            NavigationLink {
+                                CustomizationView()
+                            } label: {
+                                Label("Settings", systemImage: "gearshape.fill")
+                            }
+                            .accessibilityIdentifier("account.settings")
+                        }
                         Section {
                             Button("Sign out", role: .destructive) { Task { await store.signOut() } }
                         }

@@ -98,16 +98,18 @@ struct ScheduleView: View {
 }
 
 private struct ScheduleClassRow: View {
+    @EnvironmentObject private var customization: CustomizationStore
+    @State private var customizing = false
     @Environment(\.dynamicTypeSize) private var typeSize
     let course: ScheduleClass
 
     var body: some View {
         HStack(spacing: 12) {
             if !typeSize.isAccessibilitySize {
-                Image(systemName: "studentdesk").font(.title3).frame(width: 28).accessibilityHidden(true)
+                Image(systemName: customization.symbol(for: course.title)).font(.title3).frame(width: 28).accessibilityHidden(true)
             }
             VStack(alignment: .leading, spacing: 4) {
-                Text(course.title)
+                Text(customization.name(for: course.title))
                     .font(.headline)
                     .fixedSize(horizontal: false, vertical: true)
                 let people = [course.teacher, course.room.isEmpty ? "" : "Room \(course.room)"]
@@ -133,5 +135,7 @@ private struct ScheduleClassRow: View {
             }
         }
         .padding(.vertical, 8)
+        .contextMenu { Button("Customize class", systemImage: "paintbrush") { customizing = true } }
+        .sheet(isPresented: $customizing) { ClassAppearanceSheet(title: course.title) }
     }
 }

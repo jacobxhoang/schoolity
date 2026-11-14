@@ -4,6 +4,64 @@ import LocalAuthentication
 
 final class SavedSignInTests: XCTestCase {
     @MainActor
+    func testCategoryClassesPreloadOnceAndRefreshInvalidatesTheirCache() async throws {
+        let portal = TestPortal()
+        portal.historyJSON = #"{"kind":"history","courses":[],"requirements":[{"id":"math","subject":"Math"},{"id":"science","subject":"Science"}],"classOf":"2027"}"#
+        let store = AppStore(client: portal, unlocker: TestUnlocker())
+        await store.start()
+        await store.preloadWorkspace()
+        XCTAssertNotNil(store.cachedHistorySubject(id: "math"))
+        XCTAssertNotNil(store.cachedHistorySubject(id: "science"))
+        _ = try await store.historySubject(id: "math")
+        XCTAssertEqual(portal.subjectReadCounts, ["math": 1, "science": 1])
+        await store.loadRecord(.history, refresh: true)
+        XCTAssertEqual(portal.subjectReadCounts, ["math": 2, "science": 2])
+        await store.signOut()
+        XCTAssertNil(store.cachedHistorySubject(id: "math"))
+        XCTAssertNil(store.cachedHistorySubject(id: "science"))
+    }
+
+    @MainActor
+    func testSubjectFailureDoesNotBlockOtherPreloadsAndCanRetry() async throws {
+        let portal = TestPortal()
+        portal.historyJSON = #"{"kind":"history","courses":[],"requirements":[{"id":"math","subject":"Math"},{"id":"science","subject":"Science"}],"classOf":"2027"}"#
+        portal.subjectErrors["math"] = PortalFailure.message("Temporary failure")
+        let store = AppStore(client: portal, unlocker: TestUnlocker())
+        await store.start()
+        await store.loadRecord(.history)
+        XCTAssertNil(store.cachedHistorySubject(id: "math"))
+        XCTAssertNotNil(store.cachedHistorySubject(id: "science"))
+        XCTAssertEqual(store.access, .signedIn)
+        portal.subjectErrors["math"] = nil
+        _ = try await store.historySubject(id: "math")
+        XCTAssertNotNil(store.cachedHistorySubject(id: "math"))
+        XCTAssertEqual(portal.subjectReadCounts["math"], 2)
+    }
+
+    @MainActor
+    func testConcurrentSubjectRequestsShareWorkAndSignOutRejectsLateResults() async {
+        let portal = TestPortal()
+        let store = AppStore(client: portal, unlocker: TestUnlocker())
+        await store.start()
+        let pending = expectation(description: "Category request started")
+        portal.delayedSubjects = ["math"]
+        portal.onSubject = { _ in pending.fulfill() }
+        let first = Task { try await store.historySubject(id: "math") }
+        await fulfillment(of: [pending], timeout: 3)
+        let second = Task { try await store.historySubject(id: "math") }
+        await Task.yield()
+        await store.signOut()
+        portal.subjectContinuations["math"]?.resume(returning: SubjectDetails(columns: ["Course"], completed: [["Sample"]], inProgress: []))
+        for task in [first, second] {
+            do { _ = try await task.value; XCTFail("A signed-out request returned student data") }
+            catch { XCTAssertTrue(error is CancellationError || error is PortalFailure) }
+        }
+        XCTAssertEqual(portal.subjectReadCounts["math"], 1)
+        XCTAssertNil(store.cachedHistorySubject(id: "math"))
+        XCTAssertEqual(store.access, .signedOut)
+    }
+
+    @MainActor
     func testPreloadDoesNotFetchBeforeSignInOrAfterSignOut() async {
         let portal = TestPortal()
         let store = AppStore(client: portal, unlocker: TestUnlocker())
@@ -511,6 +569,12 @@ private final class TestUnlocker: LocalUnlocking {
 
 @MainActor
 private final class TestPortal: SchoolPortal {
+    var historyJSON = #"{"kind":"history","courses":[],"requirements":[],"classOf":""}"#
+    var subjectReadCounts: [String: Int] = [:]
+    var subjectErrors: [String: Error] = [:]
+    var delayedSubjects: Set<String> = []
+    var onSubject: ((String) -> Void)?
+    var subjectContinuations: [String: CheckedContinuation<SubjectDetails, Error>] = [:]
     var readCounts: [String: Int] = [:]
     var resourceErrors: [String: Error] = [:]
     var savedSignIn: SavedSessionInfo? = SavedSessionInfo(expires: .distantFuture, requiresUnlock: true)
@@ -567,14 +631,21 @@ private final class TestPortal: SchoolPortal {
         case "schedule-terms": json = #"{"terms":[],"currentTerm":0}"#
         case "mail", "documents": json = "[]"
         case "student": json = #"{"kind":"student","sections":[]}"#
-        case "history": json = #"{"kind":"history","courses":[],"requirements":[],"classOf":""}"#
+        case "history": json = historyJSON
         case "attendance": json = #"{"kind":"attendance","days":[],"totals":[]}"#
         default: json = #"{"name":"Sample Student","school":"Sample School","grade":"11"}"#
         }
         return try JSONDecoder().decode(T.self, from: Data(json.utf8))
     }
     func readHistorySubject(_ id: String) async throws -> SubjectDetails {
-        SubjectDetails(columns: ["Course"], completed: [], inProgress: [])
+        subjectReadCounts[id, default: 0] += 1
+        if let error = subjectErrors[id] { throw error }
+        onSubject?(id)
+        if delayedSubjects.contains(id) {
+            return try await withCheckedThrowingContinuation { subjectContinuations[id] = $0 }
+        }
+        return SubjectDetails(columns: ["Term", "Course Title (ID)", "Mark", "Credit Attempted", "Credit Completed"],
+                              completed: [["2025 - T1", "Sample course (S101)", "A", "0.50", "0.50"]], inProgress: [])
     }
     func download(id: String, filename: String, messageID: String?) async throws -> URL { throw PortalFailure.signedOut }
 }
