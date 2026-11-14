@@ -9,6 +9,13 @@ final class SchoolityUITests: XCTestCase {
         add(screenshot)
     }
 
+    private func backToRecords(_ app: XCUIApplication) {
+        let back = app.navigationBars.buttons["Records"]
+        XCTAssertTrue(back.waitForExistence(timeout: 5))
+        back.tap()
+        XCTAssertTrue(app.staticTexts["Student Info"].waitForExistence(timeout: 5))
+    }
+
     func testLoginHasNoAnonymousEntry() {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-login"]
@@ -42,6 +49,7 @@ final class SchoolityUITests: XCTestCase {
         app.tabBars.buttons["Grades"].tap()
         let course = app.descendants(matching: .any)["course-sample-math"]
         XCTAssertTrue(course.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Unweighted average of current course grades."].exists)
         XCTAssertFalse(app.tabBars.buttons["Home"].exists)
         XCTAssertEqual(app.tabBars.buttons.count, 5)
         capture("gradebook")
@@ -91,7 +99,8 @@ final class SchoolityUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.tabBars.buttons["Schedule"].waitForExistence(timeout: 10))
         app.tabBars.buttons["Schedule"].tap()
-        XCTAssertTrue(app.staticTexts["Period 1 · M,T,W,Th,F"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["schedule-period-sample-math"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["M,T,W,Th,F"].exists)
         capture("schedule")
         app.tabBars.buttons["Documents"].tap()
         XCTAssertTrue(app.buttons.containing(.staticText, identifier: "Sample report").firstMatch.waitForExistence(timeout: 5))
@@ -114,6 +123,45 @@ final class SchoolityUITests: XCTestCase {
         app.staticTexts["Student Info"].tap()
         XCTAssertTrue(app.staticTexts["Sample Student"].waitForExistence(timeout: 5))
         capture("student-info")
+    }
+
+    func testScheduleAndRecordsScreenshots() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing"]
+        app.launch()
+
+        XCTAssertTrue(app.tabBars.buttons["Schedule"].waitForExistence(timeout: 10))
+        app.tabBars.buttons["Schedule"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["schedule-period-sample-math"].waitForExistence(timeout: 5))
+        capture("parity-schedule")
+
+        app.tabBars.buttons["Records"].tap()
+        XCTAssertTrue(app.staticTexts["Student Info"].waitForExistence(timeout: 5))
+        capture("parity-records")
+
+        app.staticTexts["Student Info"].tap()
+        XCTAssertTrue(app.staticTexts["Sample Student"].waitForExistence(timeout: 5))
+        capture("parity-student-info")
+        backToRecords(app)
+
+        app.staticTexts["Attendance"].tap()
+        XCTAssertTrue(app.staticTexts["Excused periods"].waitForExistence(timeout: 5))
+        capture("parity-attendance")
+        backToRecords(app)
+
+        app.staticTexts["Course History"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["graduation-legend"].waitForExistence(timeout: 5))
+        capture("parity-course-history")
+
+        let courseRecords = app.descendants(matching: .any)["history-course-records"]
+        for _ in 0..<6 where !courseRecords.isHittable { app.swipeUp() }
+        XCTAssertTrue(courseRecords.waitForExistence(timeout: 5))
+        XCTAssertTrue(courseRecords.isHittable)
+        courseRecords.tap()
+        let courseRow = app.staticTexts["Algebra I"]
+        for _ in 0..<6 where !courseRow.isHittable { app.swipeUp() }
+        XCTAssertTrue(courseRow.waitForExistence(timeout: 5))
+        capture("parity-course-records")
     }
 
     func testSavedSignInCanUnlock() {

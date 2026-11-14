@@ -102,23 +102,28 @@ private struct ScheduleClassRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(course.title)
-                .font(.headline)
-                .fixedSize(horizontal: false, vertical: true)
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                if !course.period.isEmpty {
+                    Text("P\(course.period)")
+                        .font(.headline)
+                        .monospacedDigit()
+                        .foregroundStyle(SchoolityStyle.accent)
+                        .frame(minWidth: 30, alignment: .leading)
+                        .accessibilityLabel("Period \(course.period)")
+                        .accessibilityIdentifier("schedule-period-\(course.id)")
+                }
+                Text(course.title)
+                    .font(.headline)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             let people = [course.teacher, course.room.isEmpty ? "" : "Room \(course.room)"]
                 .filter { !$0.isEmpty }
                 .joined(separator: " · ")
             if !people.isEmpty {
                 Text(people).font(.subheadline).foregroundStyle(.secondary)
             }
-            let timing = [
-                course.period.isEmpty ? "" : "Period \(course.period)",
-                course.meetingDays ?? "",
-            ]
-            .filter { !$0.isEmpty }
-            .joined(separator: " · ")
-            if !timing.isEmpty {
-                Text(timing).font(.caption).foregroundStyle(SchoolityStyle.muted)
+            if let meetingDays = course.meetingDays, !meetingDays.isEmpty {
+                Text(meetingDays).font(.caption).foregroundStyle(SchoolityStyle.muted)
             }
         }
         .padding(.vertical, 8)
