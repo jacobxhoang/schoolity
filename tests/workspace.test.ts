@@ -117,3 +117,21 @@ test('authentication recovery still works for a non-JSON gateway response', asyn
     /workspace has been kept/,
   );
 });
+
+ test('section authorization failures only end the workspace when grades also reject the session', async () => {
+  const { requestWorkspacePortal } = await import('../src/lib/portal-request.ts');
+  const calls: string[] = [];
+  const transport = (async (_url, options) => {
+    const body = JSON.parse(String(options?.body));
+    calls.push(body.resource);
+    return new Response(JSON.stringify({data:{}}), {status:body.resource === 'grades' ? 200 : 401});
+  }) as typeof fetch;
+  await assert.rejects(requestWorkspacePortal({action:'read',resource:'history'},transport),
+    (error: unknown) => error instanceof RequestFailure && error.status === 409);
+  assert.deepEqual(calls,['history','grades']);
+  await assert.rejects(requestWorkspacePortal({action:'read',resource:'student'},reply(401,{})),
+    (error: unknown) => error instanceof RequestFailure && error.status === 401);
+  await assert.rejects(requestWorkspacePortal({action:'read',resource:'history'},
+    (async () => new Response('',{status:503})) as typeof fetch),
+    (error: unknown) => error instanceof RequestFailure && error.status === 503);
+});

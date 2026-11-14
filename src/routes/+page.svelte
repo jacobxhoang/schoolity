@@ -3,7 +3,7 @@
   import GradeSummary from '$lib/GradeSummary.svelte';
   import StudentRecords from '$lib/StudentRecords.svelte';
   import { readRecords, type RecordPage, type SubjectDetails } from '$lib/records';
-  import { requestPortal, RequestFailure } from '$lib/portal-request';
+  import { requestWorkspacePortal, RequestFailure } from '$lib/portal-request';
   import {
     readLocation,
     courseLocation,
@@ -178,7 +178,7 @@
     background = false,
   ): Promise<Record<string, unknown>> {
     try {
-      return await requestPortal(body);
+      return await requestWorkspacePortal(body);
     } catch (e) {
       if (
         e instanceof RequestFailure &&
