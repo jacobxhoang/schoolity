@@ -13,11 +13,7 @@
   );
 </script>
 
-<section class="grade-comparison" aria-label="Course grade comparison">
-  <div>
-    <span>District grade</span><strong>{percentage(starting.official)}</strong>
-    {#if starting.official === null}<small>Not available</small>{/if}
-  </div>
+<section class="grade-comparison" aria-label="Schoolity grade estimate">
   <div class:scenario>
     <span>{scenario ? 'Hypothetical estimate' : 'Schoolity estimate'}</span><strong
       >{percentage(estimate)}</strong
