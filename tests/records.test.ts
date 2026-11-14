@@ -72,7 +72,7 @@ test('new district resources use the fixed read methods and history needs server
       return { data: {} };
     });
   }
-  await assert.rejects(read(session, 'history', undefined), (e: unknown) => e instanceof PortalError && e.status === 401);
+  await assert.rejects(read(session, 'history', undefined), (e: unknown) => e instanceof PortalError && e.status === 502);
   assert.deepEqual(await read({ ...session, webCookie: 'ASP.NET_SessionId=synthetic' }, 'history', undefined, undefined,
     async (base, path, headers) => {
       assert.equal(base, DISTRICT_URL);
@@ -81,6 +81,22 @@ test('new district resources use the fixed read methods and history needs server
       return { text: `PXP.CourseHistory = ${JSON.stringify(history)};`, cookie: '' };
     }), { courseHistory: history, graduationRequirements: [], classOf: '' });
   await assert.rejects(districtRequest('https://other.example', '/page', {}), /Unsupported district/);
+});
+
+test('history login pages and HTTP rejections are feature errors, while mobile authentication still expires', async () => {
+  const session = { base: DISTRICT_URL, token: 'synthetic', webCookie: 'expired', expires: Date.now() + 10000 };
+  for (const page of [
+    async () => ({ text: '<input type="password">', cookie: '' }),
+    async () => { throw new PortalError('District web login expired', 401); },
+  ]) {
+    for (const request of [
+      () => read(session, 'history', undefined, undefined, page),
+      () => readHistorySubject(session, 'math', page),
+    ]) await assert.rejects(request(), (e: unknown) => e instanceof PortalError && e.status === 502 && /other pages are still available/.test(e.message));
+  }
+  await assert.rejects(read(session, 'grades', undefined, async () => {
+    throw new PortalError('Mobile token expired', 401);
+  }), (e: unknown) => e instanceof PortalError && e.status === 401);
 });
 
 test('graduation progress reads district subject totals and preserves missing values', () => {
@@ -136,11 +152,11 @@ test('subject requests verify membership before the dedicated district detail ca
   await assert.rejects(readHistorySubject(session,'ANOTHER_SUBJECT',page), (e: unknown)=>e instanceof PortalError&&e.status===404);
   assert.equal(calls,1);
   await assert.rejects(readHistorySubject(session,'../other',page), (e: unknown)=>e instanceof PortalError&&e.status===400);
-  await assert.rejects(readHistorySubject({...session,webCookie:undefined},'E09',page), (e: unknown)=>e instanceof PortalError&&e.status===401);
+  await assert.rejects(readHistorySubject({...session,webCookie:undefined},'E09',page), (e: unknown)=>e instanceof PortalError&&e.status===502);
   await assert.rejects(readHistorySubject(session,'E09',async (base,path,headers,body) => body === undefined
     ? page(base,path,headers,body)
     : {text:JSON.stringify({d:{Error:{Message:'INVALID_CONTEXT'}}}),cookie:''}),
-    (e: unknown)=>e instanceof PortalError&&e.status===401);
+    (e: unknown)=>e instanceof PortalError&&e.status===502);
 });
 
 test('login stores district cookies only in the server session and strips cookie attributes', async () => {
