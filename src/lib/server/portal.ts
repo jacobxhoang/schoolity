@@ -309,7 +309,7 @@ export async function read(
       return {studentInfo, studentSections:parseStudentPage(response.text)};
     } catch (error) {
       if (error instanceof Error && 'status' in error && error.status === 401)
-        throw new PortalError('Your district web session ended. Sign in again to load all student information.',401);
+        return {studentInfo, studentInfoNotice:'Your additional StudentVUE information needs to reconnect. Your available student details are shown below. Sign out and sign in again to load contacts, lockers, and transportation.'};
       return {studentInfo, studentInfoNotice:'Additional StudentVUE information could not be loaded. Refresh to try again.'};
     }
   }
