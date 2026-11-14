@@ -4,6 +4,34 @@ import LocalAuthentication
 
 final class SavedSignInTests: XCTestCase {
     @MainActor
+    func testCancelledLoadsDoNotPublishFailuresOrSignOut() async {
+        let portal = TestPortal()
+        let store = AppStore(client: portal, unlocker: TestUnlocker())
+        await store.start()
+        XCTAssertEqual(store.access, .signedIn)
+        let cancellations: [Error] = [CancellationError(), URLError(.cancelled)]
+        for error in cancellations {
+            portal.readError = error
+            await store.refreshGrades()
+            await store.loadProfile(refresh: true)
+            await store.loadSchedule(refresh: true)
+            await store.loadRecord(.student, refresh: true)
+            await store.load(.mail, refresh: true)
+            XCTAssertEqual(store.access, .signedIn)
+            XCTAssertNil(store.gradeError)
+            XCTAssertNil(store.profileError)
+            XCTAssertNil(store.scheduleError)
+            XCTAssertTrue(store.recordErrors.isEmpty)
+            XCTAssertTrue(store.failures.isEmpty)
+            XCTAssertFalse(store.isLoading)
+            XCTAssertFalse(store.isLoadingProfile)
+            XCTAssertFalse(store.isLoadingSchedule)
+            XCTAssertTrue(store.loadingRecords.isEmpty)
+            XCTAssertTrue(store.loadingResources.isEmpty)
+        }
+    }
+
+    @MainActor
     func testUnknownDiscoveryOnSessionRejectionKeepsCredentialsForAuthenticatedRetry() async {
         let portal = TestPortal()
         let store = AppStore(client: portal, unlocker: TestUnlocker())
@@ -125,6 +153,7 @@ final class SavedSignInTests: XCTestCase {
         XCTAssertEqual(store.access, .signedIn)
     }
 
+    @MainActor
     func testCredentialsCannotBeSavedWithoutLocalAuthenticationProtection() {
         let saved = SavedSession(value: "synthetic", expires: .distantFuture, username: "sample", password: "synthetic-only")
         XCTAssertThrowsError(try SessionVault.save(saved, requiresUnlock: false))

@@ -26,6 +26,7 @@ test('course navigation round-trips unusual district identifiers', () => {
 test('extra credit is included in chart bounds, with stable empty bounds', () => {
   assert.deepEqual(chartRange([86, 110, NaN]), { low: 0, high: 110 });
   assert.deepEqual(chartRange([]), { low: 0, high: 100 });
+  assert.deepEqual(chartRange([...Array<number>(250000).fill(80), -10, 120, Infinity]), {low:-10, high:120});
 });
 test('scenario results describe the comparison and unavailable inputs', () => {
   assert.match(scoreChange(90, 86), /\+4.0 percentage points/);

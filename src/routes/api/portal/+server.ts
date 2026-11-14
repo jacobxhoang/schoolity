@@ -1,3 +1,4 @@
+import { readJsonRequest } from '$lib/server/json-request';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import {
@@ -5,7 +6,7 @@ import {
   read,
   readHistorySubject,
 } from '$lib/server/portal';
-import { nativeData, object, schedule } from '$lib/portal-data';
+import { nativeData, schedule } from '$lib/portal-data';
 import { DISTRICT_URL } from '$lib/config';
 import { browserAuth } from '$lib/server/browser-auth';
 import { readRecords } from '$lib/records';
@@ -18,21 +19,7 @@ export const POST: RequestHandler = async ({
   const context = { cookies, url, getClientAddress };
   const headers = { 'Cache-Control': 'no-store', Pragma: 'no-cache' };
   try {
-    if (
-      request.headers.get('origin') !== url.origin ||
-      !request.headers.get('content-type')?.startsWith('application/json')
-    )
-      throw new PortalError('A same-origin JSON request is required.', 403);
-    if (Number(request.headers.get('content-length')) > 8192)
-      throw new PortalError('Request too large.', 413);
-    const raw = await request.text();
-    if (raw.length > 8192) throw new PortalError('Request too large.', 413);
-    let input;
-    try {
-      input = object(JSON.parse(raw));
-    } catch {
-      throw new PortalError('Invalid request.', 400);
-    }
+    const input = await readJsonRequest(request, url, 8192);
     if (input.action === 'logout') {
       await browserAuth.logout(context);
       return json({ ok: true }, { headers });
