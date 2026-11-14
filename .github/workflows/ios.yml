@@ -125,6 +125,7 @@ jobs:
             -derivedDataPath DerivedData -resultBundlePath TestResults/Dark.xcresult \
             -only-testing:SchoolityUITests/SchoolityUITests/testLoginHasNoAnonymousEntry \
             -only-testing:SchoolityUITests/SchoolityUITests/testAccessibilityGradebookAndCourse \
+            -only-testing:SchoolityUITests/SchoolityUITests/testScheduleAndRecordsScreenshots \
             -only-testing:SchoolityUITests/SchoolityUITests/testSavedSignInCanUnlock \
             -only-testing:SchoolityUITests/SchoolityUITests/testStudentIDShowsBarcodeAndDistrictNumber \
             -parallel-testing-enabled NO \
