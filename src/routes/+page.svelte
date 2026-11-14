@@ -855,6 +855,12 @@
           ><strong>{navigation.find((n) => n.id === tab)?.label}</strong>
         </div>
         <div class="header-actions">
+          {#if busy}
+            <div class="update-status" role="status" aria-live="polite" aria-atomic="true">
+              <span class="update-spinner" aria-hidden="true"></span>
+              <span>{data.courses.length ? 'Updating…' : 'Loading…'}</span>
+            </div>
+          {/if}
           <button
             class="icon-button"
             aria-label="Toggle color theme"
@@ -883,9 +889,6 @@
             </div>
           </div>{/if}
         {#if notice}<div class="notice" role="status">{notice}</div>{/if}
-        {#if busy}<div class="loading" role="status">
-            {data.courses.length ? 'Updating school data…' : 'Loading school data…'}
-          </div>{/if}
         {#if activeCourse}
           <button class="back-link" onclick={() => navigate('grades')}
             >← All courses</button
