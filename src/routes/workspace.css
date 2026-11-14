@@ -223,10 +223,6 @@ nav button svg {
   max-width: 1500px;
   padding: 36px 36px 56px;
 }
-main:focus {
-  outline: none;
-}
-
 /* Type and shared controls */
 
 h1 {

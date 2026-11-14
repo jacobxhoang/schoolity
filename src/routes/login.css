@@ -168,7 +168,8 @@
   box-shadow: var(--shadow);
 }
 .login-form-panel:focus-visible {
-  outline: none;
+  outline: var(--focus-ring);
+  outline-offset: 4px;
 }
 .login-form-head {
   display: flex;
