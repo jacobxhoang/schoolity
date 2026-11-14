@@ -42,8 +42,22 @@ struct ClassAlias: Codable, Equatable, Identifiable, Sendable {
     var symbol: String
 }
 
+enum AppearancePreference: String, Codable, CaseIterable, Sendable {
+    case system, light, dark
+
+    var label: String {
+        switch self {
+        case .system: return "System"
+        case .light: return "Light"
+        case .dark: return "Dark"
+        }
+    }
+}
+
 struct CustomizationSettings: Codable, Equatable, Sendable {
     var accent: StoredColor?
+    /// Optional so older saved settings keep decoding; `nil` means System.
+    var appearance: AppearancePreference? = nil
     var gradeColorsEnabled = false
     var defaultGradeColor = StoredColor(hex: 0x737373)
     var gradeRules = GradeColorRule.defaults
@@ -89,6 +103,14 @@ final class CustomizationStore: ObservableObject {
     }
 
     var accentColor: Color { settings.accent?.color ?? Color("ActionAccent") }
+    /// `nil` follows the iPhone's Light or Dark Mode, as before.
+    var colorScheme: ColorScheme? {
+        switch settings.appearance ?? .system {
+        case .system: return nil
+        case .light: return .light
+        case .dark: return .dark
+        }
+    }
     func gradeColor(_ score: Double?) -> Color { settings.gradeColor(for: score)?.color ?? accentColor }
     func name(for title: String) -> String { settings.alias(for: title)?.name ?? title }
     func symbol(for title: String) -> String { settings.alias(for: title)?.symbol ?? "studentdesk" }

@@ -47,6 +47,8 @@ struct ScheduleView: View {
                                 Text("\(term.classes.count) \(term.classes.count == 1 ? "class" : "classes")")
                                     .fontWeight(.regular)
                             }
+                        } footer: {
+                            LastUpdatedText(date: store.lastUpdated["schedule"])
                         }
                     }
                 }

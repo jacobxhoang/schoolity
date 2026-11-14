@@ -120,6 +120,7 @@ struct StudentInfoView: View {
                     }
                 }
             }
+            LastUpdatedFooter(date: store.lastUpdated[StudentRecordFeature.student.rawValue])
         }
         .schoolityList()
         .navigationTitle("Student Info")
@@ -273,6 +274,7 @@ struct AttendanceView: View {
                     }
                 }
             }
+            LastUpdatedFooter(date: store.lastUpdated[StudentRecordFeature.attendance.rawValue])
         }
         .schoolityList()
         .navigationTitle("Attendance")
@@ -433,6 +435,7 @@ struct CourseHistoryView: View {
                     }
                 }
             }
+            LastUpdatedFooter(date: store.lastUpdated[StudentRecordFeature.history.rawValue])
         }
         .schoolityList()
         .navigationTitle("Course History")

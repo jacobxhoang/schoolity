@@ -20,6 +20,8 @@ final class AppStore: ObservableObject {
     @Published var records: [SchoolResource: [SchoolEvent]] = [:]
     @Published var failures: [SchoolResource: String] = [:]
     @Published var loadingResources: Set<SchoolResource> = []
+    /// When each section last loaded from the district, matching the website.
+    @Published var lastUpdated: [String: Date] = [:]
     @Published var isLoading = false
     @Published var gradeError: String?
     @Published var loginError: String?
@@ -246,6 +248,7 @@ final class AppStore: ObservableObject {
             let next: Gradebook = try await client.read("grades", term: term ?? gradebook?.currentTerm)
             guard ticket == generation else { return }
             gradebook = next
+            lastUpdated["grades"] = Date()
             await observeGradedAssignments(next)
         } catch {
             guard ticket == generation, !PortalFailure.isCancellation(error) else { return }
@@ -330,6 +333,7 @@ final class AppStore: ObservableObject {
             let next: ScheduleData = try await client.read("schedule-terms", term: nil)
             guard ticket == generation else { return }
             schedule = next
+            lastUpdated["schedule"] = Date()
         } catch {
             guard ticket == generation, !PortalFailure.isCancellation(error) else { return }
             handle(error)
@@ -367,6 +371,7 @@ final class AppStore: ObservableObject {
                 guard ticket == generation else { return }
                 attendance = next
             }
+            lastUpdated[feature.rawValue] = Date()
         } catch {
             guard ticket == generation, !PortalFailure.isCancellation(error) else { return }
             handle(error)
@@ -442,7 +447,10 @@ final class AppStore: ObservableObject {
         defer { if ticket == generation { loadingResources.remove(resource) } }
         do {
             let next: [SchoolEvent] = try await client.read(resource.rawValue, term: nil)
-            if ticket == generation { records[resource] = next }
+            if ticket == generation {
+                records[resource] = next
+                lastUpdated[resource.rawValue] = Date()
+            }
         } catch {
             guard ticket == generation, !PortalFailure.isCancellation(error) else { return }
             handle(error)
@@ -513,6 +521,7 @@ final class AppStore: ObservableObject {
         records = [:]
         failures = [:]
         loadingResources = []
+        lastUpdated = [:]
         gradeError = nil
         isLoading = false
         PortalClient.clearDownloads()

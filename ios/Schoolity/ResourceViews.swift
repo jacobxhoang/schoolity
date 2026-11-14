@@ -17,11 +17,16 @@ struct ResourceView: View {
                 if items.isEmpty {
                     ContentUnavailableView(resource == .mail ? "No messages" : "No \(resource.title.lowercased())", systemImage: resource.symbol,
                                            description: Text("Nothing to show from your district yet."))
-                }
-                ForEach(Array(items.enumerated()), id: \.offset) { index, item in
-                    switch resource {
-                    case .mail: mailRow(item, index: index)
-                    case .documents: documentRow(item, index: index)
+                } else {
+                    Section {
+                        ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                            switch resource {
+                            case .mail: mailRow(item, index: index)
+                            case .documents: documentRow(item, index: index)
+                            }
+                        }
+                    } footer: {
+                        LastUpdatedText(date: store.lastUpdated[resource.rawValue])
                     }
                 }
             } else if store.loadingResources.contains(resource) {
