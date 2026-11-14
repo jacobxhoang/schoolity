@@ -205,7 +205,7 @@ final class SchoolityUITests: XCTestCase {
         capture("accessible-gradebook-row")
         if !course.isHittable { app.swipeUp() }
         course.tap()
-        XCTAssertTrue(app.staticTexts["District grade"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["School grade"].waitForExistence(timeout: 5))
         capture("accessible-course")
     }
 
