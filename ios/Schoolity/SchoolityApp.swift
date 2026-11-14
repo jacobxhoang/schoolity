@@ -168,9 +168,10 @@ struct WorkspaceView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             NavigationStack { GradebookView() }.tabItem { Label("Grades", systemImage: "book.closed.fill") }.tag(1)
-            NavigationStack { ResourceView(resource: .schedule) }.tabItem { Label("Schedule", systemImage: "calendar") }.tag(2)
+            NavigationStack { ScheduleView() }.tabItem { Label("Schedule", systemImage: "calendar") }.tag(2)
             NavigationStack { ResourceView(resource: .mail) }.tabItem { Label("Inbox", systemImage: "tray") }.tag(3)
             NavigationStack { ResourceView(resource: .documents) }.tabItem { Label("Documents", systemImage: "doc") }.tag(4)
+            NavigationStack { RecordsView() }.tabItem { Label("Records", systemImage: "list.bullet.rectangle") }.tag(5)
         }
     }
 }

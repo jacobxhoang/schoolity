@@ -13,11 +13,27 @@ struct GradebookView: View {
                             ForEach(book.terms) { Text($0.name).tag($0.id) }
                         }.pickerStyle(.menu).disabled(store.isLoading)
                 }
+                Section("Overview") {
+                    LabeledContent("Course average", value: GradeMath.percent(courseAverage(book)))
+                    LabeledContent("Courses", value: "\(book.courses.count)")
+                }
                 Section {
                     ForEach(book.courses) { course in
                         NavigationLink { CourseDetailView(course: course).id("\(book.currentTerm)-\(course.id)") } label: { CourseRow(course: course) }
                     }
                     if book.courses.isEmpty { ContentUnavailableView("No courses", systemImage: "books.vertical", description: Text("Try another reporting period.")) }
+                }
+                if !recentAssignments(book).isEmpty {
+                    Section("Recent assignments") {
+                        ForEach(recentAssignments(book)) { item in
+                            NavigationLink {
+                                CourseDetailView(course: item.course)
+                                    .id("\(book.currentTerm)-\(item.course.id)")
+                            } label: {
+                                RecentAssignmentRow(item: item)
+                            }
+                        }
+                    }
                 }
             }
             if store.isLoading { ProgressView("Loading grades…") }
@@ -29,6 +45,52 @@ struct GradebookView: View {
         .navigationTitle("Grades")
         .toolbar { ToolbarItem(placement: .topBarTrailing) { AccountButton() } }
         .refreshable { await store.refreshGrades() }
+    }
+
+    private func courseAverage(_ book: Gradebook) -> Double? {
+        let scores = book.courses.compactMap { $0.official ?? GradeMath.calculate($0) }
+        guard !scores.isEmpty else { return nil }
+        return scores.reduce(0, +) / Double(scores.count)
+    }
+
+    private func recentAssignments(_ book: Gradebook) -> [RecentAssignment] {
+        Array(book.courses.flatMap { course in
+            course.assignments.map { RecentAssignment(course: course, assignment: $0) }
+        }.sorted {
+            (GradeMath.date($0.assignment.due) ?? .distantPast) > (GradeMath.date($1.assignment.due) ?? .distantPast)
+        }.prefix(8))
+    }
+}
+
+private struct RecentAssignment: Identifiable {
+    let course: Course
+    let assignment: Assignment
+    var id: String { "\(course.id)-\(assignment.id)" }
+}
+
+private struct RecentAssignmentRow: View {
+    let item: RecentAssignment
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(item.assignment.title.isEmpty ? "Untitled assignment" : item.assignment.title)
+                .font(.headline)
+            Text(item.course.name).font(.caption).foregroundStyle(.secondary)
+            HStack(alignment: .firstTextBaseline) {
+                Text(item.assignment.due.isEmpty ? "No due date" : GradeMath.shortDate(item.assignment.due))
+                Spacer()
+                Text(score).font(.caption.weight(.semibold))
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 6)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var score: String {
+        if item.assignment.excluded == true { return "Not for grading" }
+        guard let earned = item.assignment.earned else { return "Not graded" }
+        return "\(GradeMath.points(earned)) / \(GradeMath.points(item.assignment.possible))"
     }
 }
 
@@ -46,13 +108,19 @@ struct CourseRow: View {
                 }
                     identity
             }
+            let score = course.official ?? GradeMath.calculate(course)
             HStack(alignment: .firstTextBaseline, spacing: 12) {
-                Text(GradeMath.letter(course.official))
+                Text(GradeMath.letter(score))
                     .font(.headline)
                     .foregroundStyle(SchoolityStyle.accent)
                     .padding(.horizontal, 9).padding(.vertical, 4)
                     .background(SchoolityStyle.accent.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
-                Text(GradeMath.percent(course.official)).font(.callout.weight(.semibold))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(GradeMath.percent(score)).font(.callout.weight(.semibold))
+                    Text(course.official == nil ? "Calculated" : "District grade")
+                        .font(.caption2)
+                        .foregroundStyle(SchoolityStyle.muted)
+                }
             }.monospacedDigit()
         }.padding(.vertical, 8)
         .accessibilityElement(children: .combine)
@@ -103,7 +171,15 @@ struct CourseDetailView: View {
                                 Text(assignment.earned.map { "\(GradeMath.points($0)) / \(GradeMath.points(assignment.possible))" } ?? "Not graded")
                                     .foregroundStyle(.primary).monospacedDigit()
                             }.font(.subheadline)
-                            if !assignment.due.isEmpty { Text(assignment.due).font(.caption).foregroundStyle(.secondary) }
+                            if assignment.excluded != true, let earned = assignment.earned {
+                                if assignment.possible > 0 {
+                                    Text(GradeMath.percent(earned / assignment.possible * 100))
+                                        .font(.caption).foregroundStyle(SchoolityStyle.accent)
+                                } else {
+                                    Text("Extra credit").font(.caption).foregroundStyle(SchoolityStyle.accent)
+                                }
+                            }
+                            if !assignment.due.isEmpty { Text(GradeMath.shortDate(assignment.due)).font(.caption).foregroundStyle(.secondary) }
                             if assignment.excluded == true { Text("Not for grading").font(.caption).foregroundStyle(.secondary) }
                             if assignment.hypothetical == true { Label("Hypothetical", systemImage: "pencil").font(.caption).foregroundStyle(.secondary) }
                         }.padding(.vertical, 8).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())

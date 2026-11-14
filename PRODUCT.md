@@ -25,7 +25,7 @@ An independent student dashboard for one district, combining a school portal wit
 - A valid StudentVUE login is required to enter the workspace. There is no anonymous demo entry point.
 - The district is fixed to `https://synergyportal.anoka.k12.mn.us` in the interface and server. Do not introduce district selection without a new product decision.
 - Core flow: sign in, open the gradebook, inspect a course and its assignments, explore hypothetical scores, and reset changes.
-- Additional web sections are schedule, inbox, documents, student info, course history, and attendance. The user explicitly requested attendance again, superseding its earlier removal. Native navigation remains Grades, Schedule, Inbox, and Documents.
+- Additional web sections are schedule, inbox, documents, student info, course history, and attendance. The user explicitly requested attendance again, superseding its earlier removal. Native navigation is Grades, Schedule, Inbox, Documents, and Records; Records groups Student Info, Attendance, and Course History.
 - Current local app: `http://127.0.0.1:5180/`. Source application root is this directory; the sibling Student and GradeCompass checkouts are separate projects.
 - `npm run dev` launches the SvelteKit development server with hot reload on port 5180. `npm run build` produces a Node server; `npm start` runs that build. The production Node server needs its host, port, and origin configured. Check whether a server already owns the port before starting another.
 
@@ -38,8 +38,8 @@ An independent student dashboard for one district, combining a school portal wit
 - Successful iOS builds on `main` publish one unsigned `Schoolity.ipa` asset in GitHub Releases. PR builds cannot publish; repository write permission is limited to the separate release job. Diagnostic artifacts are temporary and opt-in except on test failure.
 - Gradebook: reporting-period selection, course details, assignment scores, and calculated grade trends.
 - Calculator: points and weighted-category calculations, hypothetical score editing, hypothetical assignments, and reset.
-- School data comes from the district's mobile JSON API through Schoolity's server. Read adapters exist for grades, student identity, schedule, inbox, and document listings.
-- The web schedule supports switching among district schedule terms. The native schedule continues to show the district’s current term.
+- School data comes from the district's mobile JSON API through Schoolity's server. Read adapters exist for grades, student identity, schedule, inbox, document listings, attendance, course history, and student information. Course history subject details load on demand through the authenticated server session.
+- The web and native schedules both support switching among district schedule terms. Native scheduling reads an opt-in `schedule-terms` response so installed clients that still consume the older flat schedule shape continue to work.
 - Schoolity does not change district records. Inbox is read-only and currently loads up to 50 messages.
 - A live calendar subscription feed, two-way calendar sync, persistent offline school-data caching, and notifications are not implemented. Do not portray them as working features.
 - District-specific rounding, dropped scores, standards-based grading, and custom policies may differ from Schoolity's estimates. Preserve the distinction between district-reported and calculated grades.
@@ -52,7 +52,7 @@ An independent student dashboard for one district, combining a school portal wit
 
 - The user-selected product name is **Schoolity**.
 - Preserve the web's black-and-white interface constraint and preference for a compact, straightforward structure similar to Student, while retaining Schoolity's own implementation and branding.
-- For native iOS, the user requested Pupil-style layout while explicitly keeping black and white and the original Schoolity unlock screen. The current native request retains the original Schoolity credential form, removes Home, displays student ID directly in Account, and adds restrained color: deep teal actions in Light Mode, pale teal in Dark Mode, with neutral system surfaces. This supersedes native monochrome only; the web palette remains unchanged. Preserve compact native inset lists, course icons and stacked grade lines, and open on Grades with four tabs: Grades, Schedule, Inbox and Documents. Pupil is a visual/behavioral reference only; no source/assets or old API/storage dependencies are imported. Saved-credential renewal follows the user-approved behavior with stronger user-presence Keychain protection.
+- For native iOS, the user requested Pupil-style layout while explicitly keeping black and white and the original Schoolity unlock screen. The current native request retains the original Schoolity credential form, removes Home, displays student ID directly in Account, and adds restrained color: deep teal actions in Light Mode, pale teal in Dark Mode, with neutral system surfaces. This supersedes native monochrome only; the web palette remains unchanged. Preserve compact native inset lists, course icons and stacked grade lines, and open on Grades with five tabs: Grades, Schedule, Inbox, Documents and Records. Records groups Student Info, Attendance and Course History. Pupil is a visual/behavioral reference only; no source/assets or old API/storage dependencies are imported. Saved-credential renewal follows the user-approved behavior with stronger user-presence Keychain protection.
 - Use direct, functional language suited to students completing school tasks. Do not invent endorsements, institutional affiliation, or marketing claims.
 - Trademark availability has not been established.
 

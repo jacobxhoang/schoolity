@@ -61,17 +61,15 @@ struct SchoolEvent: Codable {
 }
 
 enum SchoolResource: String, CaseIterable {
-    case schedule, mail, documents
+    case mail, documents
     var title: String {
         switch self {
-        case .schedule: return "Schedule"
         case .mail: return "Inbox"
         case .documents: return "Documents"
         }
     }
     var symbol: String {
         switch self {
-        case .schedule: return "calendar"
         case .mail: return "tray"
         case .documents: return "doc"
         }
@@ -149,6 +147,11 @@ enum GradeMath {
     static func percent(_ score: Double?) -> String {
         guard let score, score.isFinite else { return "—" }
         return String(format: "%.1f%%", score)
+    }
+
+    static func shortDate(_ value: String) -> String {
+        guard let parsed = date(value) else { return value }
+        return parsed.formatted(.dateTime.month(.abbreviated).day())
     }
 
     static func points(_ score: Double) -> String { score.formatted(.number.precision(.fractionLength(0...2))) }
