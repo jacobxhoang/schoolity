@@ -2,6 +2,15 @@ import XCTest
 import Vision
 
 final class SchoolityUITests: XCTestCase {
+    private func reveal(_ element: XCUIElement, in app: XCUIApplication, towardTop: Bool = false,
+                        file: StaticString = #filePath, line: UInt = #line) {
+        for _ in 0..<6 where !element.exists || !element.isHittable {
+            if towardTop { app.collectionViews.firstMatch.swipeDown() }
+            else { app.collectionViews.firstMatch.swipeUp() }
+        }
+        XCTAssertTrue(element.waitForExistence(timeout: 5), file: file, line: line)
+    }
+
     private func capture(_ name: String) {
         let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         screenshot.name = name
@@ -54,8 +63,9 @@ final class SchoolityUITests: XCTestCase {
         XCTAssertEqual(app.tabBars.buttons.count, 5)
         capture("gradebook")
         course.tap()
-        XCTAssertTrue(app.staticTexts["Grade history"].waitForExistence(timeout: 5))
+        reveal(app.staticTexts["Grade history"], in: app)
         capture("course")
+        reveal(app.buttons["Add hypothetical score"], in: app)
         app.buttons["Add hypothetical score"].tap()
         XCTAssertTrue(app.textFields["Assignment title"].waitForExistence(timeout: 5))
         app.textFields["Assignment title"].tap()
@@ -63,7 +73,9 @@ final class SchoolityUITests: XCTestCase {
         app.textFields["Points earned"].tap()
         app.textFields["Points earned"].typeText("9")
         app.buttons["Save"].tap()
+        reveal(app.staticTexts["Hypothetical estimate"], in: app, towardTop: true)
         XCTAssertTrue(app.staticTexts["Hypothetical estimate"].waitForExistence(timeout: 5))
+        reveal(app.buttons["Find a target score"], in: app)
         app.buttons["Find a target score"].tap()
         XCTAssertTrue(app.navigationBars["Target score"].waitForExistence(timeout: 5))
         app.buttons["Done"].tap()
@@ -87,6 +99,30 @@ final class SchoolityUITests: XCTestCase {
         app.staticTexts["Next week’s review"].tap()
         XCTAssertTrue(app.staticTexts["Bring your practice problems on Monday. We’ll review chapters 4 & 5 together."].waitForExistence(timeout: 5))
         capture("inbox-expanded")
+    }
+
+    func testCourseBreakdownAndExpandableAssignments() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing"]
+        app.launch()
+        let course = app.descendants(matching: .any)["course-sample-math"]
+        XCTAssertTrue(course.waitForExistence(timeout: 10))
+        course.tap()
+        let picker = app.segmentedControls.firstMatch
+        reveal(picker, in: app)
+        picker.buttons["Breakdown"].tap()
+        reveal(app.staticTexts["Category breakdown"], in: app)
+        capture("course-breakdown")
+        reveal(picker, in: app, towardTop: true)
+        picker.buttons["Assignments"].tap()
+        let assignment = app.buttons.containing(.staticText, identifier: "Functions").firstMatch
+        reveal(assignment, in: app)
+        assignment.tap()
+        let edit = app.buttons["Edit hypothetical score"].firstMatch
+        reveal(edit, in: app)
+        edit.tap()
+        XCTAssertTrue(app.textFields["Assignment title"].waitForExistence(timeout: 5))
+        app.buttons["Cancel"].tap()
     }
 
     func testAccessibilityGradebookAndCourse() {

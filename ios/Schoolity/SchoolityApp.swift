@@ -170,8 +170,8 @@ struct WorkspaceView: View {
     @State private var selectedTab: WorkspaceTab = .grades
     var body: some View {
         TabView(selection: $selectedTab) {
-            NavigationStack { GradebookView() }.tabItem { Label("Grades", systemImage: "book.closed.fill") }.tag(WorkspaceTab.grades)
-            NavigationStack { ScheduleView() }.tabItem { Label("Schedule", systemImage: "calendar") }.tag(WorkspaceTab.schedule)
+            NavigationStack { GradebookView() }.tabItem { Label("Grades", systemImage: "menucard.fill") }.tag(WorkspaceTab.grades)
+            NavigationStack { ScheduleView() }.tabItem { Label("Schedule", systemImage: "list.bullet.rectangle.portrait.fill") }.tag(WorkspaceTab.schedule)
             NavigationStack { ResourceView(resource: .mail) }.tabItem { Label("Inbox", systemImage: "tray") }.tag(WorkspaceTab.inbox)
             NavigationStack { ResourceView(resource: .documents) }.tabItem { Label("Documents", systemImage: "doc") }.tag(WorkspaceTab.documents)
             NavigationStack { RecordsView() }.tabItem { Label("Records", systemImage: "list.bullet.rectangle") }.tag(WorkspaceTab.records)
@@ -190,9 +190,16 @@ struct AccountButton: View {
                     List {
                         if let profile = store.profile {
                             Section {
-                                Text(profile.name).font(.headline)
-                                Text(profile.school).foregroundStyle(.secondary)
-                                if !profile.grade.isEmpty { LabeledContent("Grade", value: profile.grade) }
+                                HStack(spacing: 14) {
+                                    Image(systemName: "person.crop.circle.fill")
+                                        .font(.system(size: 48)).foregroundStyle(SchoolityStyle.accent)
+                                        .accessibilityHidden(true)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(profile.name).font(.title3.weight(.semibold))
+                                        Text(profile.school).font(.footnote).foregroundStyle(.secondary)
+                                    }
+                                }.padding(.vertical, 8)
+                                if !profile.grade.isEmpty { InformationRow(title: "Grade", value: profile.grade, symbol: "graduationcap.fill") }
                             }
                         }
                         Section("Student ID") { StudentIDSection() }
@@ -200,6 +207,7 @@ struct AccountButton: View {
                             Button("Sign out", role: .destructive) { Task { await store.signOut() } }
                         }
                     }
+                    .listStyle(.inset)
                     .task { await store.loadProfile(refresh: store.profile?.studentId == nil) }
                     .refreshable { await store.loadProfile(refresh: true) }
                     .privacySensitive()
