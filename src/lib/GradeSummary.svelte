@@ -15,7 +15,7 @@
 
 <section class="grade-comparison" aria-label="Schoolity grade estimate">
   <div class:scenario>
-    <span>{scenario ? 'Hypothetical estimate' : 'Schoolity estimate'}</span><strong
+    {#if scenario}<span>Hypothetical estimate</span>{/if}<strong
       >{percentage(estimate)}</strong
     >{#if scenario}<small aria-label={scoreChange(estimate, baseline)}
         >{change === null
