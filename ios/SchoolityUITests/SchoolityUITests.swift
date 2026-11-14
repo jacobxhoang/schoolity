@@ -74,6 +74,7 @@ final class SchoolityUITests: XCTestCase {
         reveal(app.staticTexts["Grade history"], in: app)
         capture("course")
         reveal(app.buttons["Add hypothetical score"], in: app)
+        capture("hypothetical-action")
         app.buttons["Add hypothetical score"].tap()
         XCTAssertTrue(app.textFields["Assignment title"].waitForExistence(timeout: 5))
         app.textFields["Assignment title"].tap()
