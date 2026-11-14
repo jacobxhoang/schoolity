@@ -22,6 +22,7 @@ struct GradeCategoryBreakdown: View {
 }
 
 private struct CategoryGradeRow: View {
+    @EnvironmentObject private var customization: CustomizationStore
     let category: GradeCategory
     let assignments: [Assignment]
 
@@ -35,7 +36,7 @@ private struct CategoryGradeRow: View {
         VStack(alignment: .leading, spacing: 6) {
             LabeledContent(category.name.isEmpty ? "Assignments" : category.name, value: GradeMath.percent(score))
                 .font(.subheadline.weight(.medium))
-            if let score { ProgressView(value: min(100, max(0, score)), total: 100).tint(SchoolityStyle.accent) }
+            if let score { ProgressView(value: min(100, max(0, score)), total: 100).tint(customization.gradeColor(score)) }
             HStack {
                 Text("\(GradeMath.points(earned)) / \(GradeMath.points(possible)) points")
                 Spacer()
@@ -46,6 +47,7 @@ private struct CategoryGradeRow: View {
 }
 
 struct CourseGradeHeading: View {
+    @EnvironmentObject private var customization: CustomizationStore
     let course: Course
     let districtScore: Double?
     let changed: Bool
@@ -56,14 +58,14 @@ struct CourseGradeHeading: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline, spacing: 12) {
                 Text(GradeMath.letter(score)).font(.system(.largeTitle, design: .rounded, weight: .bold))
-                    .foregroundStyle(SchoolityStyle.accent)
+                    .foregroundStyle(customization.gradeColor(score))
                 Text(GradeMath.percent(score)).font(.title2.weight(.semibold)).foregroundStyle(.secondary)
                 Spacer(minLength: 0)
             }
             .monospacedDigit()
             if let score {
                 ProgressView(value: min(100, max(0, score)), total: 100)
-                    .tint(SchoolityStyle.accent)
+                    .tint(customization.gradeColor(score))
                     .accessibilityLabel(changed ? "Hypothetical grade progress" : "Course grade progress")
                     .accessibilityValue(GradeMath.percent(score))
             }
@@ -115,13 +117,14 @@ struct AssignmentDetailRow: View {
 }
 
 private struct AssignmentScoreIndicator: View {
+    @EnvironmentObject private var customization: CustomizationStore
     let score: Double?
     var body: some View {
         ZStack {
             Circle().stroke(Color.secondary.opacity(0.2), lineWidth: 3)
             if let score {
                 Circle().trim(from: 0, to: CGFloat(min(1, max(0, score / 100))))
-                    .stroke(SchoolityStyle.accent, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                    .stroke(customization.gradeColor(score), style: StrokeStyle(lineWidth: 3, lineCap: .round))
                     .rotationEffect(.degrees(-90))
             }
         }
@@ -146,7 +149,7 @@ private enum CoursePreviewData {
             AssignmentDetailRow(assignment: CoursePreviewData.course.assignments[0], edit: {})
             GradeCategoryBreakdown(course: CoursePreviewData.course)
         }.listStyle(.inset).navigationTitle("Gradebook")
-    }.tint(SchoolityStyle.accent)
+    }.tint(SchoolityStyle.accent).environmentObject(CustomizationStore())
 }
 
 #Preview("Course rows – large text, dark") {
@@ -158,5 +161,6 @@ private enum CoursePreviewData {
     .listStyle(.inset)
     .environment(\.dynamicTypeSize, .accessibility3)
     .preferredColorScheme(.dark)
+    .environmentObject(CustomizationStore())
 }
 #endif

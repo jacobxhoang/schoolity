@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum SchoolityStyle {
-    static let accent = Color("ActionAccent")
+    static let accent = Color.accentColor
     static let muted = Color.primary.opacity(0.65)
 }
 
