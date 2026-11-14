@@ -5,6 +5,20 @@ export class RequestFailure extends Error {
     this.status = status;
   }
 }
+// A district web-page session can expire while the mobile API still works.
+// Confirm the main session before allowing a section failure to clear the workspace.
+export async function requestWorkspacePortal(
+  body: Record<string, unknown>,
+  transport: typeof fetch = fetch,
+): Promise<Record<string, unknown>> {
+  try { return await requestPortal(body, transport); }
+  catch (error) {
+    if (!(error instanceof RequestFailure) || error.status !== 401 ||
+      body.action !== 'read' || body.resource === 'grades') throw error;
+    await requestPortal({action:'read', resource:'grades'}, transport);
+    throw new RequestFailure('This section’s district session is unavailable. Your workspace has been kept. Retry, or sign out and sign in again to reconnect this section.', 409);
+  }
+}
 export async function requestPortal(
   body: Record<string, unknown>,
   transport: typeof fetch = fetch,
