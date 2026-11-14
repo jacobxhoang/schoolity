@@ -15,6 +15,15 @@ export class PortalError extends Error {
     this.status = status;
   }
 }
+
+// StudentVUE's browser cookie is separate from the mobile API token. A
+// browser-only failure must not tell clients to discard the whole login.
+function historyFailure(error: unknown): PortalError {
+  if (error instanceof Error && 'status' in error && error.status === 401)
+    return new PortalError('Course history needs to reconnect to StudentVUE. Your other pages are still available. Try refreshing later.', 502);
+  return error instanceof PortalError ? error : new PortalError(
+    error instanceof Error ? error.message : 'Could not read course history. Try again.');
+}
 const privateNetworks = new BlockList();
 for (const [address, prefix] of [
   ['0.0.0.0', 8],
@@ -233,14 +242,12 @@ export async function read(
   page = districtRequest,
 ): Promise<unknown> {
   if (resource === 'history') {
-    if (!session.webCookie)
-      throw new PortalError('Sign in again to load course history.', 401);
-    const response = await page(session.base, '/PXP2_CourseHistory.aspx?AGU=0', { Cookie: session.webCookie });
-    try { return parseHistoryOverview(response.text); }
-    catch (error) {
-      throw new PortalError(error instanceof Error ? error.message : 'Could not read course history.',
-        error instanceof Error && 'status' in error && error.status === 401 ? 401 : 502);
-    }
+    try {
+      if (!session.webCookie)
+        throw new PortalError('Missing district web session.', 401);
+      const response = await page(session.base, '/PXP2_CourseHistory.aspx?AGU=0', { Cookie: session.webCookie });
+      return parseHistoryOverview(response.text);
+    } catch (error) { throw historyFailure(error); }
   }
   const methods: Record<string, [string, Record<string, unknown>, string[]]> = {
     grades: [
@@ -331,14 +338,14 @@ export async function read(
 export async function readHistorySubject(session: Session, subject: unknown, page = districtRequest) {
   if (typeof subject !== 'string' || !/^[A-Za-z0-9_-]{1,100}$/.test(subject))
     throw new PortalError('Choose a subject area.', 400);
-  if (!session.webCookie) throw new PortalError('Sign in again to load subject classes.', 401);
-  const overview = await read(session, 'history', undefined, undefined, page) as ReturnType<typeof parseHistoryOverview>;
-  const own = overview.graduationRequirements.find(requirement => requirement.id === subject);
-  if (!own) throw new PortalError('This subject area is not available for your account. Refresh course history.', 404);
-  const response = await page(session.base, '/service/PXP2Communication.asmx/GetCourseHistoryDetails', {
-    Cookie: session.webCookie, AGU: '0', Origin: DISTRICT_URL,
-  }, JSON.stringify({ agu: '0', itemGU: own.id }));
   try {
+    if (!session.webCookie) throw new PortalError('Missing district web session.', 401);
+    const overview = await read(session, 'history', undefined, undefined, page) as ReturnType<typeof parseHistoryOverview>;
+    const own = overview.graduationRequirements.find(requirement => requirement.id === subject);
+    if (!own) throw new PortalError('This subject area is not available for your account. Refresh course history.', 404);
+    const response = await page(session.base, '/service/PXP2Communication.asmx/GetCourseHistoryDetails', {
+      Cookie: session.webCookie, AGU: '0', Origin: DISTRICT_URL,
+    }, JSON.stringify({ agu: '0', itemGU: own.id }));
     const envelope = object(object(JSON.parse(response.text)).d);
     if (envelope.Error) {
       if (object(envelope.Error).Message === 'INVALID_CONTEXT')
@@ -346,8 +353,5 @@ export async function readHistorySubject(session: Session, subject: unknown, pag
       throw new PortalError('The district could not load these subject classes. Try again.');
     }
     return parseSubjectDetails(envelope.Data);
-  } catch (error) {
-    if (error instanceof PortalError) throw error;
-    throw new PortalError(error instanceof Error ? error.message : 'Could not load subject classes. Try again.');
-  }
+  } catch (error) { throw historyFailure(error); }
 }
