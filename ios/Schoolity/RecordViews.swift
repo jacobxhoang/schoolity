@@ -346,6 +346,7 @@ struct CourseHistoryView: View {
                             } label: {
                                 GraduationRequirementSummary(requirement: requirement)
                             }
+                            .accessibilityIdentifier("history-subject-\(key)")
                         }
                     } header: {
                         Text("Graduation status")
@@ -459,7 +460,11 @@ struct CourseHistoryView: View {
                 if expanded {
                     openRequirement = key
                     if details[key] == nil && !detailLoading.contains(key) {
-                        Task { await loadSubject(key, requirement) }
+                        if let cached = store.cachedHistorySubject(id: requirement.id) {
+                            details[key] = cached
+                        } else {
+                            Task { await loadSubject(key, requirement) }
+                        }
                     }
                 } else if openRequirement == key {
                     openRequirement = nil
@@ -642,18 +647,7 @@ private struct SubjectDetailGroup: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
-                    VStack(alignment: .leading, spacing: 4) {
-                        ForEach(Array(detail.columns.indices), id: \.self) { index in
-                            if index < row.count {
-                                Text("\(detail.columns[index]): \(row[index].isEmpty ? "—" : row[index])")
-                                    .font(.caption)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                        }
-                    }
-                    .padding(.vertical, 4)
-                }
+                HistorySubjectTable(columns: detail.columns, rows: rows)
             }
         }
     }

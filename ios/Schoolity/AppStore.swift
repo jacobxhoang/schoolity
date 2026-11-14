@@ -33,6 +33,9 @@ final class AppStore: ObservableObject {
     private var started = false
     private var backgrounded = false
     private var savedSessionNeedsUnlock = false
+    private var historyGeneration = UUID()
+    private var historySubjects: [String: SubjectDetails] = [:]
+    private var historySubjectRequests: [String: (id: UUID, task: Task<SubjectDetails, Error>)] = [:]
     #if DEBUG
     private var testingSavedSignIn = false
     #endif
@@ -252,6 +255,7 @@ final class AppStore: ObservableObject {
     /// Existing per-resource guards share work with tabs opened during preload.
     func preloadWorkspace() async {
         guard access == .signedIn, !Task.isCancelled else { return }
+        let ticket = generation
         async let profile: Void = loadProfile()
         async let schedule: Void = loadSchedule()
         async let inbox: Void = load(.mail)
@@ -260,6 +264,8 @@ final class AppStore: ObservableObject {
         async let history: Void = loadRecord(.history)
         async let attendance: Void = loadRecord(.attendance)
         _ = await (profile, schedule, inbox, documents, student, history, attendance)
+        guard ticket == generation, !Task.isCancelled else { return }
+        await preloadHistorySubjects()
     }
 
     func loadProfile(refresh: Bool = false) async {
@@ -309,6 +315,7 @@ final class AppStore: ObservableObject {
         }
         let ticket = generation
         loadingRecords.insert(feature)
+        if feature == .history && refresh { clearHistorySubjects() }
         recordErrors[feature] = nil
         defer { if ticket == generation { loadingRecords.remove(feature) } }
         do {
@@ -321,6 +328,7 @@ final class AppStore: ObservableObject {
                 let next: CourseHistoryPage = try await client.read("history", term: nil)
                 guard ticket == generation else { return }
                 courseHistory = next
+                await preloadHistorySubjects()
             case .attendance:
                 let next: AttendancePage = try await client.read("attendance", term: nil)
                 guard ticket == generation else { return }
@@ -333,20 +341,61 @@ final class AppStore: ObservableObject {
         }
     }
 
+    func cachedHistorySubject(id: String) -> SubjectDetails? { historySubjects[id] }
+
+    private func preloadHistorySubjects() async {
+        let ticket = generation
+        let historyTicket = historyGeneration
+        for requirement in courseHistory?.requirements ?? [] {
+            guard ticket == generation, historyTicket == historyGeneration,
+                  access == .signedIn, !Task.isCancelled else { return }
+            if !requirement.id.isEmpty {
+                // Each subject has its own retry path; one failed category must
+                // not prevent the remaining categories from preloading.
+                _ = try? await historySubject(id: requirement.id)
+            }
+        }
+    }
+
     func historySubject(id: String) async throws -> SubjectDetails {
         guard access == .signedIn else { throw PortalFailure.signedOut }
+        try Task.checkCancellation()
+        if let cached = historySubjects[id] { return cached }
         let ticket = generation
+        let historyTicket = historyGeneration
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("--ui-testing") {
-            return SubjectDetails(columns: ["Course", "Mark"], completed: [["Sample completed course", "A"]], inProgress: [])
+            let fixture = SubjectDetails(
+                columns: ["Term", "Course Title (ID)", "Mark", "Credit Attempted", "Credit Completed"],
+                completed: [["2025 - S1", "Sample completed course (MATH101)", "A", "1.00", "1.00"]], inProgress: [])
+            historySubjects[id] = fixture
+            return fixture
         }
         #endif
+        let request: Task<SubjectDetails, Error>
+        let requestID: UUID
+        if let running = historySubjectRequests[id] {
+            request = running.task
+            requestID = running.id
+        }
+        else {
+            request = Task { @MainActor [client] in try await client.readHistorySubject(id) }
+            requestID = UUID()
+            historySubjectRequests[id] = (id: requestID, task: request)
+        }
+        defer {
+            if ticket == generation && historyTicket == historyGeneration && historySubjectRequests[id]?.id == requestID {
+                historySubjectRequests[id] = nil
+            }
+        }
         do {
-            let result = try await client.readHistorySubject(id)
-            guard ticket == generation else { throw CancellationError() }
+            let result = try await request.value
+            guard ticket == generation, historyTicket == historyGeneration else { throw CancellationError() }
+            try Task.checkCancellation()
+            historySubjects[id] = result
             return result
         } catch {
-            guard ticket == generation else { throw CancellationError() }
+            guard ticket == generation, historyTicket == historyGeneration else { throw CancellationError() }
             handle(error)
             throw error
         }
@@ -412,6 +461,7 @@ final class AppStore: ObservableObject {
 
     private func clearWorkspace() {
         generation = UUID()
+        clearHistorySubjects()
         gradebook = nil
         profile = nil
         isLoadingProfile = false
@@ -430,5 +480,12 @@ final class AppStore: ObservableObject {
         gradeError = nil
         isLoading = false
         PortalClient.clearDownloads()
+    }
+
+    private func clearHistorySubjects() {
+        historyGeneration = UUID()
+        for request in historySubjectRequests.values { request.task.cancel() }
+        historySubjectRequests = [:]
+        historySubjects = [:]
     }
 }

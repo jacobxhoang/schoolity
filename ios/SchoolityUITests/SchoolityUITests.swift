@@ -145,6 +145,49 @@ final class SchoolityUITests: XCTestCase {
         XCTAssertFalse(app.textFields["login.username"].exists)
     }
 
+    func testCustomizationSettingsAndSavingGradeColors() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing"]
+        app.launch()
+        XCTAssertTrue(app.buttons["Account"].waitForExistence(timeout: 10))
+        app.buttons["Account"].tap()
+        let settings = app.descendants(matching: .any)["account.settings"]
+        reveal(settings, in: app)
+        settings.tap()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Grade Colors"].exists)
+        XCTAssertTrue(app.staticTexts["Class Names and Icons"].exists)
+        XCTAssertTrue(app.staticTexts["Accent Color"].exists)
+        capture("customization-settings")
+        app.staticTexts["Grade Colors"].tap()
+        let enabled = app.switches["Use custom grade colors"]
+        XCTAssertTrue(enabled.waitForExistence(timeout: 5))
+        enabled.tap()
+        app.buttons["Save"].tap()
+        XCTAssertEqual(enabled.value as? String, "1")
+        XCTAssertFalse(app.buttons["Save"].isEnabled)
+        capture("grade-colors")
+    }
+
+    func testCourseHistoryCategoryUsesCreditColumns() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing"]
+        app.launch()
+        XCTAssertTrue(app.tabBars.buttons["Records"].waitForExistence(timeout: 10))
+        app.tabBars.buttons["Records"].tap()
+        app.staticTexts["Course History"].tap()
+        let category = app.descendants(matching: .any)["history-subject-0-math"]
+        reveal(category, in: app)
+        category.tap()
+        let table = app.descendants(matching: .any)["history-subject-table"]
+        reveal(table, in: app)
+        XCTAssertTrue(app.staticTexts["Term"].exists)
+        XCTAssertTrue(app.staticTexts["Course Title (ID)"].exists)
+        capture("history-category-columns")
+        XCTAssertTrue(app.staticTexts["Credit Completed"].exists)
+        capture("history-category-credit-columns")
+    }
+
     func testAccessibilityGradebookAndCourse() {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing"]
