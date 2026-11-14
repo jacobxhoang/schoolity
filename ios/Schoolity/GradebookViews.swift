@@ -396,15 +396,7 @@ struct GradebookSummaryCard: View {
             Spacer(minLength: 0)
         }
         .padding(16)
-        .background {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemGroupedBackground))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .fill(LinearGradient(colors: [tint.opacity(0.18), tint.opacity(0.03)],
-                                             startPoint: .topLeading, endPoint: .bottomTrailing))
-                }
-        }
+        .schoolityGlass(tint: tint)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Course average \(GradeMath.percent(average)) across \(coursesText)")
     }

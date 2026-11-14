@@ -20,7 +20,7 @@ The main action is opening a course. Put the course title and secondary teacher/
 
 ## Screens
 
-Gradebook: compact summary, reporting-period selection, courses, and the existing web recent-assignment sidebar. Both surfaces now carry the same summary and recent assignments; iOS presents them as list sections where the web places a sidebar, and its summary is a tinted card pairing a grade ring with the exact figure.
+Gradebook: compact summary, reporting-period selection, courses, and the existing web recent-assignment sidebar. Both surfaces now carry the same summary and recent assignments; iOS presents them as list sections where the web places a sidebar, and its summary is a tinted card pairing a grade ring with the exact figure, drawn as Liquid Glass on iOS 26 and as a translucent card on earlier versions.
 
 Course: clear grade heading, assignments/breakdown control, grade history, and hypothetical editing only in Assignments.
 
