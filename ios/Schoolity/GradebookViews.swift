@@ -85,16 +85,20 @@ private struct GradebookContent: View, Equatable {
     }
 
     private func recentAssignments(_ book: Gradebook) -> [RecentAssignment] {
-        Array(book.courses.flatMap { course in
-            course.assignments.enumerated().map {
-                (item: RecentAssignment(course: course, assignment: $0.element),
-                 date: GradeMath.date($0.element.due) ?? .distantPast, index: $0.offset)
+        var items: [(item: RecentAssignment, date: Date, index: Int)] = []
+        for course in book.courses {
+            for (index, assignment) in course.assignments.enumerated() {
+                let item = RecentAssignment(course: course, assignment: assignment)
+                let due = GradeMath.date(assignment.due) ?? Date.distantPast
+                items.append((item: item, date: due, index: index))
             }
-        }.sorted {
+        }
+        items.sort {
             if $0.date != $1.date { return $0.date > $1.date }
             if $0.item.course.id != $1.item.course.id { return $0.item.course.id < $1.item.course.id }
             return $0.index < $1.index
-        }.prefix(8).map(\.item))
+        }
+        return items.prefix(8).map(\.item)
     }
 }
 
