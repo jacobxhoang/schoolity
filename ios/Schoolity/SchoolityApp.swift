@@ -30,15 +30,9 @@ struct SchoolityApp: App {
             .environmentObject(customization)
             .accentColor(Color("ActionAccent"))
             .task { if scenePhase == .active { await store.start() } }
-            .privacySensitive()
             .onChange(of: scenePhase) { _, phase in
                 if phase == .background { store.enterBackground() }
                 if phase == .active { Task { await store.enterForeground(); await store.start() } }
-            }
-            .overlay {
-                if scenePhase != .active {
-                    Color(uiColor: .systemBackground).ignoresSafeArea().accessibilityHidden(true)
-                }
             }
         }
     }
@@ -167,7 +161,7 @@ struct WorkspaceView: View {
     @EnvironmentObject private var store: AppStore
     @EnvironmentObject private var customization: CustomizationStore
     private enum WorkspaceTab: Hashable {
-        case grades, schedule, inbox, documents, records
+        case grades, schedule, inbox, records, settings
     }
     @State private var selectedTab: WorkspaceTab = .grades
     var body: some View {
@@ -175,8 +169,8 @@ struct WorkspaceView: View {
             NavigationStack { GradebookView() }.tabItem { Label("Grades", systemImage: "menucard.fill") }.tag(WorkspaceTab.grades)
             NavigationStack { ScheduleView() }.tabItem { Label("Schedule", systemImage: "list.bullet.rectangle.portrait.fill") }.tag(WorkspaceTab.schedule)
             NavigationStack { ResourceView(resource: .mail) }.tabItem { Label("Inbox", systemImage: "tray") }.tag(WorkspaceTab.inbox)
-            NavigationStack { ResourceView(resource: .documents) }.tabItem { Label("Documents", systemImage: "doc") }.tag(WorkspaceTab.documents)
             NavigationStack { RecordsView() }.tabItem { Label("Records", systemImage: "list.bullet.rectangle") }.tag(WorkspaceTab.records)
+            NavigationStack { CustomizationView() }.tabItem { Label("Settings", systemImage: "gearshape.fill") }.tag(WorkspaceTab.settings)
         }
         .task { await store.preloadWorkspace() }
         .tint(customization.accentColor)

@@ -149,11 +149,9 @@ final class SchoolityUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing"]
         app.launch()
-        XCTAssertTrue(app.buttons["Account"].waitForExistence(timeout: 10))
-        app.buttons["Account"].tap()
-        let settings = app.descendants(matching: .any)["account.settings"]
-        reveal(settings, in: app)
-        settings.tap()
+        XCTAssertTrue(app.tabBars.buttons["Settings"].waitForExistence(timeout: 10))
+        XCTAssertEqual(app.tabBars.buttons.element(boundBy: 4).label, "Settings")
+        app.tabBars.buttons["Settings"].tap()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Grade Colors"].exists)
         XCTAssertTrue(app.staticTexts["Class Names and Icons"].exists)
@@ -220,7 +218,11 @@ final class SchoolityUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["schedule-period-sample-math"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["M,T,W,Th,F"].exists)
         capture("schedule")
-        app.tabBars.buttons["Documents"].tap()
+        XCTAssertFalse(app.tabBars.buttons["Documents"].exists)
+        app.tabBars.buttons["Records"].tap()
+        let documents = app.staticTexts["Documents"]
+        reveal(documents, in: app)
+        documents.tap()
         XCTAssertTrue(app.buttons.containing(.staticText, identifier: "Sample report").firstMatch.waitForExistence(timeout: 5))
         capture("documents")
         app.buttons["Account"].tap()

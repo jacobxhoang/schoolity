@@ -90,7 +90,7 @@ struct CourseRow: View {
         .font(.callout.weight(.semibold))
         .monospacedDigit()
         .fixedSize(horizontal: false, vertical: true)
-        .accessibilityLabel("\(GradeMath.percent(score)), \(GradeMath.letter(score)), \(course.official == nil ? "calculated grade" : "district grade")")
+        .accessibilityLabel("\(GradeMath.percent(score)), \(GradeMath.letter(score)), \(course.official == nil ? "calculated grade" : "school grade")")
     }
 
     private var identity: some View {
@@ -120,7 +120,7 @@ struct CourseDetailView: View {
         List {
             Section {
                 CourseGradeHeading(course: course, districtScore: original.official, changed: changed)
-                LabeledContent("District grade", value: GradeMath.percent(original.official)).font(.headline)
+                LabeledContent("School grade", value: GradeMath.percent(original.official)).font(.headline)
                 LabeledContent(changed ? "Hypothetical estimate" : "Schoolity estimate", value: GradeMath.percent(GradeMath.calculate(course)))
                     .accessibilityAddTraits(.updatesFrequently)
                 Picker("Section", selection: $detailSection) {
@@ -134,11 +134,15 @@ struct CourseDetailView: View {
                     GradeCategoryBreakdown(course: course)
                 }
             }
-            Section {
-                HypotheticalAddButton {
-                    presentedSheet = Assignment(id: UUID().uuidString, title: "", category: categoryNames.first ?? "Assignments", earned: nil, possible: 10, due: "", hypothetical: true)
+            if detailSection == .assignments || changed {
+                Section {
+                    if detailSection == .assignments {
+                        HypotheticalAddButton {
+                            presentedSheet = Assignment(id: UUID().uuidString, title: "", category: categoryNames.first ?? "Assignments", earned: nil, possible: 10, due: "", hypothetical: true)
+                        }
+                    }
+                    if changed { Button("Reset changes", role: .destructive) { showReset = true }.frame(minHeight: 44) }
                 }
-                if changed { Button("Reset changes", role: .destructive) { showReset = true }.frame(minHeight: 44) }
             }
             if detailSection == .assignments {
                 Section("Assignments") {
@@ -169,7 +173,7 @@ struct CourseDetailView: View {
         if let index = course.assignments.firstIndex(where: { $0.id == edited.id }) {
             course.assignments[index] = edited
         } else {
-            course.assignments.append(edited)
+            course.assignments.insert(edited, at: 0)
         }
     }
 

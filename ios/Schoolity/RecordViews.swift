@@ -19,6 +19,11 @@ struct RecordsView: View {
                 } label: {
                     RecordDestinationLabel(title: "Course History", detail: "Credits and graduation progress", symbol: "clock.arrow.circlepath")
                 }
+                NavigationLink {
+                    ResourceView(resource: .documents)
+                } label: {
+                    RecordDestinationLabel(title: "Documents", detail: "Reports and school files", symbol: "doc")
+                }
             } footer: {
                 Text("District-reported records. Schoolity does not change them.")
             }
