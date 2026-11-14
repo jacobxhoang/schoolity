@@ -165,7 +165,7 @@
   );
   const scores = $derived(
     data.courses
-      .map((c) => c.official ?? calculate(c))
+      .map((c) => calculate(c))
       .filter((v): v is number => v !== null),
   );
   const average = $derived(
@@ -894,13 +894,6 @@
                   starting={startingCourse}
                   scenario={hypothetical}
                 />{/if}
-              <details class="estimate-details">
-                <summary>About estimates</summary>
-                <p>
-                  Calculated from scored assignments. School grading rules may
-                  differ. Hypothetical changes stay in Schoolity.
-                </p>
-              </details>
             </div>
             <div class="large-trend">
               <Trend
@@ -1106,14 +1099,12 @@
                       <div>
                         <strong
                           >{percentage(
-                            course.official ?? calculate(course),
+                            calculate(course),
                           )}</strong
                         ><span class="letter-grade"
-                          >{letter(course.official ?? calculate(course))}</span
+                          >{letter(calculate(course))}</span
                         ><small
-                          >{course.official === null
-                            ? 'Calculated'
-                            : 'District grade'}</small
+                          >Schoolity estimate</small
                         >
                       </div>
                     </div></button
@@ -1515,9 +1506,6 @@
               </p>
             </div>
             <div class="preview-pair">
-              <div>
-                <span>District grade</span><strong>92.5%</strong>
-              </div>
               <div>
                 <span>Schoolity estimate</span><strong>91.2%</strong>
               </div>
