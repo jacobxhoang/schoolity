@@ -117,15 +117,21 @@ enum GradeMath {
     }
 
     static func trend(_ course: Course) -> [Point] {
-        let ordered = course.assignments.enumerated().filter {
-            $0.element.excluded != true && $0.element.earned?.isFinite == true
-        }.map { (assignment: $0.element, index: $0.offset, date: date($0.element.due) ?? .distantFuture) }
-            .sorted { $0.date == $1.date ? $0.index < $1.index : $0.date < $1.date }
+        var ordered: [(assignment: Assignment, index: Int, date: Date)] = []
+        for (index, assignment) in course.assignments.enumerated() {
+            guard assignment.excluded != true, assignment.earned?.isFinite == true else { continue }
+            let due = date(assignment.due) ?? Date.distantFuture
+            ordered.append((assignment: assignment, index: index, date: due))
+        }
+        ordered.sort { left, right in
+            if left.date == right.date { return left.index < right.index }
+            return left.date < right.date
+        }
         let weighted = course.categories.contains { $0.weight > 0 }
         var totals: [String: (earned: Double, possible: Double)] = [:]
         var earned = 0.0
         var possible = 0.0
-        return ordered.enumerated().compactMap { index, assignment in
+        return ordered.enumerated().compactMap { index, assignment -> Point? in
             let task = assignment.assignment
             if task.possible.isFinite && task.possible >= 0 {
                 earned += task.earned ?? 0
