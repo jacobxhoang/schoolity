@@ -12,6 +12,7 @@ protocol SchoolPortal: AnyObject {
     func signIn(username: String, password: String, protectSession: Bool) async throws
     func signOut() async throws
     func read<T: Decodable>(_ resource: String, term: Int?) async throws -> T
+    func readHistorySubject(_ id: String) async throws -> SubjectDetails
     func download(id: String, filename: String, messageID: String?) async throws -> URL
 }
 
@@ -176,6 +177,15 @@ final class PortalClient: SchoolPortal {
         if let term { body["term"] = term }
         let (data, _) = try await send(body)
         return try JSONDecoder().decode(PortalEnvelope<T>.self, from: data).data
+    }
+
+    func readHistorySubject(_ id: String) async throws -> SubjectDetails {
+        let (data, _) = try await send([
+            "action": "read",
+            "resource": "history-subject",
+            "subject": id,
+        ])
+        return try JSONDecoder().decode(PortalEnvelope<SubjectDetails>.self, from: data).data
     }
 
     func download(id: String, filename: String, messageID: String? = nil) async throws -> URL {
