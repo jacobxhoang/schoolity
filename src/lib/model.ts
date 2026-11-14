@@ -116,7 +116,7 @@ export function letter(score: number | null): string {
           : 'F';
 }
 export function percentage(score: number | null): string {
-  return score === null ? '—' : `${score.toFixed(1)}%`;
+  return score === null ? '—' : `${score.toFixed(2)}%`;
 }
 export function trend(course: Course): number[] {
   const ordered = course.assignments

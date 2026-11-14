@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, untrack, tick } from 'svelte';
+  import { readGradeCache, saveGradeCache, clearGradeCache } from '$lib/grade-cache';
   import GradeSummary from '$lib/GradeSummary.svelte';
   import StudentRecords from '$lib/StudentRecords.svelte';
   import { readRecords, type RecordPage, type SubjectDetails } from '$lib/records';
@@ -9,7 +10,8 @@
     courseLocation,
     scoreChange,
   } from '$lib/workspace';
-  let { data: sessionData }: { data: { authenticated: boolean; signInError?: string; retrySavedSignIn?: boolean } } = $props();
+  let { data: sessionData }: { data: { authenticated: boolean; cacheIdentity?: string | null; signInError?: string; retrySavedSignIn?: boolean } } = $props();
+  let cacheIdentity = untrack(() => sessionData.cacheIdentity ?? null);
   let authenticated = $state(untrack(() => sessionData.authenticated));
   import Icon from '$lib/Icon.svelte';
   import Trend from '$lib/Trend.svelte';
@@ -249,8 +251,10 @@
       ]);
       if (version !== generation || !authenticated) return;
       data = grades(g.data);
+      if (typeof g.cacheIdentity === 'string') cacheIdentity = g.cacheIdentity;
       if (p) person = profile(p.data);
       lastRefresh = Date.now();
+      try { saveGradeCache(localStorage, cacheIdentity, data, lastRefresh); } catch { /* Storage unavailable. */ }
       if (selected && !data.courses.some((c) => c.id === selected)) {
         selected = null;
         hypothetical = false;
@@ -504,7 +508,8 @@
     loginError = '';
     loginBusy = true;
     try {
-      await api({ action: 'login', username, password, remember: rememberSignIn });
+      const signedIn = await api({ action: 'login', username, password, remember: rememberSignIn });
+      cacheIdentity = typeof signedIn.cacheIdentity === 'string' ? signedIn.cacheIdentity : null;
       password = '';
       showPassword = false;
       authenticated = true;
@@ -583,6 +588,8 @@
     }
   }
   function clearWorkspace() {
+    try { clearGradeCache(localStorage); } catch { /* Storage unavailable. */ }
+    cacheIdentity = null;
     downloading = {};
     downloadErrors = {};
     generation++;
@@ -700,6 +707,10 @@
     };
   });
   onMount(() => {
+    try {
+      const cached = readGradeCache(localStorage, authenticated ? cacheIdentity : null);
+      if (authenticated && cached) { data = cached.book; lastRefresh = cached.savedAt; }
+    } catch { /* Normal network loading works without local storage. */ }
     const storedTheme = localStorage.getItem('schoolity_theme');
     dark = storedTheme
       ? storedTheme === 'dark'
@@ -873,7 +884,7 @@
           </div>{/if}
         {#if notice}<div class="notice" role="status">{notice}</div>{/if}
         {#if busy}<div class="loading" role="status">
-            Loading school data…
+            {data.courses.length ? 'Updating school data…' : 'Loading school data…'}
           </div>{/if}
         {#if activeCourse}
           <button class="back-link" onclick={() => navigate('grades')}
@@ -1604,9 +1615,10 @@
           </p>
           <h3>Where your information lives</h3>
           <p>
-            Grades and other school records are held in this page's memory. API
-            responses are marked no-store. The only preference saved in local
-            storage is the color theme. Hosting and session-store operators can
+            Your last gradebook is saved in this browser for up to seven days
+            and shown after sign-in while fresh grades load. Signing out clears
+            it. Other school records remain in page memory. API responses are
+            marked no-store. Your color theme is also saved locally. Hosting and session-store operators can
             access data passing through its server, including decrypting saved
             sign-ins if they control the encryption key.
           </p>

@@ -8,7 +8,8 @@ import {
 } from '$lib/server/portal';
 import { nativeData, schedule } from '$lib/portal-data';
 import { DISTRICT_URL } from '$lib/config';
-import { browserAuth } from '$lib/server/browser-auth';
+import { browserAuth, SESSION_COOKIE } from '$lib/server/browser-auth';
+import { gradeCacheIdentity } from '$lib/server/grade-cache-identity';
 import { readRecords } from '$lib/records';
 export const POST: RequestHandler = async ({
   request,
@@ -44,7 +45,7 @@ export const POST: RequestHandler = async ({
           400,
         );
       await browserAuth.login(context, input.username, input.password, input.remember === true);
-      return json({ ok: true }, { headers });
+      return json({ ok: true, cacheIdentity: gradeCacheIdentity(cookies.get(SESSION_COOKIE)) }, { headers });
     }
     if (input.action === 'session')
       return json({ connected: !!await browserAuth.restore(context) }, { headers });
@@ -65,7 +66,7 @@ export const POST: RequestHandler = async ({
         : ['student', 'history', 'attendance'].includes(resource)
           ? readRecords(resource, data)
           : nativeData(data, resource);
-    return json({ data: payload }, { headers });
+    return json({ data: payload, cacheIdentity: gradeCacheIdentity(cookies.get(SESSION_COOKIE)) }, { headers });
   } catch (error) {
     return json(
       {
