@@ -345,8 +345,8 @@ struct CourseHistoryView: View {
                                 )
                             } label: {
                                 GraduationRequirementSummary(requirement: requirement)
+                                    .accessibilityIdentifier("history-subject-\(key)")
                             }
-                            .accessibilityIdentifier("history-subject-\(key)")
                         }
                     } header: {
                         Text("Graduation status")

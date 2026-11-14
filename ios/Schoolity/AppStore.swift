@@ -38,6 +38,7 @@ final class AppStore: ObservableObject {
     private var historySubjectRequests: [String: (id: UUID, task: Task<SubjectDetails, Error>)] = [:]
     #if DEBUG
     private var testingSavedSignIn = false
+    var usingUITestData = false
     #endif
 
     init(client: (any SchoolPortal)? = nil, unlocker: (any LocalUnlocking)? = nil) {
@@ -233,7 +234,7 @@ final class AppStore: ObservableObject {
     func refreshGrades(term: Int? = nil) async {
         guard !isLoading, access == .signedIn else { return }
         #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("--ui-testing") { return }
+        if usingUITestData { return }
         #endif
         let ticket = generation
         isLoading = true
@@ -271,7 +272,7 @@ final class AppStore: ObservableObject {
     func loadProfile(refresh: Bool = false) async {
         guard access == .signedIn, !isLoadingProfile, refresh || profile == nil else { return }
         #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("--ui-testing") { return }
+        if usingUITestData { return }
         #endif
         let ticket = generation
         isLoadingProfile = true
@@ -364,7 +365,7 @@ final class AppStore: ObservableObject {
         let ticket = generation
         let historyTicket = historyGeneration
         #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("--ui-testing") {
+        if usingUITestData {
             let fixture = SubjectDetails(
                 columns: ["Term", "Course Title (ID)", "Mark", "Credit Attempted", "Credit Completed"],
                 completed: [["2025 - S1", "Sample completed course (MATH101)", "A", "1.00", "1.00"]], inProgress: [])
