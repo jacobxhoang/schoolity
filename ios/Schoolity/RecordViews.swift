@@ -30,7 +30,6 @@ struct RecordsView: View {
         }
         .listStyle(.inset)
         .navigationTitle("Records")
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { AccountButton() } }
     }
 }
 
