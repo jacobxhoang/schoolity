@@ -23,7 +23,7 @@ struct RecordsView: View {
                 Text("District-reported records. Schoolity does not change them.")
             }
         }
-        .listStyle(.insetGrouped)
+        .listStyle(.inset)
         .navigationTitle("Records")
         .toolbar { ToolbarItem(placement: .topBarTrailing) { AccountButton() } }
     }
@@ -42,7 +42,7 @@ private struct RecordDestinationLabel: View {
             }
             .padding(.vertical, 6)
         } icon: {
-            Image(systemName: symbol).foregroundStyle(SchoolityStyle.accent)
+            InformationIcon(symbol: symbol)
         }
         .accessibilityElement(children: .combine)
     }
@@ -53,6 +53,25 @@ struct StudentInfoView: View {
 
     var body: some View {
         List {
+            Section {
+                NavigationLink {
+                    List { StudentIDSection() }
+                        .listStyle(.inset)
+                        .navigationTitle("Student ID")
+                        .navigationBarTitleDisplayMode(.inline)
+                } label: {
+                    Label {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Student ID").font(.headline)
+                            Text(store.profile?.studentId ?? "View your district ID")
+                                .font(.footnote).foregroundStyle(.secondary)
+                        }
+                    } icon: {
+                        InformationIcon(symbol: "barcode")
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
             if let page = store.studentInfo {
                 if let notice = page.notice, !notice.isEmpty {
                     Section {
@@ -98,7 +117,7 @@ struct StudentInfoView: View {
                 }
             }
         }
-        .listStyle(.insetGrouped)
+        .listStyle(.inset)
         .navigationTitle("Student Info")
         .task { await store.loadRecord(.student) }
         .refreshable { await store.loadRecord(.student, refresh: true) }
@@ -144,16 +163,21 @@ private struct StudentInfoFieldRow: View {
     let field: InfoField
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(field.label)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text(StudentRecordFormat.value(field.value))
-                .font(.subheadline)
-                .fixedSize(horizontal: false, vertical: true)
-                .textSelection(.enabled)
-        }
-        .padding(.vertical, 4)
+        InformationRow(title: field.label, value: StudentRecordFormat.value(field.value), symbol: symbol)
+    }
+
+    private var symbol: String {
+        let label = field.label.lowercased()
+        if label.contains("mail") { return "envelope.fill" }
+        if label.contains("phone") { return "phone.fill" }
+        if label.contains("address") || label.contains("stop") { return "house.fill" }
+        if label.contains("birth") || label.contains("date") { return "calendar" }
+        if label.contains("grade") || label.contains("school") { return "graduationcap.fill" }
+        if label.contains("bus") { return "bus.fill" }
+        if label.contains("room") || label.contains("locker") { return "door.left.hand.closed" }
+        if label.contains("physician") || label.contains("dentist") || label.contains("hospital") { return "cross.case.fill" }
+        if label.contains("id") { return "person.text.rectangle" }
+        return "person.fill"
     }
 }
 
@@ -189,7 +213,7 @@ struct AttendanceView: View {
                 if !page.totals.isEmpty {
                     Section("Totals") {
                         ForEach(page.totals) { total in
-                            LabeledContent(total.label, value: "\(total.value)")
+                            InformationRow(title: total.label, value: "\(total.value)", symbol: "checkmark.circle.fill")
                         }
                     }
                 }
@@ -246,7 +270,7 @@ struct AttendanceView: View {
                 }
             }
         }
-        .listStyle(.insetGrouped)
+        .listStyle(.inset)
         .navigationTitle("Attendance")
         .task { await store.loadRecord(.attendance) }
         .refreshable { await store.loadRecord(.attendance, refresh: true) }
@@ -406,7 +430,7 @@ struct CourseHistoryView: View {
                 }
             }
         }
-        .listStyle(.insetGrouped)
+        .listStyle(.inset)
         .navigationTitle("Course History")
         .task { await store.loadRecord(.history) }
         .refreshable {

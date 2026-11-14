@@ -65,8 +65,8 @@ private struct GradebookContent: View, Equatable {
                 Section { FailureRow(message: error) { Task { await refresh(nil) } } }
             }
         }
-        .listStyle(.insetGrouped)
-        .navigationTitle("Grades")
+        .listStyle(.inset)
+        .navigationTitle("Gradebook")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 8) {
@@ -138,31 +138,30 @@ struct CourseRow: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     let course: Course
     var body: some View {
-        Group {
-            if typeSize.isAccessibilitySize {
-                VStack(alignment: .leading, spacing: 10) {
-                    identity
-                    grade(alignment: .leading)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 12) {
+                if !typeSize.isAccessibilitySize {
+                    Image(systemName: "studentdesk")
+                        .font(.title2).frame(width: 30)
+                        .accessibilityHidden(true)
                 }
-            } else {
-                HStack(alignment: .center, spacing: 16) {
-                    identity
-                    grade(alignment: .trailing)
-                }
+                identity
             }
+            grade
         }
         .padding(.vertical, 6)
         .accessibilityElement(children: .combine)
     }
 
-    private func grade(alignment: HorizontalAlignment) -> some View {
+    private var grade: some View {
         let score = course.official ?? GradeMath.calculate(course)
-        return VStack(alignment: alignment, spacing: 3) {
+        return HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Text(GradeMath.letter(score)).foregroundStyle(SchoolityStyle.accent)
             Text(GradeMath.percent(score))
-                .font(.headline).foregroundStyle(SchoolityStyle.accent)
-            Text("\(GradeMath.letter(score)) · \(course.official == nil ? "Calculated" : "District")")
-                .font(.caption).foregroundStyle(.secondary)
+            Text(course.official == nil ? "Calculated" : "District grade")
+                .foregroundStyle(.secondary)
         }
+        .font(.callout.weight(.semibold))
         .monospacedDigit()
         .fixedSize(horizontal: false, vertical: true)
         .accessibilityLabel("\(GradeMath.percent(score)), \(GradeMath.letter(score)), \(course.official == nil ? "calculated grade" : "district grade")")
@@ -171,7 +170,7 @@ struct CourseRow: View {
     private var identity: some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(course.name).font(.headline).fixedSize(horizontal: false, vertical: true)
-            let details = [course.teacher, course.room.isEmpty ? "" : "Room \(course.room)"].filter { !$0.isEmpty }.joined(separator: " · ")
+            let details = [course.teacher, course.room.isEmpty ? "" : "Room \(course.room)"].filter { !$0.isEmpty }.joined(separator: " | ")
             if !details.isEmpty { Text(details).font(.footnote).foregroundStyle(SchoolityStyle.muted) }
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -182,6 +181,11 @@ struct CourseDetailView: View {
     @State private var course: Course
     @State private var presentedSheet: CourseSheet?
     @State private var showReset = false
+    @State private var detailSection: DetailSection = .assignments
+    private enum DetailSection: String, CaseIterable {
+        case assignments = "Assignments"
+        case breakdown = "Breakdown"
+    }
     private enum CourseSheet: Identifiable {
         case score(Assignment)
         case target
@@ -199,10 +203,20 @@ struct CourseDetailView: View {
     var body: some View {
         List {
             Section {
+                CourseGradeHeading(course: course, districtScore: original.official, changed: changed)
                 LabeledContent("District grade", value: GradeMath.percent(original.official)).font(.headline)
                 LabeledContent(changed ? "Hypothetical estimate" : "Schoolity estimate", value: GradeMath.percent(GradeMath.calculate(course)))
                     .accessibilityAddTraits(.updatesFrequently)
-                GradeHistoryView(course: course).equatable()
+                Picker("Section", selection: $detailSection) {
+                    ForEach(DetailSection.allCases, id: \.self) { section in
+                        Text(section.rawValue).tag(section)
+                    }
+                }.pickerStyle(.segmented)
+                if detailSection == .assignments {
+                    GradeHistoryView(course: course).equatable()
+                } else {
+                    GradeCategoryBreakdown(course: course)
+                }
             }
             Section {
                 HypotheticalActions(
@@ -211,51 +225,32 @@ struct CourseDetailView: View {
                 )
                 if changed { Button("Reset changes", role: .destructive) { showReset = true }.frame(minHeight: 44) }
             }
-            Section("Assignments") {
-                if course.assignments.isEmpty { Text("No assignments yet.").foregroundStyle(.secondary) }
-                ForEach(course.assignments) { assignment in
-                    Button { presentedSheet = .score(assignment) } label: {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(assignment.title).font(.headline).foregroundStyle(.primary)
-                            HStack(alignment: .firstTextBaseline) {
-                                Text(assignment.category).foregroundStyle(.secondary)
-                                Spacer()
-                                Text(assignment.earned.map { "\(GradeMath.points($0)) / \(GradeMath.points(assignment.possible))" } ?? "Not graded")
-                                    .foregroundStyle(.primary).monospacedDigit()
-                            }.font(.subheadline)
-                            if assignment.excluded != true, let earned = assignment.earned {
-                                if assignment.possible > 0 {
-                                    Text(GradeMath.percent(earned / assignment.possible * 100))
-                                        .font(.caption).foregroundStyle(SchoolityStyle.accent)
-                                } else {
-                                    Text("Extra credit").font(.caption).foregroundStyle(SchoolityStyle.accent)
-                                }
+            if detailSection == .assignments {
+                Section("Assignments") {
+                    if course.assignments.isEmpty { Text("No assignments yet.").foregroundStyle(.secondary) }
+                    ForEach(course.assignments) { assignment in
+                        AssignmentDetailRow(assignment: assignment) { presentedSheet = .score(assignment) }
+                        .swipeActions {
+                            if assignment.hypothetical == true && !original.assignments.contains(where: { $0.id == assignment.id }) {
+                                Button("Delete", role: .destructive) { course.assignments.removeAll { $0.id == assignment.id } }
                             }
-                            if !assignment.due.isEmpty { Text(GradeMath.shortDate(assignment.due)).font(.caption).foregroundStyle(.secondary) }
-                            if assignment.excluded == true { Text("Not for grading").font(.caption).foregroundStyle(.secondary) }
-                            if assignment.hypothetical == true { Label("Hypothetical", systemImage: "pencil").font(.caption).foregroundStyle(.secondary) }
-                        }.padding(.vertical, 8).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityHint("Edit a hypothetical score")
-                    .swipeActions {
-                        if assignment.hypothetical == true && !original.assignments.contains(where: { $0.id == assignment.id }) {
-                            Button("Delete", role: .destructive) { course.assignments.removeAll { $0.id == assignment.id } }
                         }
                     }
                 }
+            }
+            Section("Info") {
+                if !course.teacher.isEmpty { InformationRow(title: "Teacher", value: course.teacher, symbol: "person.fill") }
+                if !course.room.isEmpty { InformationRow(title: "Room", value: course.room, symbol: "door.left.hand.closed") }
+                if !course.period.isEmpty { InformationRow(title: "Period", value: course.period, symbol: "clock.fill") }
             }
             Section {
                 DisclosureGroup("About estimates") {
                     Text("Hypothetical changes stay on this screen and never change school records. Estimates may differ from district grading policies.")
                         .font(.subheadline).foregroundStyle(.secondary)
-                    if !course.teacher.isEmpty { LabeledContent("Teacher", value: course.teacher) }
-                    if !course.room.isEmpty { LabeledContent("Room", value: course.room) }
-                    if !course.period.isEmpty { LabeledContent("Period", value: course.period) }
                 }
             }
         }
-        .listStyle(.insetGrouped)
+        .listStyle(.inset)
         .navigationTitle(course.name)
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $presentedSheet) { destination in

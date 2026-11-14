@@ -28,7 +28,7 @@ struct ResourceView: View {
                 ProgressView("Loading \(resource.title.lowercased())…")
             }
         }
-        .listStyle(.insetGrouped)
+        .listStyle(.inset)
         .navigationTitle(resource.title)
         .toolbar { ToolbarItem(placement: .topBarTrailing) { AccountButton() } }
         .task { await store.load(resource) }
@@ -58,9 +58,12 @@ struct ResourceView: View {
                 }
             }.padding(.vertical, 12)
         } label: {
-            VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 12) {
+                InformationIcon(symbol: "envelope.fill")
+                VStack(alignment: .leading, spacing: 5) {
                 Text(item.title.isEmpty ? "Untitled message" : item.title).font(.headline).foregroundStyle(.primary)
                 if let author = item.author, !author.isEmpty { Text(author).font(.footnote).foregroundStyle(SchoolityStyle.muted) }
+                }
             }.padding(.vertical, 8)
         }
     }
@@ -79,7 +82,7 @@ struct ResourceView: View {
 
     private func downloadLabel(_ title: String, detail: String?, key: String) -> some View {
         HStack(spacing: 16) {
-            Image(systemName: "doc").font(.title2).accessibilityHidden(true)
+            InformationIcon(symbol: "doc.fill")
             VStack(alignment: .leading, spacing: 5) {
                 Text(title).font(.headline).foregroundStyle(.primary).multilineTextAlignment(.leading)
                 if let detail, !detail.isEmpty { Text(detail).font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.leading) }

@@ -62,7 +62,7 @@ struct ScheduleView: View {
                 }
             }
         }
-        .listStyle(.insetGrouped)
+        .listStyle(.inset)
         .navigationTitle("Schedule")
         .toolbar { ToolbarItem(placement: .topBarTrailing) { AccountButton() } }
         .task { await store.loadSchedule() }
@@ -98,34 +98,38 @@ struct ScheduleView: View {
 }
 
 private struct ScheduleClassRow: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     let course: ScheduleClass
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
-                if !course.period.isEmpty {
-                    Text("P\(course.period)")
-                        .font(.subheadline.weight(.semibold))
-                        .monospacedDigit()
-                        .foregroundStyle(SchoolityStyle.accent)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(SchoolityStyle.accent.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
-                        .accessibilityLabel("Period \(course.period)")
-                        .accessibilityIdentifier("schedule-period-\(course.id)")
-                }
+        HStack(spacing: 12) {
+            if !typeSize.isAccessibilitySize {
+                Image(systemName: "studentdesk").font(.title3).frame(width: 28).accessibilityHidden(true)
+            }
+            VStack(alignment: .leading, spacing: 4) {
                 Text(course.title)
                     .font(.headline)
                     .fixedSize(horizontal: false, vertical: true)
+                let people = [course.teacher, course.room.isEmpty ? "" : "Room \(course.room)"]
+                    .filter { !$0.isEmpty }
+                    .joined(separator: " | ")
+                if !people.isEmpty {
+                    Text(people).font(.footnote).foregroundStyle(.secondary)
+                }
+                if let meetingDays = course.meetingDays, !meetingDays.isEmpty {
+                    Text(meetingDays).font(.caption).foregroundStyle(SchoolityStyle.muted)
+                }
             }
-            let people = [course.teacher, course.room.isEmpty ? "" : "Room \(course.room)"]
-                .filter { !$0.isEmpty }
-                .joined(separator: " · ")
-            if !people.isEmpty {
-                Text(people).font(.subheadline).foregroundStyle(.secondary)
-            }
-            if let meetingDays = course.meetingDays, !meetingDays.isEmpty {
-                Text(meetingDays).font(.caption).foregroundStyle(SchoolityStyle.muted)
+            Spacer(minLength: 4)
+            if !course.period.isEmpty {
+                Text(course.period)
+                    .font(.system(.title3, design: .rounded, weight: .semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                    .frame(minWidth: 40, minHeight: 40)
+                    .background(Color.secondary.opacity(0.12), in: Circle())
+                    .accessibilityLabel("Period \(course.period)")
+                    .accessibilityIdentifier("schedule-period-\(course.id)")
             }
         }
         .padding(.vertical, 8)
