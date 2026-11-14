@@ -78,6 +78,9 @@
     resourceData = $state<Record<string, EventItem[]>>({}),
     schedule = $state<ScheduleData>({ terms: [], currentTerm: 0 });
   let generation = 0;
+  const resourceLoads = new Map<string, Promise<void>>();
+  const subjectCache = new Map<string, SubjectDetails>();
+  let subjectPreload: Promise<void> | null = null;
   let recordPages = $state<Record<string, RecordPage>>({});
   const recordResources = ['student', 'history', 'attendance'];
   const remoteResources = ['schedule', 'mail', 'documents', ...recordResources];
@@ -172,6 +175,7 @@
   const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
   async function api(
     body: Record<string, unknown>,
+    background = false,
   ): Promise<Record<string, unknown>> {
     try {
       return await requestPortal(body);
@@ -179,7 +183,8 @@
       if (
         e instanceof RequestFailure &&
         e.status === 401 &&
-        body.action !== 'login'
+        body.action !== 'login' &&
+        !background
       ) {
         authenticated = false;
         clearWorkspace();
@@ -190,6 +195,7 @@
   }
   async function load(term?: number) {
     const version = ++generation;
+    resourceLoads.clear();
     busy = true;
     error = '';
     retryAction = null;
@@ -266,19 +272,71 @@
     if (recordResources.includes(id)) return !!recordPages[id];
     return id === 'schedule' ? schedule.terms.length > 0 : !!resourceData[id];
   }
-  async function loadHistorySubject(id: string): Promise<SubjectDetails> {
+  async function loadHistorySubject(
+    id: string,
+    background = false,
+  ): Promise<SubjectDetails> {
+    const cached = subjectCache.get(id);
+    if (cached) return cached;
     const version = generation;
-    const response = await api({ action: 'read', resource: 'history-subject', subject: id });
+    const response = await api(
+      { action: 'read', resource: 'history-subject', subject: id },
+      background,
+    );
     if (version !== generation || !authenticated) throw new Error('Your workspace changed. Open the subject again.');
-    return response.data as SubjectDetails;
+    const details = response.data as SubjectDetails;
+    subjectCache.set(id, details);
+    return details;
   }
-  async function loadResource(id: string) {
+  function preloadHistorySubjects() {
     const version = generation;
-    busy = true;
-    error = '';
-    retryAction = null;
+    const page = recordPages.history;
+    if (subjectPreload || page?.kind !== 'history') return;
+    subjectPreload = (async () => {
+      try {
+        for (const requirement of page.requirements) {
+          if (!requirement.id || !authenticated || version !== generation)
+            return;
+          if (!subjectCache.has(requirement.id))
+            await loadHistorySubject(requirement.id, true).catch(() => {});
+        }
+      } finally {
+        subjectPreload = null;
+      }
+    })();
+  }
+  function loadResource(
+    id: string,
+    mode: 'foreground' | 'background' = 'foreground',
+  ): Promise<void> {
+    const running = resourceLoads.get(id);
+    if (running) {
+      if (mode === 'background') return running;
+      busy = true;
+      return running.finally(() => (busy = false));
+    }
+    const task = fetchResource(id, mode).finally(() => {
+      if (resourceLoads.get(id) === task) resourceLoads.delete(id);
+    });
+    resourceLoads.set(id, task);
+    return task;
+  }
+  async function fetchResource(
+    id: string,
+    mode: 'foreground' | 'background',
+  ): Promise<void> {
+    const version = generation;
+    const foreground = mode === 'foreground';
+    if (foreground) {
+      busy = true;
+      error = '';
+      retryAction = null;
+    }
     try {
-      const res = await api({ action: 'read', resource: id });
+      const res = await api(
+        { action: 'read', resource: id },
+        !foreground,
+      );
       if (version !== generation || !authenticated) return;
       if (recordResources.includes(id)) {
         recordPages = { ...recordPages, [id]: readRecords(id, res.data) };
@@ -292,15 +350,34 @@
         resourceData = { ...resourceData, [id]: events(res.data, id) };
       }
       refreshTimes = { ...refreshTimes, [id]: Date.now() };
+      if (id === 'history') {
+        subjectCache.clear();
+        preloadHistorySubjects();
+      }
     } catch (e) {
-      if (version === generation && tab === id) {
+      if (foreground && version === generation && tab === id) {
         error =
           e instanceof Error ? e.message : 'Could not load this information.';
         retryAction = () => loadResource(id);
       }
     } finally {
-      if (version === generation) busy = false;
+      if (foreground && version === generation) busy = false;
     }
+  }
+  function preloadWorkspace() {
+    const first =
+      remoteResources.includes(tab) && !hasResource(tab)
+        ? loadResource(tab)
+        : Promise.resolve();
+    return first
+      .then(() =>
+        Promise.allSettled(
+          remoteResources
+            .filter((id) => !hasResource(id))
+            .map((id) => loadResource(id, 'background')),
+        ),
+      )
+      .then(() => preloadHistorySubjects());
   }
   function openCourse(course: Course) {
     writeLocation(courseLocation(course.id));
@@ -392,6 +469,7 @@
       tab = 'grades';
       writeLocation('#grades');
       await load();
+      void preloadWorkspace();
     } catch (e) {
       loginError = e instanceof Error ? e.message : 'Unable to sign in.';
     } finally {
@@ -473,6 +551,9 @@
     refreshTimes = {};
     retryAction = null;
     busy = false;
+    resourceLoads.clear();
+    subjectCache.clear();
+    subjectPreload = null;
   }
   async function logout() {
     let message = '';
@@ -593,8 +674,7 @@
     window.addEventListener('pageshow', returned);
     if (authenticated)
       void load().then(() => {
-        if (remoteResources.includes(tab) && !hasResource(tab))
-          void loadResource(tab);
+        void preloadWorkspace();
       });
     return () => {
       mq.removeEventListener('change', resize);
