@@ -20,7 +20,6 @@ struct ResourceView: View {
                 }
                 ForEach(Array(items.enumerated()), id: \.offset) { index, item in
                     switch resource {
-                    case .schedule: scheduleRow(item)
                     case .mail: mailRow(item, index: index)
                     case .documents: documentRow(item, index: index)
                     }
@@ -38,14 +37,6 @@ struct ResourceView: View {
         .alert("Download failed", isPresented: Binding(get: { downloadError != nil }, set: { if !$0 { downloadError = nil } })) {
             Button("OK") { downloadError = nil }
         } message: { Text(downloadError ?? "Try downloading this file again.") }
-    }
-
-    private func scheduleRow(_ item: SchoolEvent) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(item.title).font(.headline)
-            if !item.detail.isEmpty { Text(item.detail).font(.subheadline).foregroundStyle(.secondary) }
-            if !item.date.isEmpty { Text(item.date).font(.subheadline).foregroundStyle(.secondary) }
-        }.padding(.vertical, 8).accessibilityElement(children: .combine)
     }
 
     private func mailRow(_ item: SchoolEvent, index: Int) -> some View {

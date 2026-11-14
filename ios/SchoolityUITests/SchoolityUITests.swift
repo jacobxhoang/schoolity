@@ -42,7 +42,7 @@ final class SchoolityUITests: XCTestCase {
         app.tabBars.buttons["Grades"].tap()
         XCTAssertTrue(app.staticTexts["Algebra II"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.tabBars.buttons["Home"].exists)
-        XCTAssertEqual(app.tabBars.buttons.count, 4)
+        XCTAssertEqual(app.tabBars.buttons.count, 5)
         capture("gradebook")
         app.staticTexts["Algebra II"].tap()
         XCTAssertTrue(app.staticTexts["Grade history"].waitForExistence(timeout: 5))
@@ -88,7 +88,7 @@ final class SchoolityUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.tabBars.buttons["Schedule"].waitForExistence(timeout: 10))
         app.tabBars.buttons["Schedule"].tap()
-        XCTAssertTrue(app.staticTexts["Period 1"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Period 1 · M,T,W,Th,F"].waitForExistence(timeout: 5))
         capture("schedule")
         app.tabBars.buttons["Documents"].tap()
         XCTAssertTrue(app.buttons.containing(.staticText, identifier: "Sample report").firstMatch.waitForExistence(timeout: 5))
@@ -99,6 +99,18 @@ final class SchoolityUITests: XCTestCase {
         capture("account")
         if !app.buttons["Sign out"].isHittable { app.swipeUp() }
         XCTAssertTrue(app.buttons["Sign out"].isHittable)
+    }
+
+    func testRecordsExposeStudentInformation() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing"]
+        app.launch()
+        XCTAssertTrue(app.tabBars.buttons["Records"].waitForExistence(timeout: 10))
+        app.tabBars.buttons["Records"].tap()
+        XCTAssertTrue(app.staticTexts["Student Info"].waitForExistence(timeout: 5))
+        app.staticTexts["Student Info"].tap()
+        XCTAssertTrue(app.staticTexts["Sample Student"].waitForExistence(timeout: 5))
+        capture("student-info")
     }
 
     func testSavedSignInCanUnlock() {
@@ -119,7 +131,7 @@ final class SchoolityUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.staticTexts["Algebra II"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.buttons["login.unlock"].exists)
-        XCTAssertEqual(app.tabBars.buttons.count, 4)
+        XCTAssertEqual(app.tabBars.buttons.count, 5)
         capture("automatic-sign-in")
     }
 

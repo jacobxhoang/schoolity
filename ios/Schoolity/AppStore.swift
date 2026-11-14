@@ -9,6 +9,14 @@ final class AppStore: ObservableObject {
     @Published var profile: StudentProfile?
     @Published var isLoadingProfile = false
     @Published var profileError: String?
+    @Published var schedule: ScheduleData?
+    @Published var isLoadingSchedule = false
+    @Published var scheduleError: String?
+    @Published var studentInfo: StudentInfoPage?
+    @Published var courseHistory: CourseHistoryPage?
+    @Published var attendance: AttendancePage?
+    @Published var recordErrors: [StudentRecordFeature: String] = [:]
+    @Published var loadingRecords: Set<StudentRecordFeature> = []
     @Published var records: [SchoolResource: [SchoolEvent]] = [:]
     @Published var failures: [SchoolResource: String] = [:]
     @Published var loadingResources: Set<SchoolResource> = []
@@ -260,6 +268,73 @@ final class AppStore: ObservableObject {
         }
     }
 
+    func loadSchedule(refresh: Bool = false) async {
+        guard access == .signedIn, !isLoadingSchedule, refresh || schedule == nil else { return }
+        let ticket = generation
+        isLoadingSchedule = true
+        scheduleError = nil
+        defer { if ticket == generation { isLoadingSchedule = false } }
+        do {
+            let next: ScheduleData = try await client.read("schedule-terms", term: nil)
+            guard ticket == generation else { return }
+            schedule = next
+        } catch {
+            guard ticket == generation else { return }
+            handle(error)
+            scheduleError = error.localizedDescription
+        }
+    }
+
+    func loadRecord(_ feature: StudentRecordFeature, refresh: Bool = false) async {
+        guard access == .signedIn, !loadingRecords.contains(feature) else { return }
+        if !refresh {
+            switch feature {
+            case .student: guard studentInfo == nil else { return }
+            case .history: guard courseHistory == nil else { return }
+            case .attendance: guard attendance == nil else { return }
+            }
+        }
+        let ticket = generation
+        loadingRecords.insert(feature)
+        recordErrors[feature] = nil
+        defer { if ticket == generation { loadingRecords.remove(feature) } }
+        do {
+            switch feature {
+            case .student:
+                let next: StudentInfoPage = try await client.read("student", term: nil)
+                guard ticket == generation else { return }
+                studentInfo = next
+            case .history:
+                let next: CourseHistoryPage = try await client.read("history", term: nil)
+                guard ticket == generation else { return }
+                courseHistory = next
+            case .attendance:
+                let next: AttendancePage = try await client.read("attendance", term: nil)
+                guard ticket == generation else { return }
+                attendance = next
+            }
+        } catch {
+            guard ticket == generation else { return }
+            handle(error)
+            recordErrors[feature] = error.localizedDescription
+        }
+    }
+
+    func historySubject(id: String) async throws -> SubjectDetails {
+        guard access == .signedIn else { throw PortalFailure.signedOut }
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing") {
+            return SubjectDetails(columns: ["Course", "Mark"], completed: [["Sample completed course", "A"]], inProgress: [])
+        }
+        #endif
+        do {
+            return try await client.readHistorySubject(id)
+        } catch {
+            handle(error)
+            throw error
+        }
+    }
+
     func load(_ resource: SchoolResource, refresh: Bool = false) async {
         guard access == .signedIn, !loadingResources.contains(resource), refresh || records[resource] == nil else { return }
         let ticket = generation
@@ -324,6 +399,14 @@ final class AppStore: ObservableObject {
         profile = nil
         isLoadingProfile = false
         profileError = nil
+        schedule = nil
+        isLoadingSchedule = false
+        scheduleError = nil
+        studentInfo = nil
+        courseHistory = nil
+        attendance = nil
+        recordErrors = [:]
+        loadingRecords = []
         records = [:]
         failures = [:]
         loadingResources = []
