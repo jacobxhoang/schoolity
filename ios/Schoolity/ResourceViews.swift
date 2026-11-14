@@ -28,7 +28,7 @@ struct ResourceView: View {
                 ProgressView("Loading \(resource.title.lowercased())…")
             }
         }
-        .listStyle(.inset)
+        .schoolityList()
         .navigationTitle(resource.title)
         .task { await store.load(resource) }
         .refreshable { await store.load(resource, refresh: true) }

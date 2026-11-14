@@ -14,7 +14,7 @@ struct CustomizationView: View {
                 Text("Get alerts for newly graded assignments. Checks run while Schoolity is open and when iOS allows background refresh. Reopen and unlock Schoolity after a restart to resume checks.")
             }
         }
-        .listStyle(.inset)
+        .schoolityList()
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -76,7 +76,7 @@ private struct AccentColorsView: View {
                 }
             }
         }
-        .listStyle(.inset)
+        .schoolityList()
         .navigationTitle("Accent Color")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -117,7 +117,7 @@ private struct GradeColorsView: View {
                 Text("The highest threshold at or below a score determines its color. Swipe a threshold to delete it. Colors do not change grade calculations.")
             }
         }
-        .listStyle(.inset)
+        .schoolityList()
         .navigationTitle("Grade Colors")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {

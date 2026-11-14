@@ -5,6 +5,21 @@ enum SchoolityStyle {
     static let muted = Color.primary.opacity(0.65)
 }
 
+private struct SchoolityListStyle: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .listStyle(.insetGrouped)
+            .listSectionSpacing(20)
+            .scrollContentBackground(.hidden)
+            .background(Color(uiColor: .systemGroupedBackground))
+            .environment(\.defaultMinListRowHeight, 52)
+    }
+}
+
+extension View {
+    func schoolityList() -> some View { modifier(SchoolityListStyle()) }
+}
+
 /// Shared icon treatment for signed-in information and destination rows.
 struct InformationIcon: View {
     let symbol: String

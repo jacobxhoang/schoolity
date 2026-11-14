@@ -62,7 +62,7 @@ struct ScheduleView: View {
                 }
             }
         }
-        .listStyle(.inset)
+        .schoolityList()
         .navigationTitle("Schedule")
         .task { await store.loadSchedule() }
         .refreshable { await store.loadSchedule(refresh: true) }

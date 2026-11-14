@@ -28,7 +28,7 @@ struct RecordsView: View {
                 Text("District-reported records. Schoolity does not change them.")
             }
         }
-        .listStyle(.inset)
+        .schoolityList()
         .navigationTitle("Records")
     }
 }
@@ -60,7 +60,7 @@ struct StudentInfoView: View {
             Section {
                 NavigationLink {
                     List { StudentIDSection() }
-                        .listStyle(.inset)
+                        .schoolityList()
                         .navigationTitle("Student ID")
                         .navigationBarTitleDisplayMode(.inline)
                 } label: {
@@ -121,7 +121,7 @@ struct StudentInfoView: View {
                 }
             }
         }
-        .listStyle(.inset)
+        .schoolityList()
         .navigationTitle("Student Info")
         .task { await store.loadRecord(.student) }
         .refreshable { await store.loadRecord(.student, refresh: true) }
@@ -274,7 +274,7 @@ struct AttendanceView: View {
                 }
             }
         }
-        .listStyle(.inset)
+        .schoolityList()
         .navigationTitle("Attendance")
         .task { await store.loadRecord(.attendance) }
         .refreshable { await store.loadRecord(.attendance, refresh: true) }
@@ -434,7 +434,7 @@ struct CourseHistoryView: View {
                 }
             }
         }
-        .listStyle(.inset)
+        .schoolityList()
         .navigationTitle("Course History")
         .task { await store.loadRecord(.history) }
         .refreshable {

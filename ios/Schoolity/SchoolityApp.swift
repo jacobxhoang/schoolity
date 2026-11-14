@@ -226,7 +226,7 @@ struct AccountDetailsView: View {
                 Button("Sign out", role: .destructive) { Task { await store.signOut() } }
             }
         }
-        .listStyle(.inset)
+        .schoolityList()
         .task { await store.loadProfile(refresh: store.profile?.studentId == nil) }
         .refreshable { await store.loadProfile(refresh: true) }
         .privacySensitive()

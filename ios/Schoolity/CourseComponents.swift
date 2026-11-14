@@ -148,7 +148,7 @@ private enum CoursePreviewData {
             CourseGradeHeading(course: CoursePreviewData.course, districtScore: 92, changed: false)
             AssignmentDetailRow(assignment: CoursePreviewData.course.assignments[0], edit: {})
             GradeCategoryBreakdown(course: CoursePreviewData.course)
-        }.listStyle(.inset).navigationTitle("Gradebook")
+        }.schoolityList().navigationTitle("Gradebook")
     }.tint(SchoolityStyle.accent).environmentObject(CustomizationStore())
 }
 
@@ -158,7 +158,7 @@ private enum CoursePreviewData {
         InformationRow(title: "Home address", value: "101 Sample Road\nExample, MN 00000", symbol: "house.fill")
         AssignmentDetailRow(assignment: CoursePreviewData.course.assignments[0], edit: {})
     }
-    .listStyle(.inset)
+    .schoolityList()
     .environment(\.dynamicTypeSize, .accessibility3)
     .preferredColorScheme(.dark)
     .environmentObject(CustomizationStore())
