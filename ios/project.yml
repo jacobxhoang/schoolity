@@ -16,7 +16,11 @@ targets:
   Schoolity:
     type: application
     platform: iOS
-    sources: [Schoolity]
+    sources:
+      - path: Schoolity
+        excludes: [Resources]
+      - path: Schoolity/Resources
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.schoolity.app
