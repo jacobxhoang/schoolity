@@ -135,7 +135,9 @@ final class GradeNotifications: ObservableObject {
             return
         }
         for change in changes {
-            guard enabled, ticket == revision, !Task.isCancelled else { return }
+            // Once the baseline is committed, finish its alerts even if the
+            // foreground polling task is cancelled by an ordinary app switch.
+            guard enabled, ticket == revision else { return }
             let content = UNMutableNotificationContent()
             content.title = "Assignment graded"
             content.subtitle = change.course
