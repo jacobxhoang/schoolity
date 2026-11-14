@@ -8,10 +8,45 @@ struct CustomizationView: View {
                 NavigationLink { ClassAliasesView() } label: { Label("Class Names and Icons", systemImage: "studentdesk") }
                 NavigationLink { AccentColorsView() } label: { Label("Accent Color", systemImage: "paintbrush.fill") }
             }
+            Section {
+                GradeNotificationSettings()
+            } header: { Text("Notifications") } footer: {
+                Text("Get alerts for newly graded assignments. Checks run while Schoolity is open and when iOS allows background refresh. Reopen and unlock Schoolity after a restart to resume checks.")
+            }
         }
         .listStyle(.inset)
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct GradeNotificationSettings: View {
+    @ObservedObject private var notifications = GradeNotifications.shared
+    @Environment(\.openURL) private var openURL
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var requesting = false
+
+    var body: some View {
+        Group {
+            Toggle("Graded assignments", isOn: Binding(
+                get: { notifications.enabled },
+                set: { value in
+                    requesting = true
+                    Task { await notifications.setEnabled(value); requesting = false }
+                }
+            ))
+            .disabled(requesting)
+            .accessibilityIdentifier("settings.gradeNotifications")
+            if requesting { ProgressView("Requesting permission…") }
+            if notifications.permissionDenied {
+                Text("Notifications are blocked in iOS Settings.").font(.footnote).foregroundStyle(.secondary)
+                Button("Open notification settings") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                }
+            }
+            if let error = notifications.error { Text(error).font(.footnote).foregroundStyle(.secondary) }
+        }
+        .task(id: scenePhase) { await notifications.refreshPermission() }
     }
 }
 

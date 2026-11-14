@@ -183,37 +183,22 @@ struct CourseDetailView: View {
 }
 
 private struct HypotheticalAddButton: View {
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     let add: () -> Void
 
     var body: some View {
-        // Availability handles older devices; the compiler guard also keeps
-        // builds using a pre-iOS-26 SDK compatible with the existing CI setup.
-        #if compiler(>=6.2)
-        if #available(iOS 26, *), !reduceTransparency {
-            addButton.buttonStyle(.glassProminent)
-                .buttonBorderShape(.roundedRectangle(radius: 12))
-                .padding(.vertical, 4)
-        } else {
-            standardControls
-        }
-        #else
-        standardControls
-        #endif
-    }
-
-    private var standardControls: some View {
-        addButton.buttonStyle(.borderedProminent)
-        .buttonBorderShape(.roundedRectangle(radius: 12))
-        .padding(.vertical, 4)
-    }
-
-    private var addButton: some View {
         Button(action: add) {
             Label("Add hypothetical score", systemImage: "plus")
-                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .font(.body.weight(.semibold))
+                .frame(maxWidth: .infinity, minHeight: 44)
                 .fixedSize(horizontal: false, vertical: true)
         }
+        .buttonStyle(.bordered)
+        .tint(.primary)
+        .buttonBorderShape(.roundedRectangle(radius: 14))
+        .controlSize(.large)
+        .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+        .listRowBackground(Color.clear)
+        .accessibilityHint("Try a new assignment without changing school records")
     }
 
 }
@@ -231,7 +216,7 @@ struct GradeHistoryView: View, Equatable {
             } else {
                 Chart(points) { point in
                     LineMark(x: .value("Graded assignment", point.id), y: .value("Grade", point.score))
-                        .foregroundStyle(SchoolityStyle.accent)
+                        .foregroundStyle(Color("ActionAccent"))
                     PointMark(x: .value("Graded assignment", point.id), y: .value("Grade", point.score))
                         .foregroundStyle(customization.gradeColor(point.score)).symbolSize(points.count > 30 ? 6 : 18)
                 }

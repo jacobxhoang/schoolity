@@ -32,6 +32,7 @@ final class AppStore: ObservableObject {
     private var generation = UUID()
     private var started = false
     private var backgrounded = false
+    private var checkingForGradeNotifications = false
     private var savedSessionNeedsUnlock = false
     private var historyGeneration = UUID()
     private var historySubjects: [String: SubjectDetails] = [:]
@@ -178,6 +179,7 @@ final class AppStore: ObservableObject {
     }
 
     private func lockWorkspace() {
+        GradeNotifications.shared.cancelPending()
         unlocker.cancel()
         client.forgetSession()
         clearWorkspace()
@@ -197,6 +199,7 @@ final class AppStore: ObservableObject {
     }
 
     func usePasswordInstead() {
+        GradeNotifications.shared.cancelPending()
         unlocker.cancel()
         client.clear()
         #if DEBUG
@@ -243,12 +246,42 @@ final class AppStore: ObservableObject {
             let next: Gradebook = try await client.read("grades", term: term ?? gradebook?.currentTerm)
             guard ticket == generation else { return }
             gradebook = next
+            await observeGradedAssignments(next)
         } catch {
             guard ticket == generation, !PortalFailure.isCancellation(error) else { return }
             handle(error)
             gradeError = error.localizedDescription
         }
         if profile == nil, access == .signedIn, ticket == generation { await loadProfile() }
+    }
+
+    private func observeGradedAssignments(_ book: Gradebook) async {
+        guard access == .signedIn,
+              let account = client.notificationAccountID ?? profile?.studentId.map(GradingSnapshot.hash) else { return }
+        await GradeNotifications.shared.observe(book, account: account)
+    }
+
+    // Check the current period independently of the period being viewed. Use
+    // only the active session; never prompt for Face ID during background work.
+    func checkForGradedAssignments() async {
+        guard access == .signedIn, GradeNotifications.shared.enabled,
+              !checkingForGradeNotifications, !Task.isCancelled else { return }
+        #if DEBUG
+        if usingUITestData { return }
+        #endif
+        let ticket = generation
+        checkingForGradeNotifications = true
+        defer { if ticket == generation { checkingForGradeNotifications = false } }
+        do {
+            let current: Gradebook = try await client.read("grades", term: nil)
+            try Task.checkCancellation()
+            guard ticket == generation, access == .signedIn else { return }
+            if gradebook?.currentTerm == current.currentTerm { gradebook = current }
+            await observeGradedAssignments(current)
+        } catch {
+            guard ticket == generation, !PortalFailure.isCancellation(error) else { return }
+            handle(error)
+        }
     }
 
     /// Owned by the signed-in workspace's task, so sign-out cancels the group.
@@ -435,6 +468,7 @@ final class AppStore: ObservableObject {
     func signOut() async {
         guard !signingOut else { return }
         signingOut = true
+        GradeNotifications.shared.cancelPending()
         // Clear visible records immediately; block a new login until revocation finishes.
         reset()
         try? await client.signOut()
@@ -452,6 +486,7 @@ final class AppStore: ObservableObject {
     }
 
     private func reset() {
+        GradeNotifications.shared.cancelPending()
         clearWorkspace()
         savedSessionNeedsUnlock = false
         isUnlocking = false
@@ -461,6 +496,7 @@ final class AppStore: ObservableObject {
 
     private func clearWorkspace() {
         generation = UUID()
+        checkingForGradeNotifications = false
         clearHistorySubjects()
         gradebook = nil
         profile = nil

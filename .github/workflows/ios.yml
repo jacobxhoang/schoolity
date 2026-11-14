@@ -133,6 +133,19 @@ jobs:
             | tee build/ui-dark.log
           grep -Eq 'Executed [1-9][0-9]* tests?' build/ui-dark.log
           xcrun simctl ui "$SIMULATOR_ID" content_size large
+      - name: Export course and settings previews
+        if: success()
+        run: |
+          mkdir -p build/previews
+          xcrun xcresulttool export attachments --path TestResults/Light.xcresult --output-path build/previews/Light
+          xcrun xcresulttool export attachments --path TestResults/Dark.xcresult --output-path build/previews/Dark
+      - name: Upload interface previews
+        if: success()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: Schoolity-interface-previews
+          path: ios/build/previews/
+          retention-days: 1
       - name: Export test screenshots
         if: failure() || inputs.keep_test_evidence == true
         run: |
