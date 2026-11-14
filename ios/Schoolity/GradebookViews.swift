@@ -43,7 +43,7 @@ private struct GradebookContent: View, Equatable {
                 Section { FailureRow(message: error) { Task { await refresh(nil) } } }
             }
         }
-        .listStyle(.inset)
+        .schoolityList()
         .navigationTitle("Gradebook")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -61,18 +61,27 @@ struct CourseRow: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     let course: Course
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 12) {
-                if !typeSize.isAccessibilitySize {
-                    Image(systemName: customization.symbol(for: course.name))
-                        .font(.title2).frame(width: 30)
-                        .accessibilityHidden(true)
+        Group {
+            if typeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 12) {
+                    identity
+                    grade
                 }
-                identity
+            } else {
+                HStack(spacing: 14) {
+                    Image(systemName: customization.symbol(for: course.name))
+                        .font(.system(size: 19, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 42, height: 44)
+                        .background(Color(uiColor: .tertiarySystemFill), in: RoundedRectangle(cornerRadius: 12))
+                        .accessibilityHidden(true)
+                    identity
+                    Spacer(minLength: 8)
+                    grade
+                }
             }
-            grade
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, 10)
         .accessibilityElement(children: .combine)
         .contextMenu { Button("Customize class", systemImage: "paintbrush") { customizing = true } }
         .sheet(isPresented: $customizing) { ClassAppearanceSheet(title: course.name) }
@@ -80,11 +89,12 @@ struct CourseRow: View {
 
     private var grade: some View {
         let score = course.official ?? GradeMath.calculate(course)
-        return HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Text(GradeMath.letter(score)).foregroundStyle(customization.gradeColor(score))
-            Text(GradeMath.percent(score))
+        return VStack(alignment: typeSize.isAccessibilitySize ? .leading : .trailing, spacing: 4) {
+            Text(GradeMath.percent(score)).font(.title3.weight(.semibold)).foregroundStyle(.primary)
+            Text(GradeMath.letter(score))
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(customization.gradeColor(score))
         }
-        .font(.callout.weight(.semibold))
         .monospacedDigit()
         .fixedSize(horizontal: false, vertical: true)
         .accessibilityLabel("\(GradeMath.percent(score)), \(GradeMath.letter(score)), \(course.official == nil ? "calculated grade" : "school grade")")
@@ -92,9 +102,9 @@ struct CourseRow: View {
 
     private var identity: some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(customization.name(for: course.name)).font(.headline).fixedSize(horizontal: false, vertical: true)
+            Text(customization.name(for: course.name)).font(.body.weight(.semibold)).fixedSize(horizontal: false, vertical: true)
             let details = [course.teacher, course.room.isEmpty ? "" : "Room \(course.room)"].filter { !$0.isEmpty }.joined(separator: " | ")
-            if !details.isEmpty { Text(details).font(.footnote).foregroundStyle(SchoolityStyle.muted) }
+            if !details.isEmpty { Text(details).font(.caption).foregroundStyle(.secondary) }
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
 }
@@ -155,7 +165,7 @@ struct CourseDetailView: View {
                 }
             }
         }
-        .listStyle(.inset)
+        .schoolityList()
         .navigationTitle(customization.name(for: course.name))
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $presentedSheet) { assignment in

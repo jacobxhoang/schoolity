@@ -44,7 +44,7 @@ struct ClassAliasesView: View {
                 if classes.isEmpty { Text("Your classes will appear after grades or schedule finish loading.").foregroundStyle(.secondary) }
             }
         }
-        .listStyle(.inset)
+        .schoolityList()
         .navigationTitle("Class Names and Icons")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $editing) { alias in ClassAliasEditor(alias: alias) }
@@ -94,7 +94,7 @@ struct ClassLinkPicker: View {
                 Button("Create name and icon", systemImage: "plus") { adding = ClassAlias(name: title, symbol: "studentdesk") }
             }
         }
-        .listStyle(.inset)
+        .schoolityList()
         .navigationTitle("Class Appearance")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $adding) { alias in ClassAliasEditor(alias: alias, linkTo: title) }

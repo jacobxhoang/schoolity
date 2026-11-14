@@ -152,7 +152,7 @@
   max-width: 54ch;
   margin-top: 16px;
   color: var(--muted);
-  font-size: 14.5px;
+  font-size: 16px;
   line-height: 1.65;
   text-wrap: pretty;
 }

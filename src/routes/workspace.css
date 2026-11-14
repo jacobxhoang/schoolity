@@ -1,6 +1,11 @@
 /* Signed-in workspace. One layer, tokens only, no overrides. */
 
 .app-shell.workspace {
+  --nav-bg: var(--panel);
+  --nav-ink: var(--ink);
+  --nav-muted: var(--muted);
+  --nav-line: var(--line);
+  --nav-hover: var(--field);
   display: flex;
   min-height: 100vh;
   background: var(--canvas);
@@ -16,16 +21,11 @@
   display: flex;
   flex-direction: column;
   width: 248px;
-  padding: 20px 14px 0;
+  padding: 24px 16px 0;
   overflow-y: auto;
-  background: radial-gradient(
-    120% 100% at 100% 0%,
-    #1c1c1c 0%,
-    #111111 52%,
-    var(--rail-end) 100%
-  );
-  box-shadow: inset -1px 0 0 #ffffff0f;
-  color: var(--rail-muted);
+  background: var(--nav-bg);
+  border-right: 1px solid var(--nav-line);
+  color: var(--nav-muted);
 }
 #school-navigation > .brand,
 #school-navigation > nav,
@@ -39,7 +39,7 @@
   gap: 10px;
   min-height: var(--s6);
   padding: 0 8px;
-  color: var(--rail-ink);
+  color: var(--nav-ink);
   font-family: var(--font-display);
   font-size: 20px;
   font-weight: 600;
@@ -51,8 +51,8 @@
   width: 30px;
   height: 30px;
   border-radius: 9px;
-  background: var(--rail-ink);
-  color: #0f0f0f;
+  background: var(--nav-ink);
+  color: var(--nav-bg);
   font-family: var(--font-display);
   font-size: 18px;
   font-weight: 700;
@@ -73,8 +73,8 @@ nav button {
   min-height: var(--s6);
   padding: 0 12px;
   border-radius: 10px;
-  color: var(--rail-muted);
-  font-size: 13.5px;
+  color: var(--nav-muted);
+  font-size: 14px;
   font-weight: 500;
   text-align: left;
   transition:
@@ -82,12 +82,12 @@ nav button {
     color 0.18s ease;
 }
 nav button:hover {
-  background: #ffffff0d;
-  color: var(--rail-ink);
+  background: var(--nav-hover);
+  color: var(--nav-ink);
 }
 nav button.active {
-  background: var(--rail-ink);
-  color: #0f0f0f;
+  background: var(--nav-ink);
+  color: var(--nav-bg);
   font-weight: 600;
 }
 nav button svg {
@@ -96,11 +96,10 @@ nav button svg {
 .nav-group-label {
   margin: 14px 0 4px;
   padding: 0 12px;
-  color: #7d7d7d;
+  color: var(--nav-muted);
   font-size: var(--t-mini);
   font-weight: 500;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: 0;
 }
 
 .sidebar-bottom {
@@ -116,8 +115,8 @@ nav button svg {
   min-height: var(--s6);
   padding: 0 10px;
   border-radius: 10px;
-  color: #9a9a9a;
-  font-size: 12.5px;
+  color: var(--nav-muted);
+  font-size: 13px;
   text-align: left;
   transition:
     background 0.18s ease,
@@ -125,8 +124,8 @@ nav button svg {
 }
 .privacy-link:hover,
 .sign-out-button:hover {
-  background: #ffffff0d;
-  color: var(--rail-ink);
+  background: var(--nav-hover);
+  color: var(--nav-ink);
 }
 .profile {
   display: flex;
@@ -135,12 +134,12 @@ nav button svg {
   width: 100%;
   min-height: 56px;
   padding: 14px 8px;
-  border-top: 1px solid #ffffff14;
+  border-top: 1px solid var(--nav-line);
   text-align: left;
   transition: background 0.18s ease;
 }
 .profile:hover {
-  background: #ffffff0a;
+  background: var(--nav-hover);
 }
 .avatar {
   display: grid;
@@ -148,11 +147,11 @@ nav button svg {
   place-items: center;
   width: 36px;
   height: 36px;
-  border: 1px solid #2c2c2c;
+  border: 1px solid var(--nav-line);
   border-radius: 10px;
-  background: #1c1c1c;
-  color: var(--rail-ink);
-  font-size: 11.5px;
+  background: var(--nav-hover);
+  color: var(--nav-ink);
+  font-size: 13px;
   font-weight: 600;
 }
 .profile > span:last-child {
@@ -161,8 +160,8 @@ nav button svg {
 .profile strong {
   display: block;
   overflow: hidden;
-  color: var(--rail-ink);
-  font-size: 12.5px;
+  color: var(--nav-ink);
+  font-size: 14px;
   font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -170,7 +169,7 @@ nav button svg {
 .profile small {
   display: block;
   margin-top: 2px;
-  color: #8f8f8f;
+  color: var(--nav-muted);
   font-size: var(--t-mini);
 }
 .navigation-backdrop {
@@ -194,7 +193,7 @@ nav button svg {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 76px;
+  height: 72px;
   padding: 0 36px;
   border-bottom: 1px solid var(--line);
 }
@@ -222,7 +221,7 @@ nav button svg {
 }
 .main-shell > main {
   max-width: 1500px;
-  padding: 28px 36px 48px;
+  padding: 36px 36px 56px;
 }
 main:focus {
   outline: none;
@@ -290,7 +289,7 @@ h3 {
   border-radius: 10px;
   background: var(--panel);
   color: var(--ink);
-  font-size: 12.5px;
+  font-size: var(--t-meta);
   font-weight: 500;
   white-space: nowrap;
   transition:
@@ -304,7 +303,7 @@ h3 {
 .loading {
   margin: 8px 0 18px;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: var(--t-meta);
 }
 
 :is(input, select) {
@@ -343,31 +342,37 @@ select option {
 /* Gradebook */
 
 .stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 320px));
-  gap: 12px;
-  margin-bottom: 24px;
-}
-.stat-card {
-  padding: 18px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-bottom: 32px;
+  padding: 24px;
   border: 1px solid var(--line);
   border-radius: var(--r);
   background: var(--panel);
-  box-shadow: var(--shadow);
+}
+.stat-card {
+  flex: 1;
+  min-width: 120px;
+  padding: 0;
+}
+.stat-card + .stat-card {
+  padding-left: 24px;
+  border-left: 1px solid var(--line);
 }
 .stat-card > span {
   display: flex;
   align-items: center;
   justify-content: space-between;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: var(--t-meta);
   font-weight: 500;
 }
 .stat-card > strong {
   display: block;
   margin: 8px 0 2px;
   font-family: var(--font-display);
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 600;
   letter-spacing: -0.045em;
   line-height: 1.1;
@@ -375,7 +380,7 @@ select option {
 }
 .stat-card small {
   color: var(--faint);
-  font-size: 11.5px;
+  font-size: var(--t-mini);
 }
 
 .content-columns {
@@ -389,7 +394,7 @@ select option {
   border: 1px solid var(--line);
   border-radius: var(--r);
   background: var(--panel);
-  box-shadow: var(--shadow);
+  box-shadow: none;
 }
 .recent-assignments h2 {
   font-size: 18px;
@@ -397,7 +402,7 @@ select option {
 .recent-assignments-note {
   margin-top: 4px;
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: var(--t-mini);
 }
 .recent-assignment-list {
   margin-top: 12px;
@@ -429,7 +434,7 @@ select option {
 }
 .recent-assignment-course {
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: var(--t-mini);
 }
 .recent-assignment-meta {
   display: flex;
@@ -439,7 +444,7 @@ select option {
   width: 100%;
   margin-top: 4px;
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: var(--t-mini);
 }
 .recent-assignment-score {
   color: var(--ink);
@@ -449,7 +454,7 @@ select option {
 .recent-assignments-empty {
   padding: 10px 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--t-mini);
 }
 
 .term-line {
@@ -494,7 +499,7 @@ select option {
 .term-line > span:last-child {
   margin-left: auto;
   color: var(--faint);
-  font-size: 11.5px;
+  font-size: var(--t-mini);
 }
 
 .course-grid {
@@ -509,13 +514,13 @@ select option {
   align-items: center;
   column-gap: 14px;
   row-gap: 3px;
-  min-height: 84px;
-  padding: 16px 18px;
+  min-height: 96px;
+  padding: 20px;
   border: 1px solid var(--line);
   border-radius: var(--r);
   background: var(--panel);
   text-align: left;
-  box-shadow: 0 1px 2px rgba(15, 15, 15, 0.03);
+  box-shadow: none;
   transition:
     transform 0.2s ease,
     border-color 0.2s ease,
@@ -557,7 +562,7 @@ select option {
   grid-row: 2;
   align-self: start;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--t-mini);
   line-height: 1.45;
 }
 .course-card > p > span {
@@ -585,7 +590,7 @@ select option {
   display: block;
   margin-top: 4px;
   color: var(--faint);
-  font-size: 11.5px;
+  font-size: var(--t-mini);
 }
 .course-grid > .empty-state {
   grid-column: 1 / -1;
@@ -623,7 +628,7 @@ select option {
 }
 .grade-comparison span {
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: var(--t-meta);
 }
 .grade-comparison strong {
   font-family: var(--font-display);
@@ -635,13 +640,13 @@ select option {
 }
 .grade-comparison small {
   color: var(--faint);
-  font-size: 11.5px;
+  font-size: var(--t-mini);
   line-height: 1.5;
 }
 .estimate-details {
   flex: 0 0 150px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--t-mini);
 }
 .estimate-details summary {
   display: flex;
@@ -693,7 +698,7 @@ select option {
   justify-content: space-between;
   min-width: 44px;
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: var(--t-mini);
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
@@ -702,12 +707,12 @@ select option {
   justify-content: space-between;
   margin: 8px 0 0 56px;
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: var(--t-mini);
 }
 .trend-empty {
   margin-top: 12px;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: var(--t-meta);
   text-align: center;
 }
 
@@ -729,7 +734,7 @@ select option {
 .what-if p {
   margin-top: 3px;
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: var(--t-mini);
 }
 .toggle-control {
   display: flex;
@@ -741,7 +746,7 @@ select option {
   border-radius: var(--r-pill);
   background: var(--field);
   color: var(--ink);
-  font-size: 12.5px;
+  font-size: var(--t-meta);
   font-weight: 500;
   white-space: nowrap;
 }
@@ -794,7 +799,7 @@ th {
   border-bottom: 1px solid var(--line);
   background: var(--field);
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: var(--t-mini);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -827,7 +832,7 @@ td small {
   display: block;
   margin-top: 3px;
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: var(--t-mini);
 }
 .grade-label {
   font-size: 13.5px;
@@ -848,7 +853,7 @@ td small {
   border-radius: var(--r-chip);
   background: var(--panel);
   color: var(--ink);
-  font-size: 12.5px;
+  font-size: var(--t-meta);
 }
 .title-input {
   width: 100%;
@@ -879,12 +884,12 @@ td small {
 .calculation-note {
   margin-top: 16px;
   color: var(--faint);
-  font-size: 11.5px;
+  font-size: var(--t-mini);
   line-height: 1.7;
 }
 .document-error {
   color: var(--ink);
-  font-size: 12.5px;
+  font-size: var(--t-meta);
   line-height: 1.5;
 }
 
@@ -920,7 +925,7 @@ td small {
 }
 .record-card small {
   color: var(--faint);
-  font-size: 11.5px;
+  font-size: var(--t-mini);
 }
 .record-card h3 {
   margin-top: 2px;
@@ -931,7 +936,7 @@ td small {
 .record-card p {
   margin-top: 3px;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: var(--t-meta);
   line-height: 1.55;
   max-width: 76ch;
   white-space: pre-line;
@@ -964,7 +969,7 @@ td small {
 .document-copy > span,
 .document-status {
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: var(--t-mini);
 }
 .document-copy > span {
   display: block;
@@ -1011,7 +1016,7 @@ td small {
 }
 .mail-author {
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: var(--t-mini);
   font-weight: 400;
 }
 .mail-message summary svg {
@@ -1029,7 +1034,7 @@ td small {
 }
 .mail-content small {
   color: var(--faint);
-  font-size: 11.5px;
+  font-size: var(--t-mini);
 }
 .mail-content p {
   max-width: 75ch;
@@ -1062,7 +1067,7 @@ td small {
 .attachment-name {
   flex: 1;
   min-width: 120px;
-  font-size: 12.5px;
+  font-size: var(--t-meta);
   overflow-wrap: anywhere;
 }
 .mail-attachments .document-error {
@@ -1082,16 +1087,16 @@ td small {
   align-items: center;
   gap: 8px;
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: var(--t-mini);
 }
 .record-filters select {
   padding: 0 10px;
   border-radius: var(--r-chip);
-  font-size: 12.5px;
+  font-size: var(--t-meta);
 }
 .record-filters [role='status'] {
   color: var(--faint);
-  font-size: 11.5px;
+  font-size: var(--t-mini);
 }
 .records-intro,
 .records-empty,
@@ -1133,7 +1138,7 @@ td small {
 .student-info-fields dt,
 .attendance-totals dt {
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: var(--t-mini);
   line-height: 1.5;
 }
 .student-info-fields dd {
@@ -1186,7 +1191,7 @@ td small {
 }
 .graduation-heading > span {
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: var(--t-meta);
 }
 .graduation-legend {
   display: flex;
@@ -1199,7 +1204,7 @@ td small {
   align-items: center;
   gap: 7px;
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: var(--t-mini);
 }
 .graduation-legend i {
   width: 12px;
@@ -1228,7 +1233,7 @@ td small {
   padding-bottom: 10px;
   border-bottom: 1px solid var(--line);
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: var(--t-mini);
 }
 .graduation-requirements {
   margin: 0;
@@ -1285,14 +1290,14 @@ td small {
   height: 100%;
 }
 .graduation-percentage {
-  font-size: 12px;
+  font-size: var(--t-mini);
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 .graduation-unavailable {
   grid-column: 1 / -1;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--t-mini);
 }
 .graduation-credits {
   display: grid;
@@ -1302,7 +1307,7 @@ td small {
 }
 .graduation-credits dd {
   margin-top: 3px;
-  font-size: 12.5px;
+  font-size: var(--t-meta);
   font-variant-numeric: tabular-nums;
 }
 .subject-classes {
@@ -1354,7 +1359,7 @@ td small {
 }
 .history-course-records > summary > span {
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: var(--t-mini);
   font-weight: 400;
 }
 .history-course-records > .records-intro {
@@ -1385,7 +1390,7 @@ td small {
 }
 .attendance-note {
   margin-top: 4px;
-  font-size: 12.5px;
+  font-size: var(--t-meta);
 }
 .attendance-periods {
   margin: 10px 0 0;
@@ -1405,7 +1410,7 @@ td small {
 }
 .attendance-period {
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: var(--t-mini);
 }
 .attendance-course strong,
 .attendance-status strong {
@@ -1419,7 +1424,7 @@ td small {
   display: block;
   margin-top: 2px;
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: var(--t-mini);
 }
 .attendance-status {
   text-align: right;
@@ -1438,7 +1443,7 @@ td small {
 }
 .account-fields dt {
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: var(--t-mini);
 }
 .account-fields dd {
   margin-top: 3px;
@@ -1505,7 +1510,7 @@ td small {
     display: block;
     margin-bottom: 4px;
     color: var(--muted);
-    font-size: 11.5px;
+    font-size: var(--t-mini);
   }
   td:empty {
     display: none;
@@ -1573,18 +1578,22 @@ td small {
     margin-bottom: 18px;
   }
   .stats-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-    margin-bottom: 18px;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding: 20px;
   }
   .stat-card {
-    padding: 14px;
+    min-width: 0;
+    padding: 0;
+  }
+  .stat-card + .stat-card {
+    padding-left: 16px;
   }
   .stat-card > strong {
     font-size: 26px;
   }
   .stat-card small {
-    font-size: 11px;
+    font-size: var(--t-mini);
   }
   .course-card {
     grid-template-columns: 38px minmax(0, 1fr) 92px;
@@ -1597,7 +1606,7 @@ td small {
     border-radius: 10px;
   }
   .course-card h3 {
-    font-size: 14px;
+    font-size: 15px;
   }
   .course-card-bottom strong {
     font-size: 20px;
@@ -1674,7 +1683,7 @@ td small {
     text-align: left;
   }
   .attendance-period {
-    font-size: 11.5px;
+    font-size: var(--t-mini);
   }
 }
 
