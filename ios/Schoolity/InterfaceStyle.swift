@@ -37,6 +37,51 @@ extension View {
     func schoolityList() -> some View { modifier(SchoolityListStyle()) }
 }
 
+/// A floating Liquid Glass surface on iOS 26, and a translucent surface that keeps
+/// the same shape and tint on earlier versions. System chrome, such as the tab bar
+/// and navigation bars, becomes Liquid Glass on its own when the app is built with
+/// the iOS 26 SDK.
+struct GlassSurface: ViewModifier {
+    let tint: Color
+    let cornerRadius: CGFloat
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        #if compiler(>=6.2)
+        if #available(iOS 26.0, *) {
+            content.glassEffect(.regular.tint(tint.opacity(0.4)), in: .rect(cornerRadius: cornerRadius))
+        } else {
+            translucent(content)
+        }
+        #else
+        translucent(content)
+        #endif
+    }
+
+    private func translucent(_ content: Content) -> some View {
+        content
+            .background(.ultraThinMaterial, in: .rect(cornerRadius: cornerRadius))
+            .overlay {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(LinearGradient(colors: [tint.opacity(0.18), tint.opacity(0.03)],
+                                         startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .allowsHitTesting(false)
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(.white.opacity(0.16), lineWidth: 0.8)
+                    .allowsHitTesting(false)
+            }
+    }
+}
+
+extension View {
+    /// A floating glass surface, tinted by the reader's grade colors.
+    func schoolityGlass(tint: Color, cornerRadius: CGFloat = 20) -> some View {
+        modifier(GlassSurface(tint: tint, cornerRadius: cornerRadius))
+    }
+}
+
 /// Section footer text for the time a section last loaded from the district.
 struct LastUpdatedText: View {
     let date: Date?
