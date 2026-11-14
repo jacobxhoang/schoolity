@@ -1,6 +1,6 @@
 # Schoolity for iPhone
 
-Native SwiftUI app for iOS 17 and later. Includes required Anoka-Hennepin sign-in, saved sessions, reporting periods, grade history, local hypothetical editing and target scores, schedule, expandable inbox with senders, and document/mail attachment downloads with Apple's preview and sharing controls. No web view or third-party Swift dependencies.
+Native SwiftUI app for iOS 17 and later. Includes required Anoka-Hennepin sign-in, saved sessions, reporting periods, grade history, local hypothetical editing and target scores, term-aware schedule, student information, attendance, course history with graduation progress and subject details, expandable inbox with senders, and document/mail attachment downloads with Apple's preview and sharing controls. No web view or third-party Swift dependencies.
 
 ## Saved sign-in and Face ID
 
@@ -16,7 +16,7 @@ Older installations stored only a session. Enter your school credentials once af
 
 ## Native interface
 
-The original Schoolity credential form and saved-sign-in screen are retained, now with a teal accent for primary actions, selected navigation, grade badges and graph marks. Light Mode uses deep teal (#08666E); Dark Mode uses pale teal (#74D8DE), with neutral system backgrounds and labels. The barcode remains black on white. Saved sign-in starts automatically; **Sign in** remains a retry action. Grades open first; Home is removed, leaving Grades, Schedule, Inbox and Documents. The remaining compact native inset rows, course symbols and stacked grade lines take Pupil as a visual reference. Account displays the student number and barcode directly, with no extra navigation. Charts and local calculators retain their functions. No Pupil source code, images, branding, SwiftVue, or credential-storage dependencies are bundled.
+The original Schoolity credential form and saved-sign-in screen are retained, now with a teal accent for primary actions, selected navigation, grade badges and graph marks. Light Mode uses deep teal (#08666E); Dark Mode uses pale teal (#74D8DE), with neutral system backgrounds and labels. The barcode remains black on white. Saved sign-in starts automatically; **Sign in** remains a retry action. Grades open first; Home is removed, leaving Grades, Schedule, Inbox, Documents and Records. Records groups Student Info, Attendance and Course History. Schedule can switch among the district's terms, and Course History exposes graduation progress, year/school filters, course records, and on-demand completed/in-progress subject classes. The remaining compact native inset rows, course symbols and stacked grade lines take Pupil as a visual reference. Account displays the student number and barcode directly, with no extra navigation. Charts and local calculators retain their functions. No Pupil source code, images, branding, SwiftVue, or credential-storage dependencies are bundled.
 
 ## Build on GitHub (works from Windows)
 
@@ -55,7 +55,7 @@ Choose the `Schoolity` scheme and an iPhone simulator, then Run. For an actual i
 
 `PortalClient.baseURL` is fixed to `https://schoolity-jet.vercel.app`. The existing Schoolity server forwards credentials to the fixed Anoka district and stores the district access token on the server. No server secrets belong in the app. Native POSTs include the fixed server Origin header; the web app retains its same-origin checks.
 
-Native reads opt into `{ "normalized": true }` on `/api/portal`, receiving the same decoded display models as the web interface. Raw responses for existing web callers are unchanged. `/api/documents` still checks ownership and authenticates both document and inbox attachment downloads.
+Native reads opt into `{ "normalized": true }` on `/api/portal`, receiving the same decoded display models as the web interface. Raw responses for existing web callers are unchanged. The new `schedule-terms` resource returns the term-aware schedule rather than the legacy flat schedule, so installed clients remain compatible during rollout. Student Info, Attendance and Course History use the normalized `student`, `attendance` and `history` resources; subject classes use `history-subject`. `/api/documents` still checks ownership and authenticates both document and inbox attachment downloads.
 
 On devices with a passcode, the Keychain entry includes the opaque session, its expiration, and saved school credentials, protected with `userPresence` and `WhenPasscodeSetThisDeviceOnly`. Credentials are read only after successful local authentication and used only during sign-in; the in-memory active session contains no password. Non-secret metadata records whether renewal is possible. Without a passcode, `WhenUnlockedThisDeviceOnly` stores only the session. Neither cookie nor credentials are read during client initialization. School records/responses are not saved. Networking uses an ephemeral URLSession without disk cache or cookie jar; redirects are refused. Native requests do not persist passwords on the server; only the web client's opt-in saved sign-in stores them, encrypted, for up to 30 days. Exported files remain where the user saved them; temporary downloads use complete file protection and clear on lock/sign-out.
 
@@ -63,7 +63,7 @@ Internet access and a live Schoolity deployment are required. An expired distric
 
 ## Verification
 
-Unit coverage includes points/weighted calculations, excluded and ungraded work, zero and extra credit, category redistribution, target scores, chronology, decoded API models, session expiry, and filename safety. UI tests use original synthetic records in DEBUG builds only; Release has no test/demo entry point. Tests cover login gating, gradebook/chart navigation, hypothetical editing, collapsed messages/senders, Schedule, Documents, Account, and light/dark screenshots. Login, the gradebook, and course details are also captured at the largest accessibility text size in Dark Mode.
+Unit coverage includes points/weighted calculations, excluded and ungraded work, zero and extra credit, category redistribution, target scores, chronology, decoded API models, session expiry, and filename safety. UI tests use original synthetic records in DEBUG builds only; Release has no test/demo entry point. Tests cover login gating, gradebook/chart navigation, hypothetical editing, collapsed messages/senders, schedule, documents, student information, account, and light/dark screenshots. Unit coverage also decodes the term-aware schedule, student information, course history, attendance and subject-detail payloads. Login, the gradebook, and course details are also captured at the largest accessibility text size in Dark Mode.
 
 Successful compilation and fixture tests do not verify real district credentials, live files, physical-device behavior, or App Store readiness. Real-account compatibility should be checked privately on a signed device build.
 
