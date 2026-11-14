@@ -162,7 +162,10 @@ final class SchoolityUITests: XCTestCase {
         app.staticTexts["Grade Colors"].tap()
         let enabled = app.switches["Use custom grade colors"]
         XCTAssertTrue(enabled.waitForExistence(timeout: 5))
-        enabled.tap()
+        enabled.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        let turnedOn = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "1"), object: enabled)
+        XCTAssertEqual(XCTWaiter.wait(for: [turnedOn], timeout: 5), .completed)
+        XCTAssertTrue(app.buttons["Save"].isEnabled)
         app.buttons["Save"].tap()
         XCTAssertEqual(enabled.value as? String, "1")
         XCTAssertFalse(app.buttons["Save"].isEnabled)
