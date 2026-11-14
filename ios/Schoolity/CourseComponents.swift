@@ -48,6 +48,7 @@ private struct CategoryGradeRow: View {
 
 struct CourseGradeHeading: View {
     @EnvironmentObject private var customization: CustomizationStore
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let course: Course
     let districtScore: Double?
     let changed: Bool
@@ -59,10 +60,15 @@ struct CourseGradeHeading: View {
             HStack(alignment: .firstTextBaseline, spacing: 12) {
                 Text(GradeMath.letter(score)).font(.system(.largeTitle, design: .rounded, weight: .bold))
                     .foregroundStyle(customization.gradeColor(score))
-                Text(GradeMath.percent(score)).font(.title2.weight(.semibold)).foregroundStyle(.secondary)
+                    .contentTransition(.numericText())
+                Text(GradeMath.percent(score))
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .contentTransition(.numericText(value: score ?? 0))
                 Spacer(minLength: 0)
             }
             .monospacedDigit()
+            .animation(SchoolityMotion.calm(SchoolityMotion.value, reduceMotion: reduceMotion), value: score)
             if let score {
                 ProgressView(value: min(100, max(0, score)), total: 100)
                     .tint(customization.gradeColor(score))

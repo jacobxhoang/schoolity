@@ -33,8 +33,9 @@ private struct GradebookContent: View, Equatable {
                         }.pickerStyle(.menu).disabled(isLoading)
                 }
                 Section {
-                    LabeledContent("Course average", value: GradeMath.percent(book.calculatedAverage))
-                    LabeledContent("Courses", value: "\(book.courses.count)")
+                    GradebookSummaryCard(average: book.calculatedAverage, courses: book.courses.count)
+                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                        .listRowBackground(Color.clear)
                 } footer: {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Unweighted average of Schoolity estimates.")
@@ -77,6 +78,8 @@ private struct GradebookContent: View, Equatable {
             }
         }
         .refreshable { await refresh(nil) }
+        // A successful load, including a pull to refresh, lands with a tap.
+        .sensoryFeedback(.success, trigger: updated)
     }
 
 }
@@ -85,6 +88,7 @@ struct CourseRow: View {
     @EnvironmentObject private var customization: CustomizationStore
     @State private var customizing = false
     @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let course: Course
     var body: some View {
         Group {
@@ -116,12 +120,17 @@ struct CourseRow: View {
     private var grade: some View {
         let score = course.official ?? GradeMath.calculate(course)
         return VStack(alignment: typeSize.isAccessibilitySize ? .leading : .trailing, spacing: 4) {
-            Text(GradeMath.percent(score)).font(.title3.weight(.semibold)).foregroundStyle(.primary)
+            Text(GradeMath.percent(score))
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(.primary)
+                .contentTransition(.numericText(value: score ?? 0))
             Text(GradeMath.letter(score))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(customization.gradeColor(score))
+                .contentTransition(.numericText())
         }
         .monospacedDigit()
+        .animation(SchoolityMotion.calm(SchoolityMotion.value, reduceMotion: reduceMotion), value: score)
         .fixedSize(horizontal: false, vertical: true)
         .accessibilityLabel("\(GradeMath.percent(score)), \(GradeMath.letter(score)), \(course.official == nil ? "calculated grade" : "school grade")")
     }
@@ -354,5 +363,78 @@ private struct RecentAssignmentRow: View {
         guard let earned = assignment.earned else { return "Not graded" }
         if assignment.possible <= 0 { return "Extra credit" }
         return "\(GradeMath.points(earned)) / \(GradeMath.points(assignment.possible))"
+    }
+}
+
+/// The gradebook summary as a card: the average reads as a ringed letter grade
+/// beside the exact figure, tinted by the reader's own grade colors.
+struct GradebookSummaryCard: View {
+    @EnvironmentObject private var customization: CustomizationStore
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let average: Double?
+    let courses: Int
+
+    private var tint: Color { customization.gradeColor(average) }
+    private var coursesText: String { courses == 1 ? "1 course" : "\(courses) courses" }
+
+    var body: some View {
+        HStack(spacing: 18) {
+            GradeAverageRing(score: average, tint: tint)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Course average")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Text(GradeMath.percent(average))
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .contentTransition(.numericText(value: average ?? 0))
+                    .animation(SchoolityMotion.calm(SchoolityMotion.value, reduceMotion: reduceMotion), value: average)
+                Text(coursesText)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(16)
+        .background {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color(uiColor: .secondarySystemGroupedBackground))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .fill(LinearGradient(colors: [tint.opacity(0.18), tint.opacity(0.03)],
+                                             startPoint: .topLeading, endPoint: .bottomTrailing))
+                }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Course average \(GradeMath.percent(average)) across \(coursesText)")
+    }
+}
+
+/// A ring that fills to the average, with the letter grade resting in the middle.
+private struct GradeAverageRing: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let score: Double?
+    let tint: Color
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(tint.opacity(0.16), lineWidth: 7)
+            if let score {
+                Circle()
+                    .trim(from: 0, to: max(0.03, min(1, score / 100)))
+                    .stroke(tint, style: StrokeStyle(lineWidth: 7, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                    .animation(SchoolityMotion.calm(SchoolityMotion.shape, reduceMotion: reduceMotion), value: score)
+                Text(GradeMath.letter(score))
+                    .font(.system(.headline, design: .rounded, weight: .bold))
+                    .foregroundStyle(tint)
+                    .contentTransition(.numericText())
+            } else {
+                Text("—").font(.headline).foregroundStyle(.secondary)
+            }
+        }
+        .frame(width: 62, height: 62)
+        .accessibilityHidden(true)
     }
 }
