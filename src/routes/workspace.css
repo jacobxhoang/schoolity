@@ -221,16 +221,25 @@ nav button svg {
   align-items: center;
   gap: 10px;
 }
+.update-toast {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 16px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 80;
+  pointer-events: none;
+}
 .update-status {
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
   gap: 7px;
-  min-height: 34px;
-  padding: 0 10px;
+  min-height: 40px;
+  padding: 0 14px;
   border: 1px solid var(--line);
   border-radius: var(--r-chip);
   background: var(--panel);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.1);
   color: var(--muted);
   font-size: 13px;
   font-weight: 500;
