@@ -16,6 +16,7 @@ struct HistorySubjectTable: View {
             if typeSize.isAccessibilitySize {
                 accessibleRows
             } else {
+                ViewThatFits(in: .horizontal) {
                 VStack(alignment: .leading, spacing: 0) {
                     HistoryColumnsLayout(weights: headers.map(weight)) {
                         ForEach(headers.indices, id: \.self) { index in
@@ -45,9 +46,48 @@ struct HistorySubjectTable: View {
                     }
                 }
                 .accessibilityElement(children: .contain)
+                .frame(minWidth: 560)
+                compactRows
+                }
             }
         }
         .accessibilityIdentifier("history-subject-table")
+    }
+
+    // Full-width course titles on phones leave enough room for the district's
+    // credit labels and values without squeezing five columns into a dropdown.
+    private var compactRows: some View {
+        let titleIndex = headers.firstIndex { $0.lowercased().contains("course") || $0.lowercased().contains("title") }
+        return VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(rows.enumerated()), id: \.offset) { offset, row in
+                if offset > 0 { Divider().padding(.vertical, 16) }
+                VStack(alignment: .leading, spacing: 14) {
+                    if let titleIndex {
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text(headers[titleIndex]).font(.caption).foregroundStyle(.secondary)
+                            Text(value(row, at: titleIndex))
+                                .font(.body.weight(.semibold))
+                                .fixedSize(horizontal: false, vertical: true)
+                                .textSelection(.enabled)
+                        }
+                    }
+                    LazyVGrid(columns: [GridItem(.flexible(), alignment: .leading), GridItem(.flexible(), alignment: .leading)], alignment: .leading, spacing: 14) {
+                        ForEach(headers.indices.filter { $0 != titleIndex }, id: \.self) { index in
+                            VStack(alignment: .leading, spacing: 5) {
+                                Text(headers[index]).font(.caption).foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Text(value(row, at: index)).font(.subheadline.weight(.medium)).monospacedDigit()
+                                    .textSelection(.enabled)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                }
+                .padding(.horizontal, 4)
+            }
+        }
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var accessibleRows: some View {

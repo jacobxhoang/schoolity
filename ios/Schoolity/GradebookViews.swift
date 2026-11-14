@@ -226,7 +226,7 @@ struct GradeHistoryView: View, Equatable {
             } else {
                 Chart(points) { point in
                     LineMark(x: .value("Graded assignment", point.id), y: .value("Grade", point.score))
-                        .foregroundStyle(Color("ActionAccent"))
+                        .foregroundStyle(Color(uiColor: .secondaryLabel))
                     PointMark(x: .value("Graded assignment", point.id), y: .value("Grade", point.score))
                         .foregroundStyle(customization.gradeColor(point.score)).symbolSize(points.count > 30 ? 6 : 18)
                 }
