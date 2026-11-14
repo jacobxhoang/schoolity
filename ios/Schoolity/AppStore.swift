@@ -158,6 +158,9 @@ final class AppStore: ObservableObject {
 
     func enterBackground() {
         backgrounded = true
+        // Keep an already authenticated workspace in memory during app switches.
+        // The scene's privacy cover still hides records in the app switcher.
+        if access == .signedIn { return }
         // A session check can still be pending on a passcode-free device.
         // Discard that attempt; foregrounding restarts it with a fresh ticket.
         if access == .checking {
@@ -165,8 +168,8 @@ final class AppStore: ObservableObject {
             clearWorkspace()
             return
         }
-        // Keychain may already be unavailable when the phone locks. Never
-        // depend on another Keychain read to decide whether the UI must lock.
+        // Interrupt pending authentication rather than revealing its result
+        // while the app is backgrounded.
         guard !signingOut, savedSessionNeedsUnlock || access == .locked || isUnlocking else { return }
         lockWorkspace()
     }
@@ -185,11 +188,7 @@ final class AppStore: ObservableObject {
         // background transition before starting another automatic attempt.
         guard backgrounded else { return }
         backgrounded = false
-        // A passcode may have been configured while Schoolity was backgrounded.
-        if access == .signedIn, !savedSessionNeedsUnlock, unlocker.available {
-            savedSessionNeedsUnlock = true
-            lockWorkspace()
-        }
+        if access == .signedIn { return }
         if access == .locked { await unlockSavedSignIn() }
         else if access == .checking, started { await restore() }
     }
@@ -247,6 +246,20 @@ final class AppStore: ObservableObject {
             gradeError = error.localizedDescription
         }
         if profile == nil, access == .signedIn, ticket == generation { await loadProfile() }
+    }
+
+    /// Owned by the signed-in workspace's task, so sign-out cancels the group.
+    /// Existing per-resource guards share work with tabs opened during preload.
+    func preloadWorkspace() async {
+        guard access == .signedIn, !Task.isCancelled else { return }
+        async let profile: Void = loadProfile()
+        async let schedule: Void = loadSchedule()
+        async let inbox: Void = load(.mail)
+        async let documents: Void = load(.documents)
+        async let student: Void = loadRecord(.student)
+        async let history: Void = loadRecord(.history)
+        async let attendance: Void = loadRecord(.attendance)
+        _ = await (profile, schedule, inbox, documents, student, history, attendance)
     }
 
     func loadProfile(refresh: Bool = false) async {

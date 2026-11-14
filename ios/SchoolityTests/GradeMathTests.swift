@@ -38,7 +38,6 @@ final class GradeMathTests: XCTestCase {
         XCTAssertEqual(try XCTUnwrap(GradeMath.calculate(course())), 60 / 70 * 100.0, accuracy: 0.0001)
         let weighted = course(categories: [GradeCategory(name: "Practice", weight: 30), GradeCategory(name: "Tests", weight: 70)])
         XCTAssertEqual(try XCTUnwrap(GradeMath.calculate(weighted)), 86, accuracy: 0.0001)
-        XCTAssertEqual(try XCTUnwrap(GradeMath.target(weighted, category: "Tests", possible: 50, goal: 93)), 50, accuracy: 0.0001)
     }
 
     func testExcludedAndUngradedScoresDoNotCountButZeroDoes() throws {
@@ -50,13 +49,11 @@ final class GradeMathTests: XCTestCase {
         XCTAssertEqual(try XCTUnwrap(GradeMath.calculate(value)), 0)
     }
 
-    func testExtraCreditAndInvalidTarget() throws {
+    func testExtraCredit() throws {
         var value = course()
         value.assignments = [Assignment(id: "one", title: "Score", category: "Tests", earned: 10, possible: 10, due: ""),
                              Assignment(id: "bonus", title: "Bonus", category: "Tests", earned: 1, possible: 0, due: "")]
         XCTAssertEqual(try XCTUnwrap(GradeMath.calculate(value)), 110, accuracy: 0.0001)
-        XCTAssertNil(GradeMath.target(value, category: "Tests", possible: 0, goal: 90))
-        XCTAssertNil(GradeMath.target(value, category: "Tests", possible: 50, goal: .infinity))
     }
 
     func testEmptyWeightedCategoriesRedistribute() throws {

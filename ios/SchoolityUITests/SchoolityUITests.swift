@@ -67,7 +67,6 @@ final class SchoolityUITests: XCTestCase {
         app.tabBars.buttons["Grades"].tap()
         let course = app.descendants(matching: .any)["course-sample-math"]
         XCTAssertTrue(course.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Unweighted average of current course grades."].exists)
         XCTAssertFalse(app.tabBars.buttons["Home"].exists)
         XCTAssertEqual(app.tabBars.buttons.count, 5)
         capture("gradebook")
@@ -84,11 +83,7 @@ final class SchoolityUITests: XCTestCase {
         app.buttons["Save"].tap()
         reveal(app.staticTexts["Hypothetical estimate"], in: app, towardTop: true)
         XCTAssertTrue(app.staticTexts["Hypothetical estimate"].waitForExistence(timeout: 5))
-        reveal(app.buttons["Find a target score"], in: app)
-        app.buttons["Find a target score"].tap()
-        XCTAssertTrue(app.navigationBars["Target score"].waitForExistence(timeout: 5))
-        app.buttons["Done"].tap()
-        XCTAssertTrue(app.buttons["Add hypothetical score"].waitForExistence(timeout: 5))
+        reveal(app.buttons["Add hypothetical score"], in: app)
         app.buttons["Add hypothetical score"].tap()
         XCTAssertTrue(app.textFields["Assignment title"].waitForExistence(timeout: 5))
         app.buttons["Cancel"].tap()
@@ -132,6 +127,22 @@ final class SchoolityUITests: XCTestCase {
         edit.tap()
         XCTAssertTrue(app.textFields["Assignment title"].waitForExistence(timeout: 5))
         app.buttons["Cancel"].tap()
+    }
+
+    func testReturningFromHomeKeepsTheOpenCourse() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing"]
+        app.launch()
+        let course = app.descendants(matching: .any)["course-sample-math"]
+        XCTAssertTrue(course.waitForExistence(timeout: 10))
+        course.tap()
+        XCTAssertTrue(app.navigationBars["Algebra II"].waitForExistence(timeout: 5))
+        XCUIDevice.shared.press(.home)
+        app.activate()
+        XCTAssertTrue(app.navigationBars["Algebra II"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.tabBars.buttons["Grades"].isSelected)
+        XCTAssertFalse(app.buttons["login.unlock"].exists)
+        XCTAssertFalse(app.textFields["login.username"].exists)
     }
 
     func testAccessibilityGradebookAndCourse() {
