@@ -64,7 +64,6 @@ struct ScheduleView: View {
         }
         .listStyle(.inset)
         .navigationTitle("Schedule")
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { AccountButton() } }
         .task { await store.loadSchedule() }
         .refreshable { await store.loadSchedule(refresh: true) }
         .onChange(of: store.schedule?.currentTerm) { _, value in
