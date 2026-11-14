@@ -90,6 +90,7 @@ struct AssignmentDetailRow: View {
                 LabeledContent("Category", value: assignment.category)
                 if !assignment.due.isEmpty { LabeledContent("Due", value: GradeMath.shortDate(assignment.due)) }
                 if let score { LabeledContent("Score", value: GradeMath.percent(score)) }
+                else if assignment.earned != nil && assignment.possible <= 0 { LabeledContent("Score", value: "Extra credit") }
                 if assignment.excluded == true { Text("Not for grading").foregroundStyle(.secondary) }
                 if assignment.hypothetical == true { Label("Hypothetical", systemImage: "pencil").foregroundStyle(.secondary) }
                 Button("Edit hypothetical score", systemImage: "pencil", action: edit)
@@ -112,6 +113,7 @@ struct AssignmentDetailRow: View {
 
     private var points: String {
         guard let earned = assignment.earned else { return "Not graded" }
+        if assignment.possible <= 0 { return "Extra credit · \(GradeMath.points(earned)) points" }
         return "\(GradeMath.points(earned)) / \(GradeMath.points(assignment.possible))"
     }
 }

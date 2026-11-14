@@ -8,6 +8,10 @@ struct CustomizationView: View {
                 NavigationLink { ClassAliasesView() } label: { Label("Class Names and Icons", systemImage: "studentdesk") }
                 NavigationLink { AccentColorsView() } label: { Label("Accent Color", systemImage: "paintbrush.fill") }
             }
+            Section("App") {
+                NavigationLink { AppearanceView() } label: { Label("Appearance", systemImage: "circle.lefthalf.filled") }
+                NavigationLink { PrivacyView() } label: { Label("Privacy & Connection", systemImage: "hand.raised.fill") }
+            }
             Section {
                 GradeNotificationSettings()
             } header: { Text("Notifications") } footer: {
@@ -47,6 +51,32 @@ private struct GradeNotificationSettings: View {
             if let error = notifications.error { Text(error).font(.footnote).foregroundStyle(.secondary) }
         }
         .task(id: scenePhase) { await notifications.refreshPermission() }
+    }
+}
+
+private struct AppearanceView: View {
+    @EnvironmentObject private var customization: CustomizationStore
+
+    var body: some View {
+        List {
+            Section {
+                Picker("Appearance", selection: Binding(
+                    get: { customization.settings.appearance ?? .system },
+                    set: { value in customization.update { $0.appearance = value } }
+                )) {
+                    ForEach(AppearancePreference.allCases, id: \.self) { option in
+                        Text(option.label).tag(option)
+                    }
+                }
+                .pickerStyle(.inline)
+                .labelsHidden()
+            } footer: {
+                Text("System follows the iPhone’s Light or Dark Mode. The sign-in screen keeps its original palette.")
+            }
+        }
+        .schoolityList()
+        .navigationTitle("Appearance")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

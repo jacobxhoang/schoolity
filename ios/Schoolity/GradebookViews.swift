@@ -5,7 +5,8 @@ struct GradebookView: View {
     @EnvironmentObject private var store: AppStore
     var body: some View {
         GradebookContent(book: store.gradebook, isLoading: store.isLoading,
-                         error: store.gradeError, refresh: { await store.refreshGrades(term: $0) })
+                         error: store.gradeError, updated: store.lastUpdated["grades"],
+                         refresh: { await store.refreshGrades(term: $0) })
             .equatable()
     }
 }
@@ -14,10 +15,11 @@ private struct GradebookContent: View, Equatable {
     let book: Gradebook?
     let isLoading: Bool
     let error: String?
+    let updated: Date?
     let refresh: (Int?) async -> Void
 
     static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.book == rhs.book && lhs.isLoading == rhs.isLoading && lhs.error == rhs.error
+        lhs.book == rhs.book && lhs.isLoading == rhs.isLoading && lhs.error == rhs.error && lhs.updated == rhs.updated
     }
 
     var body: some View {
@@ -30,12 +32,36 @@ private struct GradebookContent: View, Equatable {
                             ForEach(book.terms) { Text($0.name).tag($0.id) }
                         }.pickerStyle(.menu).disabled(isLoading)
                 }
+                Section {
+                    LabeledContent("Course average", value: GradeMath.percent(book.calculatedAverage))
+                    LabeledContent("Courses", value: "\(book.courses.count)")
+                } footer: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Unweighted average of Schoolity estimates.")
+                        LastUpdatedText(date: updated)
+                    }
+                }
                 Section("Courses") {
                     ForEach(book.courses) { course in
                         NavigationLink { CourseDetailView(course: course).id("\(book.currentTerm)-\(course.id)") } label: { CourseRow(course: course) }
                             .accessibilityIdentifier("course-\(course.id)")
                     }
                     if book.courses.isEmpty { ContentUnavailableView("No courses", systemImage: "books.vertical", description: Text("Try another reporting period.")) }
+                }
+                if !book.recentAssignments.isEmpty {
+                    Section {
+                        ForEach(book.recentAssignments) { item in
+                            NavigationLink {
+                                CourseDetailView(course: item.course).id("\(book.currentTerm)-\(item.course.id)")
+                            } label: {
+                                RecentAssignmentRow(item: item)
+                            }
+                        }
+                    } header: {
+                        Text("Recent assignments")
+                    } footer: {
+                        Text("Latest due dates in this reporting period.")
+                    }
                 }
             }
             if isLoading && book == nil { ProgressView("Loading grades…") }
@@ -127,6 +153,12 @@ struct CourseDetailView: View {
         List {
             Section {
                 CourseGradeHeading(course: course, districtScore: original.official, changed: changed)
+                if !courseDetails.isEmpty {
+                    Text(courseDetails)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 LabeledContent("School grade", value: GradeMath.percent(original.official)).font(.headline)
                 LabeledContent(changed ? "Hypothetical estimate" : "Schoolity estimate", value: GradeMath.percent(GradeMath.calculate(course)))
                     .accessibilityAddTraits(.updatesFrequently)
@@ -182,6 +214,14 @@ struct CourseDetailView: View {
         } else {
             course.assignments.insert(edited, at: 0)
         }
+    }
+
+    private var courseDetails: String {
+        [course.teacher,
+         course.period.isEmpty ? "" : "Period \(course.period)",
+         course.room.isEmpty ? "" : "Room \(course.room)"]
+            .filter { !$0.isEmpty }
+            .joined(separator: " · ")
     }
 
     private var categoryNames: [String] {
@@ -282,5 +322,37 @@ struct ScoreEditor: View {
                 possible = GradeMath.input(assignment.possible)
             }
         }
+    }
+}
+
+private struct RecentAssignmentRow: View {
+    let item: RecentAssignment
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(item.assignment.title.isEmpty ? "Untitled assignment" : item.assignment.title)
+                .font(.subheadline.weight(.semibold))
+                .fixedSize(horizontal: false, vertical: true)
+            Text(item.course.name).font(.caption).foregroundStyle(.secondary)
+            HStack(alignment: .firstTextBaseline) {
+                Text(dueLabel).font(.caption).foregroundStyle(.secondary)
+                Spacer(minLength: 8)
+                Text(scoreLabel).font(.caption.weight(.medium)).foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 2)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var dueLabel: String {
+        item.assignment.due.isEmpty ? "No due date" : GradeMath.shortDate(item.assignment.due)
+    }
+
+    private var scoreLabel: String {
+        let assignment = item.assignment
+        if assignment.excluded == true { return "Not for grading" }
+        guard let earned = assignment.earned else { return "Not graded" }
+        if assignment.possible <= 0 { return "Extra credit" }
+        return "\(GradeMath.points(earned)) / \(GradeMath.points(assignment.possible))"
     }
 }

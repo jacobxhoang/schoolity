@@ -20,7 +20,7 @@ The main action is opening a course. Put the course title and secondary teacher/
 
 ## Screens
 
-Gradebook: compact summary, reporting-period selection, courses, and the existing web recent-assignment sidebar. iOS keeps the user's requested course-only gradebook without an overview or recent assignments.
+Gradebook: compact summary, reporting-period selection, courses, and the existing web recent-assignment sidebar. Both surfaces now carry the same summary and recent assignments; iOS presents them as list sections where the web places a sidebar.
 
 Course: clear grade heading, assignments/breakdown control, grade history, and hypothetical editing only in Assignments.
 

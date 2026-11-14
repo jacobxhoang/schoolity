@@ -31,6 +31,7 @@ struct SchoolityApp: App {
             .environmentObject(store)
             .environmentObject(customization)
             .accentColor(Color("ActionAccent"))
+            .preferredColorScheme(customization.colorScheme)
             .task { if scenePhase == .active { await store.start() } }
             .task(id: gradeNotifications.enabled && scenePhase == .active && store.access == .signedIn) {
                 guard gradeNotifications.enabled, scenePhase == .active, store.access == .signedIn else { return }
@@ -159,6 +160,13 @@ struct LoginView: View {
                 }
                 if let error = store.loginError {
                     Section { Label(error, systemImage: "exclamationmark.circle").accessibilityAddTraits(.updatesFrequently) }
+                }
+                Section {
+                    NavigationLink { PrivacyView() } label: {
+                        Label("Privacy & Connection", systemImage: "hand.raised.fill")
+                    }
+                } footer: {
+                    Text("Schoolity is an independent student project. It is not affiliated with or endorsed by Anoka-Hennepin Schools or Edupoint.")
                 }
             }
             .scrollDismissesKeyboard(.interactively)

@@ -20,6 +20,35 @@ extension View {
     func schoolityList() -> some View { modifier(SchoolityListStyle()) }
 }
 
+/// Section footer text for the time a section last loaded from the district.
+struct LastUpdatedText: View {
+    let date: Date?
+    var body: some View {
+        if let date {
+            Text("Last updated \(date.formatted(date: .omitted, time: .shortened))")
+        }
+    }
+}
+
+/// The same caption as a trailing list row, for screens without a section footer.
+struct LastUpdatedFooter: View {
+    let date: Date?
+    var body: some View {
+        if let date {
+            HStack {
+                Spacer(minLength: 0)
+                Text("Last updated \(date.formatted(date: .omitted, time: .shortened))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityAddTraits(.isStaticText)
+                Spacer(minLength: 0)
+            }
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+        }
+    }
+}
+
 /// Shared icon treatment for signed-in information and destination rows.
 struct InformationIcon: View {
     let symbol: String

@@ -156,7 +156,8 @@ enum GradeMath {
 
     static func percent(_ score: Double?) -> String {
         guard let score, score.isFinite else { return "—" }
-        return String(format: "%.1f%%", score)
+        // Two decimals, matching the website's grade labels.
+        return String(format: "%.2f%%", score)
     }
 
     static func shortDate(_ value: String) -> String {
@@ -179,5 +180,42 @@ enum GradeMath {
         case 60..<70: return "D"
         default: return "F"
         }
+    }
+}
+
+/// One assignment in the gradebook-wide recent list, tied to its course so the
+/// row can open the same course screen the gradebook uses.
+struct RecentAssignment: Identifiable, Equatable {
+    let id: String
+    let course: Course
+    let assignment: Assignment
+}
+
+extension Gradebook {
+    /// The gradebook summary shown above the courses, matching the website's
+    /// unweighted average of Schoolity estimates. District grades stay separate.
+    var calculatedAverage: Double? {
+        let scores = courses.compactMap { GradeMath.calculate($0) }
+        guard !scores.isEmpty else { return nil }
+        return scores.reduce(0, +) / Double(scores.count)
+    }
+
+    /// Latest due dates across every course in the selected reporting period.
+    /// Ties keep the district's course and assignment order.
+    var recentAssignments: [RecentAssignment] {
+        var entries: [(index: Int, item: RecentAssignment)] = []
+        for course in courses {
+            for assignment in course.assignments {
+                entries.append((entries.count, RecentAssignment(
+                    id: "\(course.id)|\(assignment.id)", course: course, assignment: assignment)))
+            }
+        }
+        entries.sort { left, right in
+            let leftDue = GradeMath.date(left.item.assignment.due)?.timeIntervalSince1970 ?? 0
+            let rightDue = GradeMath.date(right.item.assignment.due)?.timeIntervalSince1970 ?? 0
+            if leftDue == rightDue { return left.index < right.index }
+            return leftDue > rightDue
+        }
+        return entries.prefix(8).map { $0.item }
     }
 }
