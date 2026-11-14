@@ -39,7 +39,7 @@ An independent student dashboard for one district, combining a school portal wit
 - Gradebook: reporting-period selection, course details, assignment scores, and calculated grade trends.
 - Calculator: points and weighted-category calculations, hypothetical score editing, hypothetical assignments, and reset.
 - School data comes from the district's mobile JSON API through Schoolity's server. Read adapters exist for grades, student identity, schedule, inbox, and document listings.
-- The web schedule supports switching among district schedule terms. The selected term can be downloaded as an `.ics` calendar file generated in the browser. The native schedule continues to show the district’s current term. The district schedule listing does not include class times, so classes export as weekly all-day events unless times are present.
+- The web schedule supports switching among district schedule terms. The native schedule continues to show the district’s current term.
 - Schoolity does not change district records. Inbox is read-only and currently loads up to 50 messages.
 - A live calendar subscription feed, two-way calendar sync, persistent offline school-data caching, and notifications are not implemented. Do not portray them as working features.
 - District-specific rounding, dropped scores, standards-based grading, and custom policies may differ from Schoolity's estimates. Preserve the distinction between district-reported and calculated grades.

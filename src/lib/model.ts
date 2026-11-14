@@ -7,6 +7,7 @@ export interface Task {
   due: string;
   excluded?: boolean;
   hypothetical?: boolean;
+  emptyScores?: boolean;
 }
 export interface Category {
   name: string;
@@ -44,8 +45,6 @@ export interface ScheduleClass {
   room: string;
   period: string;
   meetingDays?: string;
-  startTime?: string;
-  endTime?: string;
 }
 export interface ScheduleTerm {
   id: number;

@@ -106,8 +106,6 @@ function scheduleClass(c: JsonObject, index: number): ScheduleClass {
   const meetingDays = Array.isArray(meeting)
     ? meeting.map(string).filter(Boolean).join(', ')
     : string(meeting);
-  const startTime = string(c.startTime ?? c.starttime ?? c.beginTime);
-  const endTime = string(c.endTime ?? c.endtime);
   return {
     id: string(c.sectionGU ?? c.sectionId) || `class-${index}`,
     title: displayText(c.courseTitle ?? c.courseName ?? c.title),
@@ -115,8 +113,6 @@ function scheduleClass(c: JsonObject, index: number): ScheduleClass {
     room: displayText(c.roomName ?? c.room),
     period: string(c.period),
     ...(meetingDays ? { meetingDays: displayText(meetingDays) } : {}),
-    ...(startTime ? { startTime } : {}),
-    ...(endTime ? { endTime } : {}),
   };
 }
 export function schedule(payload: unknown): ScheduleData {
