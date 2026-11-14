@@ -1,12 +1,33 @@
 <!doctype html>
-<html lang="en">
+<html
+  lang="en"
+  data-type="software"
+  data-radius="soft"
+  data-buttons="solid"
+  data-motion="full"
+>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#ffffff" />
+    <link
+      rel="preload"
+      href="/fonts/inter-tight-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/inter-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
     %sveltekit.head%
   </head>
   <body data-sveltekit-preload-data="hover">
+    <!-- Web design: black-and-white palette; Inter Tight with Inter; soft-gray canvas, white sign-in card, ink workspace index; no shader effect. -->
     <div style="display: contents">%sveltekit.body%</div>
   </body>
 </html>
