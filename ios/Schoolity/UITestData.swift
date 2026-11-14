@@ -5,6 +5,7 @@ import Foundation
 // Production builds have no anonymous/demo entry point.
 extension AppStore {
     func loadUITestData() {
+        usingUITestData = true
         profile = StudentProfile(name: "Sample Student", school: "Sample School", grade: "11", studentId: ProcessInfo.processInfo.arguments.contains("--ui-no-student-id") ? nil : "00012345")
         let course = Course(id: "sample-math", name: "Algebra II", teacher: "Sample Teacher", room: "102", period: "1", official: 92.5,
                             categories: [GradeCategory(name: "Tests", weight: 70), GradeCategory(name: "Practice", weight: 30)],
