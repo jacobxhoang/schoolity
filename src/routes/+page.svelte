@@ -1049,7 +1049,7 @@
             </table>
           </div>
         {:else if tab === 'grades'}
-          <div class="page-heading">
+          <div class="page-heading" id="grades">
             <div>
               <h1>
                 Gradebook
@@ -1081,7 +1081,8 @@
                 </div>
               </div>
               <div class="term-line">
-                <span class="green-dot"></span><select
+                <label for="reporting-period">Term</label><select
+                  id="reporting-period"
                   aria-label="Reporting period"
                   value={data.currentTerm}
                   onchange={(e) => changeTerm(e.currentTarget.value)}
