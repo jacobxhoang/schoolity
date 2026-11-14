@@ -1,0 +1,1256 @@
+/* Authenticated workspace. Same monochrome system as sign-in: Inter Tight + Inter. */
+
+.app-shell.workspace {
+  --ws-canvas: #f4f4f4;
+  --ws-panel: #ffffff;
+  --ws-ink: #0f0f0f;
+  --ws-muted: #5f5f5f;
+  --ws-faint: #767676;
+  --ws-line: #e6e6e6;
+  --ws-line-strong: #d2d2d2;
+  --ws-field: #f4f4f4;
+  --ws-soft: #eaeaea;
+  --ws-sidebar-muted: #a3a3a3;
+  --ws-shadow:
+    0 1px 2px rgba(15, 15, 15, 0.04),
+    0 24px 50px -38px rgba(15, 15, 15, 0.22);
+  --bg: var(--ws-canvas);
+  --panel: var(--ws-panel);
+  --ink: var(--ws-ink);
+  --muted: var(--ws-muted);
+  --border: var(--ws-line);
+  --surface: var(--ws-field);
+  --radius-sm: 10px;
+  --radius: 16px;
+  --radius-lg: 20px;
+  background: var(--ws-canvas);
+  color: var(--ws-ink);
+  font-family:
+    'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Arial,
+    sans-serif;
+}
+.app-shell.workspace.dark {
+  --ws-canvas: #0b0b0b;
+  --ws-panel: #151515;
+  --ws-ink: #f2f2f2;
+  --ws-muted: #a3a3a3;
+  --ws-faint: #8f8f8f;
+  --ws-line: #2a2a2a;
+  --ws-line-strong: #3d3d3d;
+  --ws-field: #1d1d1d;
+  --ws-soft: #242424;
+  --bg: var(--ws-canvas);
+  --panel: var(--ws-panel);
+  --ink: var(--ws-ink);
+  --muted: var(--ws-muted);
+  --border: var(--ws-line);
+  --surface: var(--ws-field);
+  background: var(--ws-canvas);
+  color: var(--ws-ink);
+}
+
+/* Sidebar */
+.app-shell.workspace #school-navigation {
+  width: 248px;
+  padding: 22px 14px 0;
+  border-right: 1px solid #ffffff0f;
+  background:
+    radial-gradient(120% 100% at 100% 0%, #1d1d1d 0%, #111111 50%, #090909 100%);
+  color: var(--ws-sidebar-muted);
+  box-shadow: none;
+}
+.app-shell.workspace #school-navigation .brand {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  gap: 10px;
+  padding: 0 8px;
+  color: #ffffff;
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.045em;
+}
+.app-shell.workspace #school-navigation .brand-symbol {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #0f0f0f;
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  text-transform: none;
+}
+.app-shell.workspace #school-navigation nav {
+  gap: 4px;
+  margin-top: 28px;
+}
+.app-shell.workspace #school-navigation nav button {
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 10px;
+  color: #a3a3a3;
+  font-size: 13px;
+  font-weight: 500;
+  gap: 11px;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
+}
+.app-shell.workspace #school-navigation nav button svg {
+  opacity: 1;
+}
+.app-shell.workspace #school-navigation nav button:hover {
+  background: #ffffff0d;
+  color: #ffffff;
+}
+.app-shell.workspace #school-navigation nav button.active {
+  background: #ffffff;
+  color: #0f0f0f;
+  font-weight: 600;
+}
+.app-shell.workspace #school-navigation .sidebar-bottom {
+  padding-bottom: 14px;
+}
+.app-shell.workspace #school-navigation .privacy-link {
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: 10px;
+  color: #8f8f8f;
+  font-size: 11.5px;
+}
+.app-shell.workspace #school-navigation .privacy-link:hover {
+  background: #ffffff0d;
+  color: #ffffff;
+}
+.app-shell.workspace #school-navigation .profile {
+  gap: 10px;
+  padding: 16px 8px;
+  border-top: 1px solid #ffffff14;
+}
+.app-shell.workspace #school-navigation .avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #2c2c2c;
+  border-radius: 10px;
+  background: #1c1c1c;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+}
+.app-shell.workspace #school-navigation .profile strong {
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+}
+.app-shell.workspace #school-navigation .profile small {
+  color: #8f8f8f;
+  font-size: 10px;
+}
+.app-shell.workspace #school-navigation .sign-out-button {
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: 10px;
+  color: #a3a3a3;
+  font-size: 12.5px;
+}
+.app-shell.workspace #school-navigation .sign-out-button:hover {
+  background: #ffffff0d;
+  color: #ffffff;
+}
+.app-shell.workspace .navigation-backdrop {
+  background: #000000a8;
+  backdrop-filter: blur(2px);
+}
+
+/* Shell and header */
+.app-shell.workspace .main-shell {
+  min-height: 100vh;
+  margin-left: 248px;
+  background: transparent;
+}
+.app-shell.workspace .main-shell > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 76px;
+  padding: 0 36px;
+  border-bottom: 1px solid var(--ws-line);
+  background: transparent;
+}
+.app-shell.workspace .breadcrumb {
+  font-size: 13px;
+  color: var(--ws-muted);
+}
+.app-shell.workspace .breadcrumb strong {
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ws-ink);
+}
+.app-shell.workspace .header-actions {
+  gap: 10px;
+}
+.app-shell.workspace .main-shell > main {
+  max-width: 1500px;
+  margin: 0;
+  padding: 28px 36px 48px;
+}
+
+/* Type and shared controls */
+.app-shell.workspace h1 {
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-size: 38px;
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  line-height: 1.02;
+  color: var(--ws-ink);
+}
+.app-shell.workspace h2 {
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  color: var(--ws-ink);
+}
+.app-shell.workspace h3 {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ws-ink);
+}
+.app-shell.workspace .page-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.app-shell.workspace .page-heading p {
+  margin-top: 8px;
+  color: var(--ws-muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.app-shell.workspace .course-heading {
+  margin-bottom: 20px;
+}
+.app-shell.workspace .resource-freshness {
+  margin: -12px 0 16px;
+  color: var(--ws-faint);
+  font-size: 11px;
+}
+
+.app-shell.workspace .primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--ws-ink);
+  color: var(--ws-panel);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: none;
+  transition:
+    background 0.2s ease,
+    transform 0.12s ease;
+}
+.app-shell.workspace .primary:hover {
+  background: #262626;
+}
+.app-shell.workspace .primary:active {
+  transform: translateY(1px);
+}
+.app-shell.workspace .primary.small {
+  min-height: 44px;
+  padding: 0 14px;
+  font-size: 12.5px;
+}
+.app-shell.workspace.dark .primary {
+  background: #f2f2f2;
+  color: #111111;
+}
+.app-shell.workspace.dark .primary:hover {
+  background: #ffffff;
+}
+.app-shell.workspace .refresh-button {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--ws-line);
+  border-radius: 10px;
+  background: var(--ws-panel);
+  color: var(--ws-ink);
+  font-size: 12.5px;
+  font-weight: 500;
+  box-shadow: none;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease;
+}
+.app-shell.workspace .refresh-button:hover {
+  border-color: var(--ws-line-strong);
+  background: #fbfbfb;
+}
+.app-shell.workspace.dark .refresh-button:hover {
+  background: #1d1d1d;
+}
+.app-shell.workspace .icon-button {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--ws-line);
+  border-radius: 10px;
+  background: var(--ws-panel);
+  color: var(--ws-ink);
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease;
+}
+.app-shell.workspace .icon-button:hover {
+  border-color: var(--ws-line-strong);
+  background: #fbfbfb;
+}
+.app-shell.workspace.dark .icon-button:hover {
+  background: #1d1d1d;
+}
+.app-shell.workspace .text-button {
+  color: var(--ws-muted);
+  font-size: 12.5px;
+  font-weight: 500;
+  text-underline-offset: 3px;
+}
+.app-shell.workspace .text-button:hover {
+  color: var(--ws-ink);
+  text-decoration: underline;
+}
+.app-shell.workspace .back-link {
+  min-height: 44px;
+  margin-bottom: 12px;
+  padding: 0;
+  color: var(--ws-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+.app-shell.workspace .back-link:hover {
+  color: var(--ws-ink);
+}
+.app-shell.workspace :is(input, select) {
+  min-height: 44px;
+  border: 1px solid var(--ws-line);
+  border-radius: 10px;
+  background: var(--ws-panel);
+  color: var(--ws-ink);
+  font-size: 14px;
+}
+.app-shell.workspace :is(input, select):focus-visible {
+  border-color: var(--ws-ink);
+  outline: 2px solid var(--ws-ink);
+  outline-offset: 2px;
+}
+.app-shell.workspace select option {
+  background: var(--ws-panel);
+  color: var(--ws-ink);
+}
+.app-shell.workspace ::selection {
+  background: var(--ws-ink);
+  color: var(--ws-panel);
+}
+
+.app-shell.workspace .count,
+.app-shell.workspace .letter-grade,
+.app-shell.workspace .tiny-tag,
+.app-shell.workspace .subtle-tag,
+.app-shell.workspace .pending {
+  display: inline-block;
+  padding: 3px 8px;
+  border: 1px solid var(--ws-line);
+  border-radius: 999px;
+  background: var(--ws-field);
+  color: var(--ws-muted);
+  font-size: 10.5px;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.app-shell.workspace .letter-grade {
+  margin-left: 6px;
+  color: var(--ws-ink);
+  font-weight: 600;
+}
+.app-shell.workspace .section-heading {
+  align-items: center;
+  margin-bottom: 14px;
+  gap: 12px;
+}
+.app-shell.workspace .section-heading h2 {
+  font-size: 20px;
+}
+
+/* Gradebook */
+.app-shell.workspace .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 24px;
+  padding: 0;
+  border: 0;
+}
+.app-shell.workspace .stats-grid .stat-card {
+  padding: 18px 20px;
+  border: 1px solid var(--ws-line);
+  border-right: 1px solid var(--ws-line);
+  border-radius: 16px;
+  background: var(--ws-panel);
+  box-shadow: var(--ws-shadow);
+}
+.app-shell.workspace .stats-grid .stat-card:first-child {
+  padding-left: 20px;
+}
+.app-shell.workspace .stat-card > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--ws-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+.app-shell.workspace .stat-card > strong {
+  display: block;
+  margin: 10px 0 2px;
+  color: var(--ws-ink);
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  line-height: 1.1;
+}
+.app-shell.workspace .stat-card small {
+  color: var(--ws-faint);
+  font-size: 11px;
+}
+
+.app-shell.workspace .content-columns {
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 20px;
+  align-items: start;
+}
+.app-shell.workspace .recent-assignments {
+  padding: 20px;
+  border: 1px solid var(--ws-line);
+  border-left: 1px solid var(--ws-line);
+  border-radius: 18px;
+  background: var(--ws-panel);
+  box-shadow: var(--ws-shadow);
+}
+.app-shell.workspace .recent-assignments h2 {
+  font-size: 18px;
+}
+.app-shell.workspace .recent-assignments-note,
+.app-shell.workspace .recent-assignments-empty {
+  color: var(--ws-muted);
+  font-size: 11.5px;
+}
+.app-shell.workspace .recent-assignment-list {
+  margin-top: 14px;
+}
+.app-shell.workspace .recent-assignment-list li + li {
+  border-top-color: var(--ws-line);
+}
+.app-shell.workspace .recent-assignment {
+  padding: 12px 8px;
+  border-radius: 10px;
+}
+.app-shell.workspace .recent-assignment:hover {
+  background: var(--ws-field);
+}
+.app-shell.workspace .recent-assignment-title {
+  color: var(--ws-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+.app-shell.workspace .recent-assignment-course,
+.app-shell.workspace .recent-assignment-meta {
+  color: var(--ws-muted);
+  font-size: 11.5px;
+}
+.app-shell.workspace .recent-assignment-score {
+  color: var(--ws-ink);
+  font-weight: 500;
+}
+
+.app-shell.workspace .term-line {
+  min-height: 52px;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 4px 10px 4px 14px;
+  border: 1px solid var(--ws-line);
+  border-radius: 12px;
+  background: var(--ws-panel);
+  color: var(--ws-muted);
+  font-size: 12px;
+  box-shadow: 0 1px 2px rgba(15, 15, 15, 0.03);
+}
+.app-shell.workspace .term-line select {
+  min-height: 44px;
+  padding: 0 24px 0 2px;
+  border: 0;
+  background: transparent;
+  color: var(--ws-ink);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.app-shell.workspace .term-line > span:last-child {
+  margin-left: auto;
+  color: var(--ws-faint);
+  font-size: 11px;
+}
+.app-shell.workspace .green-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--ws-ink);
+}
+.app-shell.workspace .course-grid {
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.app-shell.workspace .course-card {
+  grid-template-columns: 44px minmax(0, 1fr) 128px;
+  column-gap: 14px;
+  row-gap: 3px;
+  min-height: 84px;
+  padding: 16px 18px;
+  border: 1px solid var(--ws-line);
+  border-radius: 16px;
+  background: var(--ws-panel);
+  box-shadow: 0 1px 2px rgba(15, 15, 15, 0.03);
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.app-shell.workspace .course-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--ws-line-strong);
+  box-shadow: var(--ws-shadow);
+}
+.app-shell.workspace .course-card-top > .subject-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--ws-field) !important;
+  color: var(--ws-ink) !important;
+}
+.app-shell.workspace .course-card h3 {
+  align-self: end;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--ws-ink);
+}
+.app-shell.workspace .course-card > p {
+  align-self: start;
+  color: var(--ws-muted);
+  font-size: 12px;
+}
+.app-shell.workspace .course-card > p > span {
+  color: var(--ws-faint);
+}
+.app-shell.workspace .course-card-bottom strong {
+  color: var(--ws-ink);
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}
+.app-shell.workspace .course-card-bottom small {
+  color: var(--ws-faint);
+  font-size: 10.5px;
+}
+.app-shell.workspace .empty-state {
+  padding: 48px 24px;
+  border: 1px dashed var(--ws-line-strong);
+  border-radius: 18px;
+  background: var(--ws-panel);
+  color: var(--ws-muted);
+}
+.app-shell.workspace .empty-state h2,
+.app-shell.workspace .empty-state h3 {
+  color: var(--ws-ink);
+}
+.app-shell.workspace .empty-state p {
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+/* Course detail */
+.app-shell.workspace .course-progress {
+  padding: 22px;
+  border: 1px solid var(--ws-line);
+  border-radius: 18px;
+  background: var(--ws-panel);
+  box-shadow: var(--ws-shadow);
+  margin-bottom: 18px;
+}
+.app-shell.workspace .grade-comparison span {
+  color: var(--ws-muted);
+  font-size: 12px;
+}
+.app-shell.workspace .grade-comparison strong {
+  color: var(--ws-ink);
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-size: 34px;
+  font-weight: 600;
+  letter-spacing: -0.045em;
+}
+.app-shell.workspace .grade-comparison small {
+  color: var(--ws-faint);
+  font-size: 11px;
+}
+.app-shell.workspace .estimate-details summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  color: var(--ws-muted);
+  font-size: 12px;
+  cursor: pointer;
+  list-style: none;
+}
+.app-shell.workspace .estimate-details summary::-webkit-details-marker {
+  display: none;
+}
+.app-shell.workspace .estimate-details summary::after {
+  content: '+';
+  color: var(--ws-muted);
+  font-size: 14px;
+  line-height: 1;
+}
+.app-shell.workspace .estimate-details[open] summary::after {
+  content: '−';
+}
+.app-shell.workspace .large-trend {
+  height: auto;
+  margin-top: 18px;
+  color: var(--ws-ink);
+}
+.app-shell.workspace .trend-dates,
+.app-shell.workspace .trend-ticks {
+  color: var(--ws-faint);
+  font-size: 11px;
+}
+.app-shell.workspace .what-if {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 20px;
+  padding: 16px 20px;
+  border: 1px solid var(--ws-line);
+  border-radius: 16px;
+  background: var(--ws-panel);
+  box-shadow: none;
+}
+.app-shell.workspace .what-if h2 {
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.app-shell.workspace .what-if p {
+  margin-top: 3px;
+  color: var(--ws-muted);
+  font-size: 11.5px;
+}
+.app-shell.workspace .toggle-control {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--ws-line);
+  border-radius: 999px;
+  background: var(--ws-field);
+  color: var(--ws-ink);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.app-shell.workspace .toggle-control.enabled {
+  background: var(--ws-ink);
+  border-color: var(--ws-ink);
+  color: var(--ws-panel);
+}
+.app-shell.workspace .toggle-control > span {
+  background: var(--ws-line-strong);
+}
+.app-shell.workspace .toggle-control.enabled > span {
+  background: var(--ws-panel);
+}
+.app-shell.workspace .table-wrap {
+  border: 1px solid var(--ws-line);
+  border-radius: 16px;
+  background: var(--ws-panel);
+  box-shadow: var(--ws-shadow);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.app-shell.workspace .history-table th {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.app-shell.workspace .history-table td {
+  padding: 13px 14px;
+}
+.app-shell.workspace table {
+  font-size: 13px;
+}
+.app-shell.workspace th {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--ws-line);
+  background: var(--ws-field);
+  color: var(--ws-muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.app-shell.workspace td {
+  padding: 13px 16px;
+  border-top: 1px solid var(--ws-line);
+  color: var(--ws-ink);
+  vertical-align: middle;
+}
+.app-shell.workspace tbody tr:first-child td {
+  border-top: 0;
+}
+.app-shell.workspace tbody tr:hover {
+  background: #fafafa;
+}
+.app-shell.workspace.dark tbody tr:hover {
+  background: #191919;
+}
+.app-shell.workspace td strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+.app-shell.workspace .muted {
+  color: var(--ws-muted);
+}
+.app-shell.workspace .grade-label {
+  color: var(--ws-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+.app-shell.workspace .hypothetical-row {
+  background: var(--ws-field);
+}
+.app-shell.workspace .title-input,
+.app-shell.workspace .score-inputs input,
+.app-shell.workspace .category-select {
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--ws-line);
+  border-radius: 8px;
+  background: var(--ws-panel);
+  color: var(--ws-ink);
+  font-size: 12.5px;
+}
+.app-shell.workspace .score-inputs {
+  gap: 6px;
+}
+.app-shell.workspace .score-inputs input {
+  width: 54px;
+}
+.app-shell.workspace .remove-assignment {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--ws-line);
+  border-radius: 8px;
+  color: var(--ws-muted);
+}
+
+/* Records */
+.app-shell.workspace .records-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.app-shell.workspace .record-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
+  border: 1px solid var(--ws-line);
+  border-radius: 16px;
+  background: var(--ws-panel);
+  box-shadow: 0 1px 2px rgba(15, 15, 15, 0.03);
+}
+.app-shell.workspace .record-icon {
+  flex: 0 0 40px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: var(--ws-field);
+  color: var(--ws-ink);
+}
+.app-shell.workspace .record-card small {
+  color: var(--ws-faint);
+  font-size: 10.5px;
+}
+.app-shell.workspace .record-card h3 {
+  margin: 2px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.app-shell.workspace .record-card p {
+  margin-top: 3px;
+  color: var(--ws-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+.app-shell.workspace .document-card {
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.app-shell.workspace .document-card:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: var(--ws-line-strong);
+  background: var(--ws-panel);
+  box-shadow: var(--ws-shadow);
+}
+.app-shell.workspace .document-copy strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.app-shell.workspace .document-copy > span,
+.app-shell.workspace .document-status {
+  color: var(--ws-muted);
+  font-size: 11.5px;
+}
+.app-shell.workspace .document-error {
+  color: var(--ws-ink);
+  font-size: 12px;
+}
+.app-shell.workspace .mail-message {
+  border: 1px solid var(--ws-line);
+  border-radius: 16px;
+  background: var(--ws-panel);
+  box-shadow: 0 1px 2px rgba(15, 15, 15, 0.03);
+}
+.app-shell.workspace .mail-message summary {
+  gap: 10px;
+  min-height: 60px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  font-size: 13.5px;
+  font-weight: 500;
+}
+.app-shell.workspace .mail-heading {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.app-shell.workspace .mail-heading > span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.app-shell.workspace .mail-message summary > svg {
+  flex: 0 0 16px;
+}
+.app-shell.workspace .mail-message summary:hover {
+  background: var(--ws-field);
+}
+.app-shell.workspace .mail-author {
+  color: var(--ws-muted);
+  font-size: 11.5px;
+}
+.app-shell.workspace .mail-message[open] summary {
+  border-bottom-color: var(--ws-line);
+  border-radius: 16px 16px 0 0;
+}
+.app-shell.workspace .mail-content {
+  padding: 18px 20px 20px;
+}
+.app-shell.workspace .mail-content small {
+  color: var(--ws-faint);
+  font-size: 11px;
+}
+.app-shell.workspace .mail-content p {
+  color: var(--ws-ink);
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+.app-shell.workspace .mail-attachments {
+  border-top-color: var(--ws-line);
+}
+.app-shell.workspace .mail-attachments h3 {
+  font-size: 13px;
+}
+.app-shell.workspace .attachment-name {
+  font-size: 12.5px;
+}
+.app-shell.workspace .record-filters {
+  margin: 24px 0 16px;
+}
+.app-shell.workspace .record-filters label {
+  color: var(--ws-muted);
+  font-size: 11.5px;
+}
+.app-shell.workspace .record-filters select {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--ws-line);
+  border-radius: 10px;
+  background: var(--ws-panel);
+}
+.app-shell.workspace .records-intro,
+.app-shell.workspace .records-empty,
+.app-shell.workspace .attendance-note {
+  color: var(--ws-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.app-shell.workspace .records-empty {
+  padding: 28px 0;
+}
+
+/* Student records, history and attendance */
+.app-shell.workspace .student-record-section {
+  margin-bottom: 14px;
+  padding: 22px;
+  border: 1px solid var(--ws-line);
+  border-radius: 18px;
+  background: var(--ws-panel);
+  box-shadow: 0 1px 2px rgba(15, 15, 15, 0.03);
+}
+.app-shell.workspace .student-record-section:first-of-type {
+  padding-top: 22px;
+}
+.app-shell.workspace .student-record-section h2 {
+  margin-bottom: 16px;
+  font-size: 18px;
+}
+.app-shell.workspace .student-info-fields {
+  gap: 18px 28px;
+}
+.app-shell.workspace .student-info-fields dt,
+.app-shell.workspace .attendance-totals dt {
+  color: var(--ws-muted);
+  font-size: 11.5px;
+}
+.app-shell.workspace .student-info-fields dd {
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+.app-shell.workspace .student-info-group {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--ws-line);
+}
+.app-shell.workspace .student-info-group h3 {
+  margin-bottom: 14px;
+  font-size: 13px;
+}
+.app-shell.workspace .student-info-note {
+  color: var(--ws-muted);
+  font-size: 13px;
+}
+.app-shell.workspace .graduation-status {
+  padding: 22px;
+  border: 1px solid var(--ws-line);
+  border-radius: 18px;
+  background: var(--ws-panel);
+  box-shadow: 0 1px 2px rgba(15, 15, 15, 0.03);
+}
+.app-shell.workspace .graduation-heading h2 {
+  font-size: 20px;
+}
+.app-shell.workspace .graduation-heading > span,
+.app-shell.workspace .graduation-columns,
+.app-shell.workspace .graduation-legend > span {
+  color: var(--ws-muted);
+  font-size: 11.5px;
+}
+.app-shell.workspace .graduation-columns,
+.app-shell.workspace .graduation-requirement {
+  border-color: var(--ws-line);
+}
+.app-shell.workspace .graduation-legend i {
+  border-color: var(--ws-line-strong);
+}
+.app-shell.workspace .graduation-bar {
+  border-color: var(--ws-line-strong);
+  background: var(--ws-field);
+}
+.app-shell.workspace .graduation-completed,
+.app-shell.workspace .completed-key {
+  background: var(--ws-ink);
+}
+.app-shell.workspace .graduation-in-progress,
+.app-shell.workspace .in-progress-key {
+  background: var(--ws-muted);
+}
+.app-shell.workspace .remaining-key {
+  background: var(--ws-field);
+}
+.app-shell.workspace .graduation-credits dt {
+  color: var(--ws-muted);
+  font-size: 11.5px;
+}
+.app-shell.workspace .graduation-percentage {
+  font-size: 12px;
+  font-weight: 500;
+}
+.app-shell.workspace .subject-toggle {
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.app-shell.workspace .subject-toggle:hover {
+  background: var(--ws-field);
+}
+.app-shell.workspace .history-course-records > summary {
+  min-height: 44px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.app-shell.workspace .history-course-records > summary > span {
+  color: var(--ws-muted);
+}
+.app-shell.workspace .attendance-totals {
+  gap: 24px 40px;
+  margin-bottom: 16px;
+  padding: 18px 20px;
+  border: 1px solid var(--ws-line);
+  border-radius: 16px;
+  background: var(--ws-panel);
+}
+.app-shell.workspace .attendance-totals dd {
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}
+.app-shell.workspace .attendance-periods {
+  margin-top: 12px;
+}
+.app-shell.workspace .attendance-periods li {
+  padding: 12px 0;
+  font-size: 13px;
+}
+.app-shell.workspace .attendance-periods li + li {
+  border-top-color: var(--ws-line);
+}
+.app-shell.workspace .attendance-period {
+  color: var(--ws-muted);
+  font-size: 11px;
+}
+.app-shell.workspace .history-table th:first-child {
+  width: 26%;
+}
+.app-shell.workspace .subject-classes {
+  padding-top: 8px;
+}
+
+/* Feedback and dialog */
+.app-shell.workspace .alert {
+  margin-bottom: 18px;
+  padding: 16px 18px;
+  border: 1px solid var(--ws-line);
+  border-left: 3px solid var(--ws-ink);
+  border-radius: 12px;
+  background: var(--ws-panel);
+  color: var(--ws-ink);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.app-shell.workspace .alert p {
+  color: var(--ws-muted);
+}
+.app-shell.workspace .notice {
+  margin-bottom: 18px;
+  padding: 12px 16px;
+  border: 1px solid var(--ws-line);
+  border-radius: 10px;
+  background: var(--ws-panel);
+  color: var(--ws-muted);
+  font-size: 12px;
+}
+.app-shell.workspace .loading {
+  color: var(--ws-muted);
+  font-size: 12px;
+}
+.app-shell.workspace .modal-backdrop {
+  background: #0f0f0f99;
+  backdrop-filter: blur(4px);
+}
+.app-shell.workspace .modal {
+  width: 480px;
+  padding: 30px;
+  border: 1px solid var(--ws-line);
+  border-radius: 20px;
+  background: var(--ws-panel);
+  box-shadow: 0 30px 80px -30px #00000066;
+}
+.app-shell.workspace .privacy-modal {
+  width: 620px;
+}
+.app-shell.workspace .modal h2 {
+  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+}
+.app-shell.workspace .modal > p {
+  color: var(--ws-muted);
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+.app-shell.workspace .modal-emblem {
+  width: 48px;
+  height: 48px;
+  border-radius: 13px;
+  background: var(--ws-field);
+  color: var(--ws-ink);
+}
+.app-shell.workspace .privacy-details summary {
+  min-height: 44px;
+  color: var(--ws-ink);
+  font-size: 12px;
+}
+.app-shell.workspace .privacy-details p {
+  color: var(--ws-muted);
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+/* Narrower desktop */
+@media (max-width: 1000px) {
+  .app-shell.workspace #assignment-table td:empty {
+    display: none;
+  }
+}
+
+@media (max-width: 1100px) {
+  .app-shell.workspace .content-columns {
+    grid-template-columns: 1fr;
+  }
+  .app-shell.workspace .recent-assignments {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .app-shell.workspace .main-shell {
+    margin-left: 0;
+  }
+  .app-shell.workspace #school-navigation {
+    width: 248px;
+  }
+  .app-shell.workspace .main-shell > header {
+    height: 66px;
+    padding: 0 16px;
+  }
+  .app-shell.workspace .main-shell > main {
+    padding: 20px 16px 40px;
+  }
+  .app-shell.workspace h1 {
+    font-size: 30px;
+    letter-spacing: -0.04em;
+  }
+  .app-shell.workspace h2 {
+    font-size: 18px;
+  }
+  .app-shell.workspace .page-heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .app-shell.workspace .stats-grid {
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .app-shell.workspace .stats-grid .stat-card {
+    padding: 14px;
+  }
+  .app-shell.workspace .stat-card > strong {
+    font-size: 26px;
+  }
+  .app-shell.workspace .course-card {
+    grid-template-columns: 38px minmax(0, 1fr) 92px;
+    column-gap: 11px;
+    padding: 14px;
+  }
+  .app-shell.workspace .course-card-top > .subject-icon {
+    width: 36px;
+    height: 36px;
+  }
+  .app-shell.workspace .course-card h3 {
+    font-size: 14px;
+  }
+  .app-shell.workspace .course-card-bottom strong {
+    font-size: 20px;
+  }
+  .app-shell.workspace .course-progress,
+  .app-shell.workspace .student-record-section,
+  .app-shell.workspace .graduation-status,
+  .app-shell.workspace .attendance-totals {
+    padding: 16px;
+  }
+  .app-shell.workspace .what-if {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px 16px;
+  }
+  .app-shell.workspace .table-wrap {
+    border-radius: 14px;
+  }
+  .app-shell.workspace .record-card {
+    padding: 14px;
+  }
+  .app-shell.workspace .mail-message summary {
+    padding: 14px 16px;
+  }
+  .app-shell.workspace .mail-content {
+    padding: 16px;
+  }
+  .app-shell.workspace .modal,
+  .app-shell.workspace .privacy-modal {
+    width: 100%;
+    padding: 24px 20px;
+    border-radius: 18px;
+  }
+}
+
+@media (max-width: 420px) {
+  .app-shell.workspace .course-card {
+    grid-template-columns: 34px minmax(0, 1fr) 84px;
+  }
+  .app-shell.workspace .course-card-bottom strong {
+    font-size: 19px;
+  }
+  .app-shell.workspace .stats-grid .stat-card > span {
+    font-size: 11px;
+  }
+  .app-shell.workspace .stat-card > strong {
+    font-size: 24px;
+  }
+}

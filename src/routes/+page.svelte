@@ -31,6 +31,8 @@
   } from '$lib/portal-data';
   import './app.css';
   import './monochrome.css';
+  import './login.css';
+  import './workspace.css';
   const navigation = [
     { id: 'grades', label: 'Gradebook', icon: 'book' },
     { id: 'schedule', label: 'Schedule', icon: 'calendar' },
@@ -40,6 +42,15 @@
     { id: 'mail', label: 'Inbox', icon: 'mail' },
     { id: 'documents', label: 'Documents', icon: 'file' },
   ];
+  const loginDetails: Record<string, string> = {
+    grades: 'Courses, assignments, and current grades',
+    schedule: 'Classes, rooms, and terms',
+    attendance: 'Absences and period status',
+    history: 'Marks and credits by year',
+    student: 'School and contact fields',
+    mail: 'School messages, newest first',
+    documents: 'File listings and downloads',
+  };
   let tab = $state('grades'),
     data = $state<GradeData>({ courses: [], terms: [], currentTerm: 0 }),
     person = $state({ name: 'Student', school: 'Anoka-Hennepin', grade: '' }),
@@ -594,10 +605,22 @@
 </script>
 
 <svelte:head
-  ><title>Schoolity · Your school day, in focus</title><meta
+  ><title>Schoolity · Student dashboard for Anoka-Hennepin</title><meta
     name="description"
-    content="Your gradebook, hypothetical calculator, schedule, attendance, course history, and student information."
-  /></svelte:head
+    content="Sign in with your StudentVUE account to open your gradebook, schedule, attendance, and school records. Schoolity never changes what the district has on file."
+  /><meta name="page-type" content="software" /><meta
+    name="site-kind"
+    content="software"
+  /><meta
+    property="og:title"
+    content="Schoolity · Student dashboard for Anoka-Hennepin"
+  /><meta
+    property="og:description"
+    content="Sign in with your StudentVUE account to open your gradebook, schedule, attendance, and school records."
+  /><meta property="og:type" content="website" /><meta
+    name="twitter:card"
+    content="summary"
+  /><link rel="icon" href="/favicon.svg" type="image/svg+xml" /></svelte:head
 >
 <svelte:window
   onkeydown={(e) => {
@@ -608,7 +631,7 @@
   }}
 />
 
-<div class:dark class="app-shell">
+<div class:dark class:workspace={authenticated} class="app-shell">
   {#if authenticated}
     <aside
       id="school-navigation"
@@ -1151,63 +1174,156 @@
     </div>
   {/if}
   {#if !authenticated}
-    <main class="login-page" inert={privacyOpen}>
-      <div class="login-brand">
-        <span class="login-logo">S</span><strong>Schoolity</strong>
-      </div>
-      <section class="login-card" aria-labelledby="login-title">
-        <h1 id="login-title">Sign in</h1>
-        <form onsubmit={login}>
-          <label
-            >Username<input
-              required
-              bind:value={username}
-              autocomplete="username"
-              placeholder="StudentVUE username"
-            /></label
-          >
-          <label for="school-password">Password</label>
-          <div class="password-control">
-            <input
-              id="school-password"
-              required
-              type={showPassword ? 'text' : 'password'}
-              bind:value={password}
-              autocomplete="current-password"
-              placeholder="StudentVUE password"
-            /><button
-              type="button"
-              aria-controls="school-password"
-              aria-pressed={showPassword}
-              onclick={() => (showPassword = !showPassword)}
-              >{showPassword ? 'Hide' : 'Show'}<span class="sr-only">
-                password</span
-              ></button
-            >
+    <main class="login-page" inert={privacyOpen} data-enter>
+      <a class="skip-link" href="#login-form">Skip to sign-in form</a>
+      <div class="login-shell">
+        <div class="login-primary">
+          <div class="login-topbar">
+            <div class="login-brand" aria-label="Schoolity">
+              <span class="login-mark" aria-hidden="true">S</span
+              ><span class="login-wordmark">Schoolity</span>
+            </div>
+            <div class="login-meta">
+              <span class="login-district"
+                ><span class="district-dot" aria-hidden="true"></span
+                >Anoka-Hennepin Schools</span
+              ><button
+                class="login-privacy"
+                onclick={() => (privacyOpen = true)}
+                ><Icon name="shield" size={13} /><span>Privacy</span></button
+              >
+            </div>
           </div>
-          <label class="remember-sign-in">
-            <input type="checkbox" bind:checked={rememberSignIn} />
-            <span>Keep me signed in for 30 days</span>
-          </label>
-          <p class="remember-hint">
-            Saves an encrypted copy of your school login on Schoolity's server.
-            Signing out removes it.
-          </p>
-          {#if loginError}<div class="form-error" role="alert">
-              {loginError}
-            </div>{/if}
-          <button class="primary" type="submit" disabled={loginBusy}
-            >{loginBusy ? 'Signing in…' : 'Sign in'}<Icon
-              name="arrow"
-              size={16}
-            /></button
-          >
-        </form>
-        {#if sessionData.retrySavedSignIn}<button class="text-button" onclick={() => location.reload()}>Retry saved sign-in</button>{/if}
-        <button class="text-button" onclick={() => (privacyOpen = true)}
-          >Privacy & connection</button
-        >
-      </section>
+
+          <div class="login-hero">
+            <p class="login-eyebrow" data-rise style="--i: 0">
+              <span class="eyebrow-dot" aria-hidden="true"></span>Grades,
+              schedule, and records
+            </p>
+            <h1 id="login-title" data-rise style="--i: 1">
+              The Anoka-Hennepin student dashboard.
+            </h1>
+            <p class="login-deck" data-rise style="--i: 2">
+              Sign in with your StudentVUE account to open your gradebook,
+              schedule, attendance, and school records. Schoolity never changes
+              what the district has on file.
+            </p>
+
+            <section
+              class="login-form-panel"
+              id="login-form"
+              aria-labelledby="signin-title"
+              tabindex="-1"
+              data-rise
+              style="--i: 3"
+            >
+              <div class="login-form-head">
+                <h2 id="signin-title">Sign in</h2>
+                <span>StudentVUE</span>
+              </div>
+              <form onsubmit={login}>
+                <label class="field" for="school-username">
+                  <span>Username</span>
+                  <input
+                    id="school-username"
+                    required
+                    bind:value={username}
+                    autocomplete="username"
+                    spellcheck="false"
+                  />
+                </label>
+                <div class="field">
+                  <label for="school-password">Password</label>
+                  <div class="password-control">
+                    <input
+                      id="school-password"
+                      required
+                      type={showPassword ? 'text' : 'password'}
+                      bind:value={password}
+                      autocomplete="current-password"
+                    /><button
+                      class="password-reveal"
+                      type="button"
+                      aria-controls="school-password"
+                      aria-pressed={showPassword}
+                      onclick={() => (showPassword = !showPassword)}
+                      >{showPassword ? 'Hide' : 'Show'}<span class="sr-only">
+                        password</span
+                      ></button
+                    >
+                  </div>
+                </div>
+                <div class="remember-block">
+                  <label class="remember-sign-in">
+                    <input
+                      type="checkbox"
+                      bind:checked={rememberSignIn}
+                      aria-describedby="remember-hint"
+                    />
+                    <span>Keep me signed in for 30 days</span>
+                  </label>
+                  <p class="remember-hint" id="remember-hint">
+                    Stores an encrypted copy of your school login on Schoolity's
+                    server. Signing out removes it.
+                  </p>
+                </div>
+                {#if loginError}<div class="form-error" role="alert">
+                    {loginError}
+                  </div>{/if}
+                <button class="primary login-submit" type="submit" disabled={loginBusy}
+                  ><span>{loginBusy ? 'Signing in…' : 'Sign in'}</span><span
+                    class="submit-arrow"
+                    aria-hidden="true"><Icon name="arrow" size={15} /></span
+                  ></button
+                >
+              </form>
+              {#if sessionData.retrySavedSignIn}<button
+                  class="login-text-button"
+                  onclick={() => location.reload()}>Retry saved sign-in</button
+                >{/if}
+            </section>
+          </div>
+
+          <footer class="login-footer">
+            <p>
+              Independent student project. Not affiliated with or endorsed by
+              Anoka-Hennepin Schools or Edupoint.
+            </p>
+            <p class="login-credit">
+              Inter &amp; Inter Tight · SIL Open Font License
+            </p>
+          </footer>
+        </div>
+
+        <aside class="login-index" aria-labelledby="index-title">
+          <div class="index-head" data-rise style="--i: 2">
+            <h2 id="index-title">Inside the workspace</h2>
+            <span>07 sections</span>
+          </div>
+          <ol data-rise style="--i: 3">
+            {#each navigation as item}
+              <li>
+                <span class="index-icon"><Icon name={item.icon} size={17} /></span>
+                <span class="index-name">{item.label}</span>
+                <span class="index-detail">{loginDetails[item.id]}</span>
+              </li>
+            {/each}
+          </ol>
+          <div class="index-note" data-rise style="--i: 4">
+            <span class="index-note-icon" aria-hidden="true"
+              ><Icon name="shield" size={16} /></span
+            >
+            <div class="index-note-copy">
+              <p class="index-note-title">Read-only by design.</p>
+              <p>
+                Schoolity reads the record your district already keeps. Grade
+                estimates come from your assignments; district-reported grades
+                stay separate.
+              </p>
+            </div>
+          </div>
+        </aside>
+      </div>
     </main>
   {/if}
   {#if privacyOpen}<div
