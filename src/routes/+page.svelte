@@ -1103,8 +1103,6 @@
                           )}</strong
                         ><span class="letter-grade"
                           >{letter(calculate(course))}</span
-                        ><small
-                          >Schoolity estimate</small
                         >
                       </div>
                     </div></button
@@ -1507,7 +1505,7 @@
             </div>
             <div class="preview-pair">
               <div>
-                <span>Schoolity estimate</span><strong>91.2%</strong>
+                <strong>91.2%</strong>
               </div>
             </div>
             <svg
