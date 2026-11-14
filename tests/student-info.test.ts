@@ -71,5 +71,12 @@ test('student page errors remain explicit rather than appearing as complete empt
   assert.equal(complete.sections.length,7);
   const retry=studentInformation(await read({...session,webCookie:'fixture'},'student',undefined,send,async()=>{throw new Error('Unavailable');}));
   assert.match(retry.notice!,/could not be loaded/);
-  await assert.rejects(read({...session,webCookie:'fixture'},'student',undefined,send,async()=>({text:'<input type="password">',cookie:''})),(e:unknown)=>e instanceof PortalError&&e.status===401);
+  for (const page of [
+    async()=>({text:'<input type="password">',cookie:''}),
+    async()=>{throw new PortalError('Expired district web session',401);},
+  ]) {
+    const expired=studentInformation(await read({...session,webCookie:'fixture'},'student',undefined,send,page));
+    assert.match(expired.notice!,/needs to reconnect/);
+    assert.equal(expired.sections[0].fields.find(f=>f.label==='Name')?.value,'Sample Student');
+  }
 });
