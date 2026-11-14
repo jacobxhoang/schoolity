@@ -1,5 +1,7 @@
 <script lang="ts">
   import { onMount, untrack, tick } from 'svelte';
+  import { fly } from 'svelte/transition';
+  let reducedMotion = $state(false);
   import { readGradeCache, saveGradeCache, clearGradeCache } from '$lib/grade-cache';
   import GradeSummary from '$lib/GradeSummary.svelte';
   import StudentRecords from '$lib/StudentRecords.svelte';
@@ -707,6 +709,10 @@
     };
   });
   onMount(() => {
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const updateMotion = () => { reducedMotion = motionQuery.matches; };
+    updateMotion();
+    motionQuery.addEventListener('change', updateMotion);
     try {
       const cached = readGradeCache(localStorage, authenticated ? cacheIdentity : null);
       if (authenticated && cached) { data = cached.book; lastRefresh = cached.savedAt; }
@@ -739,6 +745,7 @@
         void preloadWorkspace();
       });
     return () => {
+      motionQuery.removeEventListener('change', updateMotion);
       mq.removeEventListener('change', resize);
       window.removeEventListener('popstate', back);
       window.removeEventListener('pageshow', returned);
@@ -842,6 +849,16 @@
         onclick={() => closeMenu()}
       ></button>{/if}
     <div class="main-shell" inert={(isMobile && mobileMenu) || privacyOpen}>
+      <div class="update-toast">
+        {#if busy}
+          <div class="update-status" role="status" aria-live="polite" aria-atomic="true"
+            in:fly={{ y: -90, duration: reducedMotion ? 0 : 240 }}
+            out:fly={{ y: -90, duration: reducedMotion ? 0 : 180 }}>
+            <span class="update-spinner" aria-hidden="true"></span>
+            <span>{data.courses.length ? 'Updating…' : 'Loading…'}</span>
+          </div>
+        {/if}
+      </div>
       <header>
         <div class="breadcrumb">
           <button
@@ -855,12 +872,6 @@
           ><strong>{navigation.find((n) => n.id === tab)?.label}</strong>
         </div>
         <div class="header-actions">
-          {#if busy}
-            <div class="update-status" role="status" aria-live="polite" aria-atomic="true">
-              <span class="update-spinner" aria-hidden="true"></span>
-              <span>{data.courses.length ? 'Updating…' : 'Loading…'}</span>
-            </div>
-          {/if}
           <button
             class="icon-button"
             aria-label="Toggle color theme"
