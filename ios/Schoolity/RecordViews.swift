@@ -269,6 +269,7 @@ struct CourseHistoryView: View {
     @State private var details: [String: SubjectDetails] = [:]
     @State private var detailLoading: Set<String> = []
     @State private var detailErrors: [String: String] = [:]
+    @State private var courseRecordsExpanded: Bool?
 
     var body: some View {
         List {
@@ -285,6 +286,9 @@ struct CourseHistoryView: View {
                 }
                 if !page.requirements.isEmpty {
                     Section {
+                        if page.requirements.contains(where: { ($0.required ?? 0) > 0 && $0.completed != nil }) {
+                            GraduationLegend()
+                        }
                         ForEach(Array(page.requirements.enumerated()), id: \.offset) { index, requirement in
                             let key = requirementKey(index, requirement)
                             DisclosureGroup(isExpanded: expansion(key, requirement)) {
@@ -320,7 +324,7 @@ struct CourseHistoryView: View {
                         }
                     }
                 }
-                Section {
+                DisclosureGroup(isExpanded: courseRecordsExpansion(page)) {
                     if page.courses.isEmpty {
                         Text("No course history was returned by your district.")
                             .font(.subheadline)
@@ -341,13 +345,7 @@ struct CourseHistoryView: View {
                         }
                         .pickerStyle(.menu)
                         LabeledContent("Courses", value: "\(shownCourses(page).count)")
-                    }
-                } header: {
-                    Text("Course records")
-                }
-                if !page.courses.isEmpty {
-                    if shownCourses(page).isEmpty {
-                        Section {
+                        if shownCourses(page).isEmpty {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("No courses match these filters.")
                                     .font(.subheadline)
@@ -358,13 +356,17 @@ struct CourseHistoryView: View {
                                 }
                                 .frame(minHeight: 44)
                             }
-                        }
-                    } else {
-                        ForEach(shownCourses(page)) { course in
-                            CourseHistoryRow(course: course)
+                            .padding(.vertical, 4)
+                        } else {
+                            ForEach(shownCourses(page)) { course in
+                                CourseHistoryRow(course: course)
+                            }
                         }
                     }
+                } label: {
+                    Text("Course records").font(.headline)
                 }
+                .accessibilityIdentifier("history-course-records")
             } else if store.loadingRecords.contains(.history) {
                 Section { ProgressView("Loading course history…") }
             } else if store.recordErrors[.history] == nil {
@@ -398,6 +400,13 @@ struct CourseHistoryView: View {
 
     private func requirementKey(_ index: Int, _ requirement: GraduationRequirement) -> String {
         "\(index)-\(requirement.id)"
+    }
+
+    private func courseRecordsExpansion(_ page: CourseHistoryPage) -> Binding<Bool> {
+        Binding(
+            get: { courseRecordsExpanded ?? page.requirements.isEmpty },
+            set: { courseRecordsExpanded = $0 }
+        )
     }
 
     private func expansion(_ key: String, _ requirement: GraduationRequirement) -> Binding<Bool> {
@@ -470,6 +479,33 @@ private struct GraduationRequirementSummary: View {
             }
         }
         .padding(.vertical, 4)
+    }
+}
+
+private struct GraduationLegend: View {
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 14) { entries }
+            VStack(alignment: .leading, spacing: 4) { entries }
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Progress legend: completed, in progress, remaining")
+        .accessibilityIdentifier("graduation-legend")
+    }
+
+    @ViewBuilder private var entries: some View {
+        legendItem("Completed", color: SchoolityStyle.accent)
+        legendItem("In progress", color: SchoolityStyle.accent.opacity(0.35))
+        legendItem("Remaining", color: Color.secondary.opacity(0.16))
+    }
+
+    private func legendItem(_ label: String, color: Color) -> some View {
+        HStack(spacing: 5) {
+            Circle().fill(color).frame(width: 8, height: 8)
+            Text(label)
+        }
     }
 }
 

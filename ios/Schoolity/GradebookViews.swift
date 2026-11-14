@@ -13,9 +13,13 @@ struct GradebookView: View {
                             ForEach(book.terms) { Text($0.name).tag($0.id) }
                         }.pickerStyle(.menu).disabled(store.isLoading)
                 }
-                Section("Overview") {
+                Section {
                     LabeledContent("Course average", value: GradeMath.percent(courseAverage(book)))
                     LabeledContent("Courses", value: "\(book.courses.count)")
+                } header: {
+                    Text("Overview")
+                } footer: {
+                    Text("Unweighted average of current course grades.")
                 }
                 Section {
                     ForEach(book.courses) { course in
