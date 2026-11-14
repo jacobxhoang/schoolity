@@ -7,6 +7,7 @@ import { BlockList } from 'node:net';
 import { object, profilePayload, string } from '../portal-data.ts';
 import { DISTRICT_URL } from '../config.ts';
 import { parseHistoryOverview, parseSubjectDetails } from './history.ts';
+import { parseStudentPage } from './student-info.ts';
 export class PortalError extends Error {
   status: number;
   constructor(message: string, status = 502) {
@@ -299,7 +300,19 @@ export async function read(
   if (!('data' in response))
     throw new PortalError('The district returned an unexpected response.');
   const data = object(response.data);
-  if (resource === 'profile' || resource === 'student') return profilePayload(data);
+  if (resource === 'profile') return profilePayload(data);
+  if (resource === 'student') {
+    const studentInfo = profilePayload(data);
+    if (!session.webCookie) return {studentInfo, studentInfoNotice:'Sign in again to load all StudentVUE information, including contacts, lockers, and transportation.'};
+    try {
+      const response = await page(session.base, '/PXP2_Student.aspx?AGU=0', {Cookie:session.webCookie});
+      return {studentInfo, studentSections:parseStudentPage(response.text)};
+    } catch (error) {
+      if (error instanceof Error && 'status' in error && error.status === 401)
+        throw new PortalError('Your district web session ended. Sign in again to load all student information.',401);
+      return {studentInfo, studentInfoNotice:'Additional StudentVUE information could not be loaded. Refresh to try again.'};
+    }
+  }
   for (const [index, key] of spec[2].entries()) {
     const value = data[key];
     if (value == null) continue;
