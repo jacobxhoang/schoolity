@@ -17,6 +17,7 @@ final class DistrictPortal: SchoolPortal {
     private var token: SavedSession?
     private var identity = UUID()
     private var memoryEpoch = UUID()
+    private var historyCache: (overview: Any, fetched: Date)?
     var savedSignIn: SavedSessionInfo? { SessionVault.info() }
     var notificationAccountID: String? { token?.accountID }
     private let session: URLSession
@@ -32,7 +33,7 @@ final class DistrictPortal: SchoolPortal {
     }
 
     func clear() { identity = UUID(); forgetSession(); SessionVault.clear() }
-    func forgetSession() { token = nil; memoryEpoch = UUID() }
+    func forgetSession() { token = nil; memoryEpoch = UUID(); historyCache = nil }
     private func expireSession() {
         token = nil
         if let info = savedSignIn, !info.legacy, info.canRenew == false { SessionVault.clear() }
@@ -144,6 +145,7 @@ final class DistrictPortal: SchoolPortal {
                                  accountID: SHA256.hash(data: Data(username.lowercased().utf8)).map { String(format: "%02x", $0) }.joined())
         guard account == identity, epoch == memoryEpoch else { throw CancellationError() }
         try SessionVault.save(saved, requiresUnlock: protectSession)
+        historyCache = nil
         token = saved.withoutCredentials
     }
 
@@ -189,7 +191,18 @@ final class DistrictPortal: SchoolPortal {
     private func historyOverview() async throws -> Any {
         let (data, _) = try await request(path: "PXP2_CourseHistory.aspx?AGU=0", web: true)
         let parsed = try await parse("history", ["html": String(decoding: data, as: UTF8.self)])
-        return try JSONSerialization.jsonObject(with: parsed)
+        let overview = try JSONSerialization.jsonObject(with: parsed)
+        historyCache = (overview, Date())
+        return overview
+    }
+
+    // Subject details re-validate their identifier against the course-history
+    // overview. Reusing a just-loaded copy keeps a preload from downloading the
+    // district page once per subject area. A history refresh re-reads and
+    // replaces this copy immediately.
+    private func cachedHistoryOverview() async throws -> Any {
+        if let cache = historyCache, Date().timeIntervalSince(cache.fetched) < 120 { return cache.overview }
+        return try await historyOverview()
     }
 
     func read<T: Decodable>(_ resource: String, term: Int? = nil) async throws -> T {
@@ -212,7 +225,9 @@ final class DistrictPortal: SchoolPortal {
     }
 
     func readHistorySubject(_ id: String) async throws -> SubjectDetails {
-        let history: CourseHistoryPage = try await read("history")
+        let overview = try await cachedHistoryOverview()
+        let normalized = try await parse("normalize", ["resource": "history", "payload": overview])
+        let history = try JSONDecoder().decode(CourseHistoryPage.self, from: normalized)
         guard history.requirements.contains(where: { $0.id == id && !id.isEmpty }) else {
             throw PortalFailure.message("This subject is unavailable for your account. Refresh course history.")
         }

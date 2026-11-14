@@ -47,8 +47,18 @@ export const POST: RequestHandler = async ({
       await browserAuth.login(context, input.username, input.password, input.remember === true);
       return json({ ok: true, cacheIdentity: gradeCacheIdentity(cookies.get(SESSION_COOKIE)) }, { headers });
     }
-    if (input.action === 'session')
-      return json({ connected: !!await browserAuth.restore(context) }, { headers });
+    if (input.action === 'session') {
+      const session = await browserAuth.restore(context);
+      return json(
+        {
+          connected: !!session,
+          cacheIdentity: session
+            ? gradeCacheIdentity(cookies.get(SESSION_COOKIE))
+            : null,
+        },
+        { headers },
+      );
+    }
     if (typeof input.resource !== 'string')
       throw new PortalError('Select a resource.', 400);
     const resource = input.resource;

@@ -5,6 +5,7 @@ import {
   sessionCookieOptions,
 } from '../src/lib/server/session-policy.ts';
 import { signIn, findSession, endSession, limitLogin, PortalError } from '../src/lib/server/portal.ts';
+import { BrowserAuth } from '../src/lib/server/browser-auth.ts';
 import { DISTRICT_URL } from '../src/lib/config.ts';
 import { store } from '../src/lib/server/store.ts';
 import { createHash, randomUUID } from 'node:crypto';
@@ -65,4 +66,46 @@ test('the same saved session survives repeated server loads and sign-out revokes
   }
   await endSession(saved.id);
   assert.equal(await findSession(saved.id), undefined);
+});
+
+test('rendering reads an existing session without contacting the district', async () => {
+  const session = {
+    base: DISTRICT_URL,
+    token: 'synthetic-existing-token',
+    expires: Date.now() + 60_000,
+  };
+  let signIns = 0;
+  let credentialReads = 0;
+  const auth = new BrowserAuth({
+    findSession: async (id) => (id === 'known-session' ? session : undefined),
+    signIn: async () => {
+      signIns += 1;
+      return { id: 'new-session', maxAge: 60 };
+    },
+    endSession: async () => {},
+    bindRememberedSession: async () => {},
+    limitLogin: async () => {},
+    remembered: {
+      ensureReady: () => {},
+      create: async () => 'unused',
+      read: async () => {
+        credentialReads += 1;
+        return { username: 'synthetic', password: 'synthetic' };
+      },
+      end: async () => {},
+    },
+  });
+  const jar = new Map<string, string>([['schoolity_session', 'known-session']]);
+  const context = {
+    cookies: {
+      get: (name: string) => jar.get(name),
+      set: (name: string, value: string) => void jar.set(name, value),
+      delete: (name: string) => void jar.delete(name),
+    },
+    url: new URL('https://schoolity.example/'),
+    getClientAddress: () => '127.0.0.1',
+  };
+  assert.equal(await auth.existing(context), session);
+  assert.equal(signIns, 0);
+  assert.equal(credentialReads, 0);
 });
