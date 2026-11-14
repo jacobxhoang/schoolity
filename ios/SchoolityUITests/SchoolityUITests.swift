@@ -73,9 +73,11 @@ final class SchoolityUITests: XCTestCase {
         XCTAssertTrue(app.tabBars.buttons["Grades"].waitForExistence(timeout: 10))
         app.tabBars.buttons["Grades"].tap()
         let course = app.descendants(matching: .any)["course-sample-math"]
-        XCTAssertTrue(course.waitForExistence(timeout: 5))
         capture("accessible-gradebook")
-        app.swipeUp()
+        for _ in 0..<4 where !course.exists {
+            app.swipeUp()
+        }
+        XCTAssertTrue(course.waitForExistence(timeout: 5))
         capture("accessible-gradebook-row")
         if !course.isHittable { app.swipeUp() }
         course.tap()
