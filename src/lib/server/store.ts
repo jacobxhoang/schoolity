@@ -93,5 +93,36 @@ export class Store {
     else this.memory.get(key)!.value = String(n);
     return n;
   }
+  async claim(key: string, value: string, seconds: number): Promise<boolean> {
+    if (this.config()) return await this.command(['SET', this.key(key), value, 'EX', seconds, 'NX']) === 'OK';
+    this.clean();
+    if (this.memory.has(key)) return false;
+    await this.set(key, value, seconds); return true;
+  }
+  async compareSet(key: string, expected: string, value: string | null, seconds = 1): Promise<boolean> {
+    if (this.config()) return Number(await this.command(['EVAL',
+      "if redis.call('GET',KEYS[1])~=ARGV[1] then return 0 end; if ARGV[2]=='delete' then redis.call('DEL',KEYS[1]) else redis.call('SET',KEYS[1],ARGV[3],'EX',ARGV[4]) end; return 1",
+      1, this.key(key), expected, value === null ? 'delete' : 'set', value ?? '', seconds])) === 1;
+    this.clean();
+    if (this.memory.get(key)?.value !== expected) return false;
+    if (value === null) this.memory.delete(key);
+    else this.memory.set(key, { value, expires: Date.now() + seconds * 1000 });
+    return true;
+  }
+  private ordered = new Map<string, Map<string, number>>();
+  async due(key: string, now: number, count: number): Promise<string[]> {
+    if (this.config()) return await this.command(['ZRANGEBYSCORE', this.key(key), '-inf', now, 'LIMIT', 0, count]);
+    return [...(this.ordered.get(key) ?? new Map<string, number>())].filter(([, score]) => score <= now)
+      .sort((a, b) => a[1] - b[1]).slice(0, count).map(([id]) => id);
+  }
+  async schedule(key: string, id: string, at: number) {
+    if (this.config()) { await this.command(['ZADD', this.key(key), at, id]); return; }
+    if (!this.ordered.has(key)) this.ordered.set(key, new Map());
+    this.ordered.get(key)!.set(id, at);
+  }
+  async unschedule(key: string, id: string) {
+    if (this.config()) await this.command(['ZREM', this.key(key), id]);
+    else this.ordered.get(key)?.delete(id);
+  }
 }
 export const store = new Store();
