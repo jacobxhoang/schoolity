@@ -620,7 +620,9 @@ private struct GraduationRequirementDetail: View {
             }
             if let detail = details[key] {
                 SubjectDetailGroup(label: "Completed", detail: detail, rows: detail.completed)
-                SubjectDetailGroup(label: "In progress", detail: detail, rows: detail.inProgress)
+                if !detail.inProgress.isEmpty {
+                    SubjectDetailGroup(label: "In progress", detail: detail, rows: detail.inProgress)
+                }
             }
         }
         .padding(.vertical, 8)

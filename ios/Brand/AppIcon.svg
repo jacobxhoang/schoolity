@@ -1,8 +1,5 @@
-<!-- Original Schoolity monogram. The app's opaque 1024px PNG was rasterized
-     from this geometry using Windows System.Drawing with antialiasing.
-     No external asset, reference-project branding, or generated image used. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
-  <path fill="#141414" d="M0 0h1024v1024H0z"/>
-  <path d="M700 320C390 165 205 470 510 512C815 554 635 860 324 704"
-        fill="none" stroke="white" stroke-width="94" stroke-linecap="round"/>
+<!-- Matches static/favicon.svg. iOS applies its own corner mask. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" fill="#111111" />
+  <text x="32" y="45" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="38" fill="#ffffff">S</text>
 </svg>
