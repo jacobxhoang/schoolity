@@ -32,7 +32,7 @@ struct ReportingTerm: Codable, Identifiable, Equatable {
     var name: String
 }
 
-struct Gradebook: Codable {
+struct Gradebook: Codable, Equatable {
     var courses: [Course]
     var terms: [ReportingTerm]
     var currentTerm: Int
@@ -119,16 +119,32 @@ enum GradeMath {
     static func trend(_ course: Course) -> [Point] {
         let ordered = course.assignments.enumerated().filter {
             $0.element.excluded != true && $0.element.earned?.isFinite == true
-        }.sorted {
-            let left = date($0.element.due) ?? .distantFuture
-            let right = date($1.element.due) ?? .distantFuture
-            return left == right ? $0.offset < $1.offset : left < right
-        }.map(\.element)
-        var prefix = course
-        prefix.assignments = []
+        }.map { (assignment: $0.element, index: $0.offset, date: date($0.element.due) ?? .distantFuture) }
+            .sorted { $0.date == $1.date ? $0.index < $1.index : $0.date < $1.date }
+        let weighted = course.categories.contains { $0.weight > 0 }
+        var totals: [String: (earned: Double, possible: Double)] = [:]
+        var earned = 0.0
+        var possible = 0.0
         return ordered.enumerated().compactMap { index, assignment in
-            prefix.assignments.append(assignment)
-            return calculate(prefix).map { Point(id: index + 1, score: $0) }
+            let task = assignment.assignment
+            if task.possible.isFinite && task.possible >= 0 {
+                earned += task.earned ?? 0
+                possible += task.possible
+                let old = totals[task.category] ?? (0, 0)
+                totals[task.category] = (old.earned + (task.earned ?? 0), old.possible + task.possible)
+            }
+            if !weighted {
+                return possible > 0 ? Point(id: index + 1, score: earned / possible * 100) : nil
+            }
+            var result = 0.0
+            var weight = 0.0
+            for category in course.categories where category.weight > 0 && category.weight.isFinite {
+                if let total = totals[category.name], total.possible > 0 {
+                    result += total.earned / total.possible * category.weight
+                    weight += category.weight
+                }
+            }
+            return weight > 0 ? Point(id: index + 1, score: result / weight * 100) : nil
         }
     }
 

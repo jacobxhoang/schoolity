@@ -62,7 +62,7 @@ struct ScheduleView: View {
                 }
             }
         }
-        .listStyle(.inset)
+        .listStyle(.insetGrouped)
         .navigationTitle("Schedule")
         .toolbar { ToolbarItem(placement: .topBarTrailing) { AccountButton() } }
         .task { await store.loadSchedule() }
@@ -105,10 +105,12 @@ private struct ScheduleClassRow: View {
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 if !course.period.isEmpty {
                     Text("P\(course.period)")
-                        .font(.headline)
+                        .font(.subheadline.weight(.semibold))
                         .monospacedDigit()
                         .foregroundStyle(SchoolityStyle.accent)
-                        .frame(minWidth: 30, alignment: .leading)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(SchoolityStyle.accent.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
                         .accessibilityLabel("Period \(course.period)")
                         .accessibilityIdentifier("schedule-period-\(course.id)")
                 }

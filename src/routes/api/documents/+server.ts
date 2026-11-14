@@ -1,3 +1,4 @@
+import { readJsonRequest } from '$lib/server/json-request';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { PortalError } from '$lib/server/portal';
@@ -6,7 +7,6 @@ import {
   downloadDocument,
   downloadMailAttachment,
 } from '$lib/server/documents';
-import { object } from '$lib/portal-data';
 
 export const POST: RequestHandler = async ({ request, cookies, url, getClientAddress }) => {
   const headers = {
@@ -15,21 +15,7 @@ export const POST: RequestHandler = async ({ request, cookies, url, getClientAdd
     'X-Content-Type-Options': 'nosniff',
   };
   try {
-    if (
-      request.headers.get('origin') !== url.origin ||
-      !request.headers.get('content-type')?.startsWith('application/json')
-    )
-      throw new PortalError('A same-origin JSON request is required.', 403);
-    if (Number(request.headers.get('content-length')) > 1024)
-      throw new PortalError('Request too large.', 413);
-    const raw = await request.text();
-    if (raw.length > 1024) throw new PortalError('Request too large.', 413);
-    let input;
-    try {
-      input = object(JSON.parse(raw));
-    } catch {
-      throw new PortalError('Invalid request.', 400);
-    }
+    const input = await readJsonRequest(request, url, 1024);
     if (
       input.kind !== undefined &&
       input.kind !== 'document' &&

@@ -38,6 +38,11 @@ export function scoreChange(
   return `${change >= 0 ? "+" : "−"}${Math.abs(change).toFixed(1)} percentage points from your starting estimate`;
 }
 export function chartRange(values: number[]): { low: number; high: number } {
-  const clean = values.filter(Number.isFinite);
-  return { low: Math.min(0, ...clean), high: Math.max(100, ...clean) };
+  let low = 0, high = 100;
+  for (const value of values) {
+    if (!Number.isFinite(value)) continue;
+    low = Math.min(low, value);
+    high = Math.max(high, value);
+  }
+  return { low, high };
 }

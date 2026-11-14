@@ -2,6 +2,30 @@ import XCTest
 @testable import Schoolity
 
 final class GradeMathTests: XCTestCase {
+    func testIncrementalTrendMatchesPrefixCalculation() throws {
+        for categories in [[], [GradeCategory(name: "Practice", weight: 30), GradeCategory(name: "Tests", weight: 70)]] {
+            var value = course(categories: categories)
+            value.assignments += [
+                Assignment(id: "bonus", title: "Bonus", category: "Tests", earned: 2, possible: 0, due: "10/10/2026"),
+                Assignment(id: "zero", title: "Zero", category: "Practice", earned: 0, possible: 10, due: "10/11/2026"),
+                Assignment(id: "invalid", title: "Invalid", category: "Tests", earned: 4, possible: -1, due: "10/12/2026"),
+                Assignment(id: "unknown", title: "Unknown", category: "Other", earned: 3, possible: 5, due: "10/13/2026")
+            ]
+            let actual = GradeMath.trend(value)
+            var prefix = value
+            prefix.assignments = []
+            var expected: [Double] = []
+            for assignment in value.assignments {
+                prefix.assignments.append(assignment)
+                if let score = GradeMath.calculate(prefix) { expected.append(score) }
+            }
+            XCTAssertEqual(actual.count, expected.count)
+            for (point, score) in zip(actual, expected) {
+                XCTAssertEqual(point.score, score, accuracy: 0.000001)
+            }
+        }
+    }
+
     private func course(categories: [GradeCategory] = []) -> Course {
         Course(id: "test", name: "Test", teacher: "", room: "", period: "", official: nil,
                categories: categories, assignments: [

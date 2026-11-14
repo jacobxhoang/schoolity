@@ -242,7 +242,7 @@ final class AppStore: ObservableObject {
             guard ticket == generation else { return }
             gradebook = next
         } catch {
-            guard ticket == generation else { return }
+            guard ticket == generation, !PortalFailure.isCancellation(error) else { return }
             handle(error)
             gradeError = error.localizedDescription
         }
@@ -262,7 +262,7 @@ final class AppStore: ObservableObject {
             let next: StudentProfile = try await client.read("profile", term: nil)
             if ticket == generation { profile = next }
         } catch {
-            guard ticket == generation else { return }
+            guard ticket == generation, !PortalFailure.isCancellation(error) else { return }
             handle(error)
             profileError = error.localizedDescription
         }
@@ -279,7 +279,7 @@ final class AppStore: ObservableObject {
             guard ticket == generation else { return }
             schedule = next
         } catch {
-            guard ticket == generation else { return }
+            guard ticket == generation, !PortalFailure.isCancellation(error) else { return }
             handle(error)
             scheduleError = error.localizedDescription
         }
@@ -314,7 +314,7 @@ final class AppStore: ObservableObject {
                 attendance = next
             }
         } catch {
-            guard ticket == generation else { return }
+            guard ticket == generation, !PortalFailure.isCancellation(error) else { return }
             handle(error)
             recordErrors[feature] = error.localizedDescription
         }
@@ -322,14 +322,18 @@ final class AppStore: ObservableObject {
 
     func historySubject(id: String) async throws -> SubjectDetails {
         guard access == .signedIn else { throw PortalFailure.signedOut }
+        let ticket = generation
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("--ui-testing") {
             return SubjectDetails(columns: ["Course", "Mark"], completed: [["Sample completed course", "A"]], inProgress: [])
         }
         #endif
         do {
-            return try await client.readHistorySubject(id)
+            let result = try await client.readHistorySubject(id)
+            guard ticket == generation else { throw CancellationError() }
+            return result
         } catch {
+            guard ticket == generation else { throw CancellationError() }
             handle(error)
             throw error
         }
@@ -345,7 +349,7 @@ final class AppStore: ObservableObject {
             let next: [SchoolEvent] = try await client.read(resource.rawValue, term: nil)
             if ticket == generation { records[resource] = next }
         } catch {
-            guard ticket == generation else { return }
+            guard ticket == generation, !PortalFailure.isCancellation(error) else { return }
             handle(error)
             failures[resource] = error.localizedDescription
         }

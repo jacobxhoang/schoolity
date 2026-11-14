@@ -4,14 +4,32 @@ import Charts
 struct GradebookView: View {
     @EnvironmentObject private var store: AppStore
     var body: some View {
+        GradebookContent(book: store.gradebook, isLoading: store.isLoading,
+                         error: store.gradeError, refresh: { await store.refreshGrades(term: $0) })
+            .equatable()
+    }
+}
+
+private struct GradebookContent: View, Equatable {
+    let book: Gradebook?
+    let isLoading: Bool
+    let error: String?
+    let refresh: (Int?) async -> Void
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.book == rhs.book && lhs.isLoading == rhs.isLoading && lhs.error == rhs.error
+    }
+
+    var body: some View {
         List {
-            if let book = store.gradebook {
+            if let book {
+                let recent = recentAssignments(book)
                 if !book.terms.isEmpty {
                         Picker("Term", selection: Binding(get: { book.currentTerm }, set: { term in
-                            Task { await store.refreshGrades(term: term) }
+                            Task { await refresh(term) }
                         })) {
                             ForEach(book.terms) { Text($0.name).tag($0.id) }
-                        }.pickerStyle(.menu).disabled(store.isLoading)
+                        }.pickerStyle(.menu).disabled(isLoading)
                 }
                 Section {
                     LabeledContent("Course average", value: GradeMath.percent(courseAverage(book)))
@@ -21,16 +39,16 @@ struct GradebookView: View {
                 } footer: {
                     Text("Unweighted average of current course grades.")
                 }
-                Section {
+                Section("Courses") {
                     ForEach(book.courses) { course in
                         NavigationLink { CourseDetailView(course: course).id("\(book.currentTerm)-\(course.id)") } label: { CourseRow(course: course) }
                             .accessibilityIdentifier("course-\(course.id)")
                     }
                     if book.courses.isEmpty { ContentUnavailableView("No courses", systemImage: "books.vertical", description: Text("Try another reporting period.")) }
                 }
-                if !recentAssignments(book).isEmpty {
+                if !recent.isEmpty {
                     Section("Recent assignments") {
-                        ForEach(recentAssignments(book)) { item in
+                        ForEach(recent) { item in
                             NavigationLink {
                                 CourseDetailView(course: item.course)
                                     .id("\(book.currentTerm)-\(item.course.id)")
@@ -42,15 +60,22 @@ struct GradebookView: View {
                     }
                 }
             }
-            if store.isLoading { ProgressView("Loading grades…") }
-            if let error = store.gradeError {
-                Section { FailureRow(message: error) { Task { await store.refreshGrades() } } }
+            if isLoading && book == nil { ProgressView("Loading grades…") }
+            if let error {
+                Section { FailureRow(message: error) { Task { await refresh(nil) } } }
             }
         }
-        .listStyle(.inset)
+        .listStyle(.insetGrouped)
         .navigationTitle("Grades")
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { AccountButton() } }
-        .refreshable { await store.refreshGrades() }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                HStack(spacing: 8) {
+                    if isLoading && book != nil { ProgressView().accessibilityLabel("Updating grades") }
+                    AccountButton()
+                }
+            }
+        }
+        .refreshable { await refresh(nil) }
     }
 
     private func courseAverage(_ book: Gradebook) -> Double? {
@@ -61,10 +86,15 @@ struct GradebookView: View {
 
     private func recentAssignments(_ book: Gradebook) -> [RecentAssignment] {
         Array(book.courses.flatMap { course in
-            course.assignments.map { RecentAssignment(course: course, assignment: $0) }
+            course.assignments.enumerated().map {
+                (item: RecentAssignment(course: course, assignment: $0.element),
+                 date: GradeMath.date($0.element.due) ?? .distantPast, index: $0.offset)
+            }
         }.sorted {
-            (GradeMath.date($0.assignment.due) ?? .distantPast) > (GradeMath.date($1.assignment.due) ?? .distantPast)
-        }.prefix(8))
+            if $0.date != $1.date { return $0.date > $1.date }
+            if $0.item.course.id != $1.item.course.id { return $0.item.course.id < $1.item.course.id }
+            return $0.index < $1.index
+        }.prefix(8).map(\.item))
     }
 }
 
@@ -104,32 +134,34 @@ struct CourseRow: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     let course: Course
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 12) {
-                if !typeSize.isAccessibilitySize {
-                    Image(systemName: "studentdesk")
-                        .font(.title2)
-                        .frame(width: 36, height: 40)
-                        .accessibilityHidden(true)
-                }
+        Group {
+            if typeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 10) {
                     identity
-            }
-            let score = course.official ?? GradeMath.calculate(course)
-            HStack(alignment: .firstTextBaseline, spacing: 12) {
-                Text(GradeMath.letter(score))
-                    .font(.headline)
-                    .foregroundStyle(SchoolityStyle.accent)
-                    .padding(.horizontal, 9).padding(.vertical, 4)
-                    .background(SchoolityStyle.accent.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(GradeMath.percent(score)).font(.callout.weight(.semibold))
-                    Text(course.official == nil ? "Calculated" : "District grade")
-                        .font(.caption2)
-                        .foregroundStyle(SchoolityStyle.muted)
+                    grade(alignment: .leading)
                 }
-            }.monospacedDigit()
-        }.padding(.vertical, 8)
+            } else {
+                HStack(alignment: .center, spacing: 16) {
+                    identity
+                    grade(alignment: .trailing)
+                }
+            }
+        }
+        .padding(.vertical, 6)
         .accessibilityElement(children: .combine)
+    }
+
+    private func grade(alignment: HorizontalAlignment) -> some View {
+        let score = course.official ?? GradeMath.calculate(course)
+        return VStack(alignment: alignment, spacing: 3) {
+            Text(GradeMath.percent(score))
+                .font(.headline).foregroundStyle(SchoolityStyle.accent)
+            Text("\(GradeMath.letter(score)) · \(course.official == nil ? "Calculated" : "District")")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+        .monospacedDigit()
+        .fixedSize(horizontal: false, vertical: true)
+        .accessibilityLabel("\(GradeMath.percent(score)), \(GradeMath.letter(score)), \(course.official == nil ? "calculated grade" : "district grade")")
     }
 
     private var identity: some View {
@@ -144,9 +176,19 @@ struct CourseRow: View {
 struct CourseDetailView: View {
     let original: Course
     @State private var course: Course
-    @State private var editor: Assignment?
-    @State private var showTarget = false
+    @State private var presentedSheet: CourseSheet?
     @State private var showReset = false
+    private enum CourseSheet: Identifiable {
+        case score(Assignment)
+        case target
+
+        var id: String {
+            switch self {
+            case .score(let assignment): return "score-\(assignment.id)"
+            case .target: return "target"
+            }
+        }
+    }
     init(course: Course) { original = course; _course = State(initialValue: course) }
     private var changed: Bool { course != original }
 
@@ -156,19 +198,19 @@ struct CourseDetailView: View {
                 LabeledContent("District grade", value: GradeMath.percent(original.official)).font(.headline)
                 LabeledContent(changed ? "Hypothetical estimate" : "Schoolity estimate", value: GradeMath.percent(GradeMath.calculate(course)))
                     .accessibilityAddTraits(.updatesFrequently)
-                GradeHistoryView(course: course)
+                GradeHistoryView(course: course).equatable()
             }
             Section {
-                Button { editor = Assignment(id: UUID().uuidString, title: "", category: categoryNames.first ?? "Assignments", earned: nil, possible: 10, due: "", hypothetical: true) } label: {
-                    Label("Add hypothetical score", systemImage: "plus")
-                }.frame(minHeight: 44)
-                Button { showTarget = true } label: { Label("Find a target score", systemImage: "scope") }.frame(minHeight: 44)
+                HypotheticalActions(
+                    add: { presentedSheet = .score(Assignment(id: UUID().uuidString, title: "", category: categoryNames.first ?? "Assignments", earned: nil, possible: 10, due: "", hypothetical: true)) },
+                    target: { presentedSheet = .target }
+                )
                 if changed { Button("Reset changes", role: .destructive) { showReset = true }.frame(minHeight: 44) }
             }
             Section("Assignments") {
                 if course.assignments.isEmpty { Text("No assignments yet.").foregroundStyle(.secondary) }
                 ForEach(course.assignments) { assignment in
-                    Button { editor = assignment } label: {
+                    Button { presentedSheet = .score(assignment) } label: {
                         VStack(alignment: .leading, spacing: 8) {
                             Text(assignment.title).font(.headline).foregroundStyle(.primary)
                             HStack(alignment: .firstTextBaseline) {
@@ -209,18 +251,27 @@ struct CourseDetailView: View {
                 }
             }
         }
-        .listStyle(.inset)
+        .listStyle(.insetGrouped)
         .navigationTitle(course.name)
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(item: $editor) { assignment in
-            ScoreEditor(assignment: assignment, categories: categoryNames) { edited in
-                if let index = course.assignments.firstIndex(where: { $0.id == edited.id }) { course.assignments[index] = edited }
-                else { course.assignments.append(edited) }
+        .sheet(item: $presentedSheet) { destination in
+            switch destination {
+            case .score(let assignment):
+                ScoreEditor(assignment: assignment, categories: categoryNames, save: saveAssignment)
+            case .target:
+                TargetScoreView(course: course, categories: categoryNames)
             }
         }
-        .sheet(isPresented: $showTarget) { TargetScoreView(course: course, categories: categoryNames) }
         .confirmationDialog("Reset all hypothetical changes?", isPresented: $showReset, titleVisibility: .visible) {
             Button("Reset changes", role: .destructive) { course = original }
+        }
+    }
+
+    private func saveAssignment(_ edited: Assignment) {
+        if let index = course.assignments.firstIndex(where: { $0.id == edited.id }) {
+            course.assignments[index] = edited
+        } else {
+            course.assignments.append(edited)
         }
     }
 
@@ -232,7 +283,59 @@ struct CourseDetailView: View {
     }
 }
 
-struct GradeHistoryView: View {
+private struct HypotheticalActions: View {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    let add: () -> Void
+    let target: () -> Void
+
+    var body: some View {
+        // Availability handles older devices; the compiler guard also keeps
+        // builds using a pre-iOS-26 SDK compatible with the existing CI setup.
+        #if compiler(>=6.2)
+        if #available(iOS 26, *), !reduceTransparency {
+            GlassEffectContainer(spacing: 12) {
+                VStack(alignment: .leading, spacing: 12) {
+                    addButton.buttonStyle(.glassProminent)
+                    targetButton.buttonStyle(.glass)
+                }
+                .buttonBorderShape(.roundedRectangle(radius: 12))
+            }
+            .padding(.vertical, 4)
+        } else {
+            standardControls
+        }
+        #else
+        standardControls
+        #endif
+    }
+
+    private var standardControls: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            addButton.buttonStyle(.borderedProminent)
+            targetButton.buttonStyle(.bordered)
+        }
+        .buttonBorderShape(.roundedRectangle(radius: 12))
+        .padding(.vertical, 4)
+    }
+
+    private var addButton: some View {
+        Button(action: add) {
+            Label("Add hypothetical score", systemImage: "plus")
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var targetButton: some View {
+        Button(action: target) {
+            Label("Find a target score", systemImage: "scope")
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+struct GradeHistoryView: View, Equatable {
     let course: Course
     var body: some View {
         let points = GradeMath.trend(course)
