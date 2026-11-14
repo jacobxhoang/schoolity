@@ -40,11 +40,12 @@ final class SchoolityUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.tabBars.buttons["Grades"].waitForExistence(timeout: 10))
         app.tabBars.buttons["Grades"].tap()
-        XCTAssertTrue(app.staticTexts["Algebra II"].waitForExistence(timeout: 5))
+        let course = app.descendants(matching: .any)["course-sample-math"]
+        XCTAssertTrue(course.waitForExistence(timeout: 5))
         XCTAssertFalse(app.tabBars.buttons["Home"].exists)
         XCTAssertEqual(app.tabBars.buttons.count, 5)
         capture("gradebook")
-        app.staticTexts["Algebra II"].tap()
+        course.tap()
         XCTAssertTrue(app.staticTexts["Grade history"].waitForExistence(timeout: 5))
         capture("course")
         app.buttons["Add hypothetical score"].tap()
@@ -71,7 +72,7 @@ final class SchoolityUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.tabBars.buttons["Grades"].waitForExistence(timeout: 10))
         app.tabBars.buttons["Grades"].tap()
-        let course = app.staticTexts["Algebra II"]
+        let course = app.descendants(matching: .any)["course-sample-math"]
         XCTAssertTrue(course.waitForExistence(timeout: 5))
         capture("accessible-gradebook")
         app.swipeUp()
