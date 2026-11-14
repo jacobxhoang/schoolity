@@ -179,11 +179,12 @@ final class SchoolityUITests: XCTestCase {
         XCTAssertTrue(app.tabBars.buttons["Records"].waitForExistence(timeout: 10))
         app.tabBars.buttons["Records"].tap()
         app.staticTexts["Course History"].tap()
-        let category = app.descendants(matching: .any)["history-subject-0-math"]
+        let category = app.staticTexts["history-subject-title-math"]
         reveal(category, in: app)
         category.tap()
-        let table = app.descendants(matching: .any)["history-subject-table"]
-        reveal(table, in: app)
+        let table = app.otherElements["history-subject-table"].firstMatch
+        reveal(app.staticTexts["Term"], in: app)
+        XCTAssertTrue(table.exists)
         XCTAssertTrue(app.staticTexts["Term"].exists)
         XCTAssertTrue(app.staticTexts["Course Title (ID)"].exists)
         capture("history-category-columns")

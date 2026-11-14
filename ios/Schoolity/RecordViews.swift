@@ -345,7 +345,6 @@ struct CourseHistoryView: View {
                                 )
                             } label: {
                                 GraduationRequirementSummary(requirement: requirement)
-                                    .accessibilityIdentifier("history-subject-\(key)")
                             }
                         }
                     } header: {
@@ -512,6 +511,7 @@ private struct GraduationRequirementSummary: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(requirement.subject).font(.headline)
+                .accessibilityIdentifier("history-subject-title-\(requirement.id)")
             if let required = requirement.required, required > 0, let completed = requirement.completed {
                 GraduationProgressBar(
                     required: required,
