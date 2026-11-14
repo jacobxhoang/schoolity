@@ -4,11 +4,20 @@ import Vision
 final class SchoolityUITests: XCTestCase {
     private func reveal(_ element: XCUIElement, in app: XCUIApplication, towardTop: Bool = false,
                         file: StaticString = #filePath, line: UInt = #line) {
-        for _ in 0..<6 where !element.exists || !element.isHittable {
-            if towardTop { app.collectionViews.firstMatch.swipeDown() }
-            else { app.collectionViews.firstMatch.swipeUp() }
+        let list = app.collectionViews.firstMatch
+        // Short drags keep a small row from being skipped by a full-screen fling.
+        for _ in 0..<16 where !element.exists || !element.isHittable {
+            let start = list.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: towardTop ? 0.4 : 0.65))
+            let end = list.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: towardTop ? 0.65 : 0.4))
+            start.press(forDuration: 0.05, thenDragTo: end)
         }
         XCTAssertTrue(element.waitForExistence(timeout: 5), file: file, line: line)
+    }
+
+    private func studentName(in app: XCUIApplication) -> XCUIElement {
+        // LabeledContent groups its label/value at standard sizes; accessibility
+        // text sizes use the stacked value text. Both must contain the real value.
+        app.staticTexts.matching(NSPredicate(format: "label == %@ OR label == %@", "Name, Sample Student", "Sample Student")).firstMatch
     }
 
     private func capture(_ name: String) {
@@ -172,7 +181,7 @@ final class SchoolityUITests: XCTestCase {
         app.tabBars.buttons["Records"].tap()
         XCTAssertTrue(app.staticTexts["Student Info"].waitForExistence(timeout: 5))
         app.staticTexts["Student Info"].tap()
-        XCTAssertTrue(app.staticTexts["Sample Student"].waitForExistence(timeout: 5))
+        XCTAssertTrue(studentName(in: app).waitForExistence(timeout: 5))
         capture("student-info")
     }
 
@@ -191,7 +200,7 @@ final class SchoolityUITests: XCTestCase {
         capture("parity-records")
 
         app.staticTexts["Student Info"].tap()
-        XCTAssertTrue(app.staticTexts["Sample Student"].waitForExistence(timeout: 5))
+        XCTAssertTrue(studentName(in: app).waitForExistence(timeout: 5))
         capture("parity-student-info")
         backToRecords(app)
 
