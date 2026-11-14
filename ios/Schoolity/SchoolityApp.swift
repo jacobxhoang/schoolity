@@ -164,6 +164,7 @@ struct LoginView: View {
 }
 
 struct WorkspaceView: View {
+    @EnvironmentObject private var store: AppStore
     private enum WorkspaceTab: Hashable {
         case grades, schedule, inbox, documents, records
     }
@@ -176,6 +177,7 @@ struct WorkspaceView: View {
             NavigationStack { ResourceView(resource: .documents) }.tabItem { Label("Documents", systemImage: "doc") }.tag(WorkspaceTab.documents)
             NavigationStack { RecordsView() }.tabItem { Label("Records", systemImage: "list.bullet.rectangle") }.tag(WorkspaceTab.records)
         }
+        .task { await store.preloadWorkspace() }
     }
 }
 

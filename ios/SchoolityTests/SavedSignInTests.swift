@@ -4,6 +4,66 @@ import LocalAuthentication
 
 final class SavedSignInTests: XCTestCase {
     @MainActor
+    func testPreloadDoesNotFetchBeforeSignInOrAfterSignOut() async {
+        let portal = TestPortal()
+        let store = AppStore(client: portal, unlocker: TestUnlocker())
+        await store.preloadWorkspace()
+        XCTAssertTrue(portal.readCounts.isEmpty)
+        await store.start()
+        await store.signOut()
+        let reads = portal.readCounts
+        await store.preloadWorkspace()
+        XCTAssertEqual(portal.readCounts, reads)
+        XCTAssertNil(store.schedule)
+        XCTAssertNil(store.studentInfo)
+        XCTAssertNil(store.courseHistory)
+        XCTAssertNil(store.attendance)
+        XCTAssertTrue(store.records.isEmpty)
+    }
+
+    @MainActor
+    func testWorkspacePreloadsEverySectionWithoutOpeningItsTab() async {
+        let portal = TestPortal()
+        let store = AppStore(client: portal, unlocker: TestUnlocker())
+        await store.start()
+        async let first: Void = store.preloadWorkspace()
+        async let second: Void = store.preloadWorkspace()
+        _ = await (first, second)
+        XCTAssertNotNil(store.profile)
+        XCTAssertNotNil(store.schedule)
+        XCTAssertNotNil(store.records[.mail])
+        XCTAssertNotNil(store.records[.documents])
+        XCTAssertNotNil(store.studentInfo)
+        XCTAssertNotNil(store.courseHistory)
+        XCTAssertNotNil(store.attendance)
+        for resource in ["profile", "schedule-terms", "mail", "documents", "student", "history", "attendance"] {
+            XCTAssertEqual(portal.readCounts[resource], 1, "Duplicate preload: \(resource)")
+        }
+        XCTAssertEqual(store.access, .signedIn)
+    }
+
+    @MainActor
+    func testOneFailedPreloadDoesNotBlockOtherSectionsAndCanRetry() async {
+        let portal = TestPortal()
+        let store = AppStore(client: portal, unlocker: TestUnlocker())
+        await store.start()
+        portal.resourceErrors["documents"] = PortalFailure.message("Temporary failure")
+        await store.preloadWorkspace()
+        XCTAssertNotNil(store.failures[.documents])
+        XCTAssertNil(store.records[.documents])
+        XCTAssertNotNil(store.schedule)
+        XCTAssertNotNil(store.studentInfo)
+        XCTAssertNotNil(store.courseHistory)
+        XCTAssertNotNil(store.attendance)
+        XCTAssertNotNil(store.records[.mail])
+        XCTAssertEqual(store.access, .signedIn)
+        portal.resourceErrors["documents"] = nil
+        await store.load(.documents)
+        XCTAssertNotNil(store.records[.documents])
+        XCTAssertNil(store.failures[.documents])
+    }
+
+    @MainActor
     func testCancelledLoadsDoNotPublishFailuresOrSignOut() async {
         let portal = TestPortal()
         let store = AppStore(client: portal, unlocker: TestUnlocker())
@@ -277,40 +337,49 @@ final class SavedSignInTests: XCTestCase {
     }
 
     @MainActor
-    func testBackgroundLocksAndClearsRecordsWithoutLosingSavedSignIn() async {
+    func testAppSwitchesKeepWorkspaceAndDoNotRepeatAuthentication() async {
         let portal = TestPortal()
         let unlock = TestUnlocker()
         let store = AppStore(client: portal, unlocker: unlock)
         await store.start()
         XCTAssertNotNil(store.profile)
-        store.enterBackground()
-        XCTAssertEqual(store.access, .locked)
-        XCTAssertNil(store.gradebook)
-        XCTAssertNil(store.profile)
-        XCTAssertTrue(store.records.isEmpty)
-        XCTAssertNotNil(portal.savedSignIn)
-        XCTAssertGreaterThan(portal.forgetCalls, 0)
-        await store.enterForeground()
-        XCTAssertEqual(store.access, .signedIn)
-        XCTAssertEqual(unlock.calls, 2)
+        let originalUnlocks = unlock.calls
+        let originalRestores = portal.restoreCalls
+        let originalForgets = portal.forgetCalls
+        store.records[.mail] = [SchoolEvent(id: "sample", title: "Sample message", detail: "", date: "")]
+        for _ in 0..<3 {
+            store.enterBackground()
+            XCTAssertEqual(store.access, .signedIn)
+            XCTAssertNotNil(store.gradebook)
+            XCTAssertNotNil(store.profile)
+            XCTAssertEqual(store.records[.mail]?.count, 1)
+            XCTAssertNotNil(portal.savedSignIn)
+            await store.enterForeground()
+            XCTAssertEqual(store.access, .signedIn)
+        }
+        XCTAssertEqual(unlock.calls, originalUnlocks)
+        XCTAssertEqual(portal.restoreCalls, originalRestores)
+        XCTAssertEqual(portal.forgetCalls, originalForgets)
     }
 
     @MainActor
-    func testLockDoesNotDependOnKeychainMetadataBeingReadableInBackground() async {
+    func testAppSwitchDoesNotRequireReadingKeychainMetadata() async {
         let portal = TestPortal()
         let store = AppStore(client: portal, unlocker: TestUnlocker())
         await store.start()
         XCTAssertEqual(store.access, .signedIn)
+        let originalForgets = portal.forgetCalls
         portal.savedSignIn = nil // Models temporarily unavailable Keychain metadata.
         store.enterBackground()
-        XCTAssertEqual(store.access, .locked)
-        XCTAssertNil(store.gradebook)
-        XCTAssertNil(store.profile)
-        XCTAssertGreaterThan(portal.forgetCalls, 0)
+        await store.enterForeground()
+        XCTAssertEqual(store.access, .signedIn)
+        XCTAssertNotNil(store.gradebook)
+        XCTAssertNotNil(store.profile)
+        XCTAssertEqual(portal.forgetCalls, originalForgets)
     }
 
     @MainActor
-    func testSettingUpPasscodeEnablesProtectedUnlockOnReturn() async {
+    func testSettingUpPasscodeDoesNotInterruptAnActiveSessionOnReturn() async {
         let portal = TestPortal()
         portal.savedSignIn = SavedSessionInfo(expires: .distantFuture, requiresUnlock: false)
         let unlock = TestUnlocker()
@@ -320,9 +389,13 @@ final class SavedSignInTests: XCTestCase {
         store.enterBackground()
         unlock.available = true
         await store.enterForeground()
+        XCTAssertEqual(unlock.calls, 0)
+        XCTAssertEqual(store.access, .signedIn)
+        // A new app process still protects restoration using the new passcode.
+        let reopened = AppStore(client: portal, unlocker: unlock)
+        await reopened.start()
         XCTAssertEqual(unlock.calls, 1)
         XCTAssertTrue(portal.protectRestoredSession)
-        XCTAssertEqual(store.access, .signedIn)
     }
 
     @MainActor
@@ -438,6 +511,8 @@ private final class TestUnlocker: LocalUnlocking {
 
 @MainActor
 private final class TestPortal: SchoolPortal {
+    var readCounts: [String: Int] = [:]
+    var resourceErrors: [String: Error] = [:]
     var savedSignIn: SavedSessionInfo? = SavedSessionInfo(expires: .distantFuture, requiresUnlock: true)
     var restoreCalls = 0
     var connectionCalls = 0
@@ -483,8 +558,19 @@ private final class TestPortal: SchoolPortal {
     }
     func signOut() async throws { clear() }
     func read<T: Decodable>(_ resource: String, term: Int?) async throws -> T {
+        readCounts[resource, default: 0] += 1
         if let readError { throw readError }
-        let json = resource == "grades" ? #"{"courses":[],"terms":[],"currentTerm":0}"# : #"{"name":"Sample Student","school":"Sample School","grade":"11"}"#
+        if let error = resourceErrors[resource] { throw error }
+        let json: String
+        switch resource {
+        case "grades": json = #"{"courses":[],"terms":[],"currentTerm":0}"#
+        case "schedule-terms": json = #"{"terms":[],"currentTerm":0}"#
+        case "mail", "documents": json = "[]"
+        case "student": json = #"{"kind":"student","sections":[]}"#
+        case "history": json = #"{"kind":"history","courses":[],"requirements":[],"classOf":""}"#
+        case "attendance": json = #"{"kind":"attendance","days":[],"totals":[]}"#
+        default: json = #"{"name":"Sample Student","school":"Sample School","grade":"11"}"#
+        }
         return try JSONDecoder().decode(T.self, from: Data(json.utf8))
     }
     func readHistorySubject(_ id: String) async throws -> SubjectDetails {

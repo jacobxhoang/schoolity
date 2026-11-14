@@ -99,18 +99,6 @@ enum GradeMath {
         return weight > 0 ? result / weight * 100 : nil
     }
 
-    static func target(_ course: Course, category: String, possible: Double, goal: Double) -> Double? {
-        guard possible.isFinite, possible > 0, goal.isFinite, goal >= 0 else { return nil }
-        var next = course
-        next.assignments.append(Assignment(id: "target", title: "Target", category: category,
-                                           earned: 0, possible: possible, due: ""))
-        let low = calculate(next)
-        next.assignments[next.assignments.count - 1].earned = possible
-        guard let low, let high = calculate(next), high != low else { return nil }
-        let required = (goal - low) / (high - low) * possible
-        return required.isFinite ? required : nil
-    }
-
     struct Point: Identifiable {
         let id: Int
         let score: Double
