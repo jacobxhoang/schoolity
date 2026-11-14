@@ -163,7 +163,6 @@ final class AppStore: ObservableObject {
     func enterBackground() {
         backgrounded = true
         // Keep an already authenticated workspace in memory during app switches.
-        // The scene's privacy cover still hides records in the app switcher.
         if access == .signedIn { return }
         // A session check can still be pending on a passcode-free device.
         // Discard that attempt; foregrounding restarts it with a fresh ticket.
