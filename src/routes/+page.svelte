@@ -21,6 +21,7 @@
     type Course,
     type GradeData,
     type EventItem,
+    type Profile,
     type ScheduleData,
   } from '$lib/model';
   import {
@@ -29,8 +30,8 @@
     events,
     schedule as readSchedule,
   } from '$lib/portal-data';
+  import './tokens.css';
   import './app.css';
-  import './monochrome.css';
   import './login.css';
   import './workspace.css';
   const navigation = [
@@ -42,24 +43,59 @@
     { id: 'mail', label: 'Inbox', icon: 'mail' },
     { id: 'documents', label: 'Documents', icon: 'file' },
   ];
-  const loginDetails: Record<string, string> = {
-    grades: 'Courses, assignments, and current grades',
-    schedule: 'Classes, rooms, and terms',
-    attendance: 'Absences and period status',
-    history: 'Marks and credits by year',
-    student: 'School and contact fields',
-    mail: 'School messages, newest first',
-    documents: 'File listings and downloads',
-  };
+  // One nav model, grouped the way the phone groups it: work first, records,
+  // then messages. Section ids are unchanged, so routing stays as it was.
+  const navGroups: { label: string; items: typeof navigation }[] = [
+    {
+      label: '',
+      items: navigation.filter((item) =>
+        ['grades', 'schedule'].includes(item.id),
+      ),
+    },
+    {
+      label: 'Records',
+      items: navigation.filter((item) =>
+        ['student', 'attendance', 'history'].includes(item.id),
+      ),
+    },
+    {
+      label: '',
+      items: navigation.filter((item) =>
+        ['mail', 'documents'].includes(item.id),
+      ),
+    },
+  ];
+  const indexRows = [
+    {
+      icon: 'book',
+      name: 'Gradebook',
+      detail: 'Courses, assignments and estimates',
+    },
+    {
+      icon: 'person',
+      name: 'Records',
+      detail: 'Student info, attendance, course history',
+    },
+    {
+      icon: 'mail',
+      name: 'Messages',
+      detail: 'Inbox and document downloads',
+    },
+  ];
   let tab = $state('grades'),
     data = $state<GradeData>({ courses: [], terms: [], currentTerm: 0 }),
-    person = $state({ name: 'Student', school: 'Anoka-Hennepin', grade: '' }),
+    person = $state<Profile>({
+      name: 'Student',
+      school: 'Anoka-Hennepin',
+      grade: '',
+    }),
     busy = $state(untrack(() => sessionData.authenticated)),
     error = $state(''),
     notice = $state('');
   let selected = $state<string | null>(null),
     mobileMenu = $state(false),
     privacyOpen = $state(false),
+    accountOpen = $state(false),
     dark = $state(false);
   let isMobile = $state(false),
     showPassword = $state(false);
@@ -664,7 +700,10 @@
     };
   });
   onMount(() => {
-    dark = localStorage.getItem('schoolity_theme') === 'dark';
+    const storedTheme = localStorage.getItem('schoolity_theme');
+    dark = storedTheme
+      ? storedTheme === 'dark'
+      : window.matchMedia('(prefers-color-scheme: dark)').matches;
     const mq = window.matchMedia('(max-width:760px)');
     const resize = () => {
       isMobile = mq.matches;
@@ -718,6 +757,7 @@
   onkeydown={(e) => {
     if (e.key === 'Escape') {
       privacyOpen = false;
+      accountOpen = false;
       closeMenu();
     }
   }}
@@ -725,6 +765,7 @@
 
 <div class:dark class:workspace={authenticated} class="app-shell">
   {#if authenticated}
+    <a class="skip-link" href="#workspace-main">Skip to school workspace</a>
     <aside
       id="school-navigation"
       bind:this={sidebar}
@@ -746,19 +787,28 @@
         }}><span class="brand-symbol">S</span>Schoolity</a
       >
       <nav aria-label="Main navigation">
-        {#each navigation as item}<button
-            class:active={tab === item.id}
-            aria-current={tab === item.id ? 'page' : undefined}
-            onclick={() => navigate(item.id)}
-            ><Icon name={item.icon} /><span>{item.label}</span></button
-          >{/each}
+        {#each navGroups as group, index (index)}
+          {#if group.label}
+            <p class="nav-group-label">{group.label}</p>
+          {/if}
+          {#each group.items as item (item.id)}<button
+              class:active={tab === item.id}
+              aria-current={tab === item.id ? 'page' : undefined}
+              onclick={() => navigate(item.id)}
+              ><Icon name={item.icon} /><span>{item.label}</span></button
+            >{/each}
+        {/each}
       </nav>
 
       <div class="sidebar-bottom">
         <button class="privacy-link" onclick={() => (privacyOpen = true)}
           ><Icon name="shield" size={17} /> Privacy & connection</button
         >
-        <div class="profile">
+        <button
+          class="profile"
+          aria-haspopup="dialog"
+          onclick={() => (accountOpen = true)}
+        >
           <span class="avatar"
             >{person.name
               .split(' ')
@@ -768,7 +818,7 @@
           ><span
             ><strong>{person.name}</strong><small>Student account</small></span
           >
-        </div>
+        </button>
         <button class="sign-out-button" onclick={logout}
           ><Icon name="logout" size={17} />Sign out</button
         >
@@ -802,7 +852,12 @@
           >
         </div>
       </header>
-      <main bind:this={mainContent} tabindex="-1" aria-label="School workspace">
+      <main
+        id="workspace-main"
+        bind:this={mainContent}
+        tabindex="-1"
+        aria-label="School workspace"
+      >
         {#if error}<div class="alert" role="alert">
             <strong>School data could not be refreshed</strong>
             <p>{error}</p>
@@ -1063,6 +1118,20 @@
                     </div></button
                   >{/each}
               </div>
+              {#if busy && !data.courses.length}
+                <div class="course-grid" aria-hidden="true">
+                  {#each [0, 1, 2] as row (row)}
+                    <div class="skeleton-card">
+                      <div class="skeleton" style="width: 42%; height: 14px"
+                      ></div>
+                      <div
+                        class="skeleton"
+                        style="width: 66%; height: 11px; margin-top: 10px"
+                      ></div>
+                    </div>
+                  {/each}
+                </div>
+              {/if}
               {#if !data.courses.length && !busy}<div class="empty-state">
                   <Icon name="search" size={32} />
                   <h3>No courses yet</h3>
@@ -1105,7 +1174,24 @@
           {#if refreshTimes[tab]}<p class="resource-freshness">Last updated {new Date(refreshTimes[tab]).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}</p>{/if}
           {#if recordPages[tab]}
             {#key recordPages[tab]}<StudentRecords page={recordPages[tab]} loadSubject={loadHistorySubject} />{/key}
-          {:else if !busy && !error}<p class="records-empty">No information has been loaded. <button class="text-button" onclick={() => loadResource(tab)}>Load {navigation.find((item) => item.id === tab)?.label}</button></p>{/if}
+          {:else if busy}
+            <div class="records-list" aria-hidden="true">
+              {#each [0, 1] as row (row)}
+                <div class="skeleton-card">
+                  <div class="skeleton" style="width: 28%; height: 12px"></div>
+                  <div
+                    class="skeleton"
+                    style="width: 58%; height: 12px; margin-top: 10px"
+                  ></div>
+                </div>
+              {/each}
+            </div>
+          {:else if !error}<p class="records-empty">
+              No information has been loaded.
+              <button class="text-button" onclick={() => loadResource(tab)}
+                >Load {navigation.find((item) => item.id === tab)?.label}</button
+              >
+            </p>{/if}
         {:else}
           <div class="page-heading">
             <div>
@@ -1143,6 +1229,19 @@
                 minute: '2-digit',
               })}
             </p>{/if}
+          {#if busy && !shownRecords.length}
+            <div class="records-list" aria-hidden="true">
+              {#each [0, 1, 2] as row (row)}
+                <div class="skeleton-card">
+                  <div class="skeleton" style="width: 34%; height: 13px"></div>
+                  <div
+                    class="skeleton"
+                    style="width: 62%; height: 11px; margin-top: 10px"
+                  ></div>
+                </div>
+              {/each}
+            </div>
+          {/if}
           <section class="records-list">
             {#each shownRecords as item}{#if tab === 'mail'}{#key item}<details
                     class="mail-message"
@@ -1289,16 +1388,16 @@
 
           <div class="login-hero">
             <p class="login-eyebrow" data-rise style="--i: 0">
-              <span class="eyebrow-dot" aria-hidden="true"></span>Grades,
-              schedule, and records
+              <span class="eyebrow-dot" aria-hidden="true"></span>StudentVUE
+              sign-in · Anoka-Hennepin
             </p>
             <h1 id="login-title" data-rise style="--i: 1">
               The Anoka-Hennepin student dashboard.
             </h1>
             <p class="login-deck" data-rise style="--i: 2">
-              Sign in with your StudentVUE account to open your gradebook,
-              schedule, attendance, and school records. Schoolity never changes
-              what the district has on file.
+              Your gradebook, schedule, attendance and records in one place.
+              Schoolity reads the record your district already keeps, and never
+              changes it.
             </p>
 
             <section
@@ -1369,6 +1468,15 @@
                   ></button
                 >
               </form>
+              <p class="login-help">
+                Use the same username and password as the district portal.
+                Trouble signing in?
+                <a
+                  href="https://synergyportal.anoka.k12.mn.us"
+                  target="_blank"
+                  rel="noopener noreferrer">Open StudentVUE</a
+                >
+              </p>
               {#if sessionData.retrySavedSignIn}<button
                   class="login-text-button"
                   onclick={() => location.reload()}>Retry saved sign-in</button
@@ -1376,31 +1484,70 @@
             </section>
           </div>
 
-          <footer class="login-footer">
-            <p>
-              Independent student project. Not affiliated with or endorsed by
-              Anoka-Hennepin Schools or Edupoint.
-            </p>
-            <p class="login-credit">
-              Inter &amp; Inter Tight · SIL Open Font License
-            </p>
-          </footer>
         </div>
 
         <aside class="login-index" aria-labelledby="index-title">
           <div class="index-head" data-rise style="--i: 2">
             <h2 id="index-title">Inside the workspace</h2>
-            <span>07 sections</span>
+            <span>Example view</span>
           </div>
-          <ol data-rise style="--i: 3">
-            {#each navigation as item}
+          <div class="index-preview" data-rise style="--i: 3">
+            <p class="preview-head">
+              <span>Gradebook</span><span>Quarter 2</span>
+            </p>
+            <div class="preview-course">
+              <span class="preview-icon"><Icon name="book" size={18} /></span>
+              <div>
+                <strong>Algebra II</strong>
+                <small>Period 2 · Room 108</small>
+              </div>
+              <span class="preview-score">A</span>
+            </div>
+            <div class="preview-rows">
+              <p>
+                <span>Chapter 4 &amp; 5 test</span><span>37 / 40</span>
+              </p>
+              <p><span>Graphing review</span><span>20 / 20</span></p>
+              <p>
+                <span>Unit 3 quiz</span
+                ><span class="preview-pending">Not graded</span>
+              </p>
+            </div>
+            <div class="preview-pair">
+              <div>
+                <span>District grade</span><strong>92.5%</strong>
+              </div>
+              <div>
+                <span>Schoolity estimate</span><strong>91.2%</strong>
+              </div>
+            </div>
+            <svg
+              class="preview-chart"
+              viewBox="0 0 240 56"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <polyline
+                points="0,44 30,40 60,42 90,33 120,35 150,26 180,29 210,17 240,20"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                vector-effect="non-scaling-stroke"
+              ></polyline>
+            </svg>
+          </div>
+          <ul class="index-list" data-rise style="--i: 3">
+            {#each indexRows as row (row.name)}
               <li>
-                <span class="index-icon"><Icon name={item.icon} size={17} /></span>
-                <span class="index-name">{item.label}</span>
-                <span class="index-detail">{loginDetails[item.id]}</span>
+                <span class="index-icon"><Icon name={row.icon} size={17} /></span>
+                <span class="index-copy">
+                  <span class="index-name">{row.name}</span>
+                  <span class="index-detail">{row.detail}</span>
+                </span>
               </li>
             {/each}
-          </ol>
+          </ul>
           <div class="index-note" data-rise style="--i: 4">
             <span class="index-note-icon" aria-hidden="true"
               ><Icon name="shield" size={16} /></span
@@ -1416,6 +1563,15 @@
           </div>
         </aside>
       </div>
+      <footer class="login-footer">
+        <p>
+          Independent student project. Not affiliated with or endorsed by
+          Anoka-Hennepin Schools or Edupoint.
+        </p>
+        <p class="login-credit">
+          Inter &amp; Inter Tight · SIL Open Font License
+        </p>
+      </footer>
     </main>
   {/if}
   {#if privacyOpen}<div
@@ -1478,6 +1634,44 @@
           </p>
         </details>
         <button class="primary" onclick={() => (privacyOpen = false)}
+          >Done</button
+        >
+      </div>
+    </div>{/if}
+  {#if accountOpen}<div
+      class="modal-backdrop"
+      role="presentation"
+      onclick={(e) => {
+        if (e.target === e.currentTarget) accountOpen = false;
+      }}
+    >
+      <div
+        use:focusDialog
+        class="modal account-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="account-title"
+        tabindex="-1"
+      >
+        <button
+          class="modal-close icon-button"
+          aria-label="Close account"
+          onclick={() => (accountOpen = false)}><Icon name="close" /></button
+        >
+        <h2 id="account-title">Account</h2>
+        <dl class="account-fields">
+          <div><dt>Name</dt><dd>{person.name}</dd></div>
+          <div><dt>School</dt><dd>{person.school}</dd></div>
+          {#if person.grade}<div><dt>Grade</dt><dd>{person.grade}</dd></div>{/if}
+          <div>
+            <dt>Student ID</dt>
+            <dd>{person.studentId ?? 'Not provided'}</dd>
+          </div>
+        </dl>
+        <p class="account-note">
+          District-provided information. Schoolity does not change it.
+        </p>
+        <button class="primary" onclick={() => (accountOpen = false)}
           >Done</button
         >
       </div>
