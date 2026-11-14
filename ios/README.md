@@ -1,6 +1,6 @@
 # Schoolity for iPhone
 
-Native SwiftUI app for iOS 17 and later. Includes required Anoka-Hennepin sign-in, saved sessions, reporting periods, grade history, local what-if editing and target scores, schedule, expandable inbox with senders, and document/mail attachment downloads with Apple's preview and sharing controls. No web view or third-party Swift dependencies.
+Native SwiftUI app for iOS 17 and later. Includes required Anoka-Hennepin sign-in, saved sessions, reporting periods, grade history, local hypothetical editing and target scores, schedule, expandable inbox with senders, and document/mail attachment downloads with Apple's preview and sharing controls. No web view or third-party Swift dependencies.
 
 ## Saved sign-in and Face ID
 
@@ -59,11 +59,11 @@ Native reads opt into `{ "normalized": true }` on `/api/portal`, receiving the s
 
 On devices with a passcode, the Keychain entry includes the opaque session, its expiration, and saved school credentials, protected with `userPresence` and `WhenPasscodeSetThisDeviceOnly`. Credentials are read only after successful local authentication and used only during sign-in; the in-memory active session contains no password. Non-secret metadata records whether renewal is possible. Without a passcode, `WhenUnlockedThisDeviceOnly` stores only the session. Neither cookie nor credentials are read during client initialization. School records/responses are not saved. Networking uses an ephemeral URLSession without disk cache or cookie jar; redirects are refused. Native requests do not persist passwords on the server; only the web client's opt-in saved sign-in stores them, encrypted, for up to 30 days. Exported files remain where the user saved them; temporary downloads use complete file protection and clear on lock/sign-out.
 
-Internet access and a live Schoolity deployment are required. An expired district session requires another sign-in. Transient read failures retain the current screen and offer Retry. Estimates are independent calculations, not district grades; they never write back to school records. What-if edits last only while the course screen is open.
+Internet access and a live Schoolity deployment are required. An expired district session requires another sign-in. Transient read failures retain the current screen and offer Retry. Estimates are independent calculations, not district grades; they never write back to school records. Hypothetical edits last only while the course screen is open.
 
 ## Verification
 
-Unit coverage includes points/weighted calculations, excluded and ungraded work, zero and extra credit, category redistribution, target scores, chronology, decoded API models, session expiry, and filename safety. UI tests use original synthetic records in DEBUG builds only; Release has no test/demo entry point. Tests cover login gating, gradebook/chart navigation, what-if editing, collapsed messages/senders, Schedule, Documents, Account, and light/dark screenshots. Login, the gradebook, and course details are also captured at the largest accessibility text size in Dark Mode.
+Unit coverage includes points/weighted calculations, excluded and ungraded work, zero and extra credit, category redistribution, target scores, chronology, decoded API models, session expiry, and filename safety. UI tests use original synthetic records in DEBUG builds only; Release has no test/demo entry point. Tests cover login gating, gradebook/chart navigation, hypothetical editing, collapsed messages/senders, Schedule, Documents, Account, and light/dark screenshots. Login, the gradebook, and course details are also captured at the largest accessibility text size in Dark Mode.
 
 Successful compilation and fixture tests do not verify real district credentials, live files, physical-device behavior, or App Store readiness. Real-account compatibility should be checked privately on a signed device build.
 

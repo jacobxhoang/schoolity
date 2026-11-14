@@ -7,7 +7,7 @@ export interface Task {
   due: string;
   excluded?: boolean;
   hypothetical?: boolean;
-  emptyScores?: boolean;
+  emptyPossible?: boolean;
 }
 export interface Category {
   name: string;
@@ -73,6 +73,7 @@ export function calculate(
   const active = course.assignments.filter(
     (a) =>
       !a.excluded &&
+      !a.emptyPossible &&
       a.earned !== null &&
       Number.isFinite(a.earned) &&
       Number.isFinite(a.possible) &&
@@ -119,7 +120,7 @@ export function percentage(score: number | null): string {
 }
 export function trend(course: Course): number[] {
   const ordered = course.assignments
-    .filter((a) => a.earned !== null && !a.excluded)
+    .filter((a) => a.earned !== null && !a.excluded && !a.emptyPossible)
     .toSorted((a, b) => {
       const first = Date.parse(a.due),
         second = Date.parse(b.due);

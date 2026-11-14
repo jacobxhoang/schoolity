@@ -26,6 +26,7 @@
     "node": "22.x"
   },
   "dependencies": {
-    "entities": "^9.0.0"
+    "entities": "^9.0.0",
+    "parse5": "^8.1.1"
   }
 }

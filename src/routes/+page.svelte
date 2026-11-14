@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount, untrack, tick } from 'svelte';
   import GradeSummary from '$lib/GradeSummary.svelte';
+  import StudentRecords from '$lib/StudentRecords.svelte';
+  import { readRecords, type RecordPage, type SubjectDetails } from '$lib/records';
   import { requestPortal, RequestFailure } from '$lib/portal-request';
   import {
     readLocation,
@@ -32,6 +34,9 @@
   const navigation = [
     { id: 'grades', label: 'Gradebook', icon: 'book' },
     { id: 'schedule', label: 'Schedule', icon: 'calendar' },
+    { id: 'attendance', label: 'Attendance', icon: 'check' },
+    { id: 'history', label: 'Course History', icon: 'history' },
+    { id: 'student', label: 'Student Info', icon: 'person' },
     { id: 'mail', label: 'Inbox', icon: 'mail' },
     { id: 'documents', label: 'Documents', icon: 'file' },
   ];
@@ -62,6 +67,9 @@
     resourceData = $state<Record<string, EventItem[]>>({}),
     schedule = $state<ScheduleData>({ terms: [], currentTerm: 0 });
   let generation = 0;
+  let recordPages = $state<Record<string, RecordPage>>({});
+  const recordResources = ['student', 'history', 'attendance'];
+  const remoteResources = ['schedule', 'mail', 'documents', ...recordResources];
   const activeCourse = $derived(
     selected
       ? ((hypothetical ? edits[selected] : undefined) ??
@@ -89,7 +97,7 @@
   );
   const scenarioAnnouncement = $derived(
     hypothetical
-      ? 'What-if estimate: ' +
+      ? 'Hypothetical estimate: ' +
           percentage(currentEstimate) +
           '. ' +
           scoreChange(currentEstimate, baselineEstimate)
@@ -112,16 +120,16 @@
   const average = $derived(
     scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null,
   );
-  const upcoming = $derived(
+  const recentAssignments = $derived(
     data.courses
       .flatMap((c) =>
         c.assignments
-          .filter((a) => a.earned === null && !a.excluded)
-          .map((a) => ({ ...a, course: c.name })),
+          .map((a) => ({ ...a, course: c })),
       )
       .toSorted(
-        (a, b) => new Date(a.due).getTime() - new Date(b.due).getTime(),
-      ),
+        (a, b) => (Date.parse(b.due) || 0) - (Date.parse(a.due) || 0),
+      )
+      .slice(0, 8),
   );
   const selectedScheduleTerm = $derived(
     schedule.terms.find((term) => term.id === schedule.currentTerm) ??
@@ -240,11 +248,18 @@
     window.scrollTo(0, 0);
     await tick();
     mainContent?.focus();
-    if (['schedule', 'mail', 'documents'].includes(id) && !hasResource(id))
+    if (remoteResources.includes(id) && !hasResource(id))
       await loadResource(id);
   }
   function hasResource(id: string) {
+    if (recordResources.includes(id)) return !!recordPages[id];
     return id === 'schedule' ? schedule.terms.length > 0 : !!resourceData[id];
+  }
+  async function loadHistorySubject(id: string): Promise<SubjectDetails> {
+    const version = generation;
+    const response = await api({ action: 'read', resource: 'history-subject', subject: id });
+    if (version !== generation || !authenticated) throw new Error('Your workspace changed. Open the subject again.');
+    return response.data as SubjectDetails;
   }
   async function loadResource(id: string) {
     const version = generation;
@@ -254,7 +269,9 @@
     try {
       const res = await api({ action: 'read', resource: id });
       if (version !== generation || !authenticated) return;
-      if (id === 'schedule') {
+      if (recordResources.includes(id)) {
+        recordPages = { ...recordPages, [id]: readRecords(id, res.data) };
+      } else if (id === 'schedule') {
         const previous = schedule.currentTerm;
         const next = readSchedule(res.data);
         schedule = next.terms.some((term) => term.id === previous)
@@ -312,8 +329,8 @@
                 : value === '' && key === 'earned'
                   ? null
                   : Math.max(0, Number(value) || 0),
-            ...(key === 'earned' || key === 'possible'
-              ? { emptyScores: false }
+            ...(key === 'possible'
+              ? { emptyPossible: value === '' }
               : {}),
           }
         : a,
@@ -330,13 +347,13 @@
     const course = clone(activeCourse);
     course.assignments.unshift({
       id: crypto.randomUUID(),
-      title: 'What-if assignment',
+      title: 'Hypothetical assignment',
       category: course.categories[0]?.name ?? 'Practice',
       earned: null,
-      possible: 100,
+      possible: 0,
       due: new Date().toISOString().slice(0, 10),
       hypothetical: true,
-      emptyScores: true,
+      emptyPossible: true,
     });
     edits = { ...edits, [course.id]: course };
   }
@@ -359,6 +376,7 @@
       data = { courses: [], terms: [], currentTerm: 0 };
       person = { name: 'Student', school: 'Your school', grade: '' };
       resourceData = {};
+      recordPages = {};
       schedule = { terms: [], currentTerm: 0 };
       tab = 'grades';
       writeLocation('#grades');
@@ -435,6 +453,7 @@
     data = { courses: [], terms: [], currentTerm: 0 };
     person = { name: 'Student', school: 'Anoka-Hennepin', grade: '' };
     resourceData = {};
+    recordPages = {};
     schedule = { terms: [], currentTerm: 0 };
     edits = {};
     selected = null;
@@ -553,7 +572,7 @@
     const back = () => {
       applyLocation();
       closeMenu(false);
-      if (['schedule', 'mail', 'documents'].includes(tab) && !hasResource(tab))
+      if (remoteResources.includes(tab) && !hasResource(tab))
         void loadResource(tab);
     };
     window.addEventListener('popstate', back);
@@ -563,7 +582,7 @@
     window.addEventListener('pageshow', returned);
     if (authenticated)
       void load().then(() => {
-        if (['schedule', 'mail', 'documents'].includes(tab) && !hasResource(tab))
+        if (remoteResources.includes(tab) && !hasResource(tab))
           void loadResource(tab);
       });
     return () => {
@@ -577,7 +596,7 @@
 <svelte:head
   ><title>Schoolity · Your school day, in focus</title><meta
     name="description"
-    content="A calmer school dashboard with a gradebook, what-if calculator, schedule, and your next steps."
+    content="Your gradebook, hypothetical calculator, schedule, attendance, course history, and student information."
   /></svelte:head
 >
 <svelte:window
@@ -709,7 +728,7 @@
                 <summary>About estimates</summary>
                 <p>
                   Calculated from scored assignments. School grading rules may
-                  differ. What-if changes stay in Schoolity.
+                  differ. Hypothetical changes stay in Schoolity.
                 </p>
               </details>
             </div>
@@ -717,7 +736,7 @@
               <Trend
                 values={trend(activeCourse)}
                 dates={activeCourse.assignments
-                  .filter((a) => a.earned !== null && !a.excluded)
+                  .filter((a) => a.earned !== null && !a.excluded && !a.emptyPossible)
                   .toSorted((a, b) => Date.parse(a.due) - Date.parse(b.due))
                   .map((a) => a.due)}
                 large
@@ -734,7 +753,7 @@
           </div>
           <section class="what-if">
             <div>
-              <h2>What-if</h2>
+              <h2>Hypothetical</h2>
               <p>Local changes only.</p>
             </div>
             <button
@@ -756,7 +775,7 @@
                 <button class="text-button" onclick={resetEdits}
                   >Reset changes</button
                 ><button class="primary small" onclick={addAssignment}
-                  ><Icon name="plus" size={16} /> Add what-if</button
+                  ><Icon name="plus" size={16} /> Add hypothetical</button
                 >
               </div>{/if}
           </div>
@@ -789,7 +808,7 @@
                             )}
                         />{:else}<strong>{a.title}</strong
                         >{/if}{#if a.hypothetical}<span class="tiny-tag"
-                          >What-if</span
+                          >Hypothetical</span
                         >{/if}{#if a.excluded}<small
                           >Excluded from calculation</small
                         >{/if}</td
@@ -816,7 +835,7 @@
                             aria-label={`Points earned for ${a.title}`}
                             type="number"
                             min="0"
-                            value={a.emptyScores ? '' : (a.earned ?? '')}
+                            value={a.earned ?? ''}
                             placeholder="—"
                             oninput={(e) =>
                               editAssignment(
@@ -828,7 +847,7 @@
                             aria-label={`Points possible for ${a.title}`}
                             type="number"
                             min="0"
-                            value={a.emptyScores ? '' : a.possible}
+                            value={a.emptyPossible ? '' : a.possible}
                             oninput={(e) =>
                               editAssignment(
                                 a.id,
@@ -839,7 +858,7 @@
                         </div>{:else}{a.earned === null ? '—' : a.earned}
                         <span class="muted">/ {a.possible}</span>{/if}</td
                     ><td data-label="Grade"
-                      >{#if a.earned === null}<span class="pending"
+                      >{#if a.earned === null || a.emptyPossible}<span class="pending"
                           >Not graded</span
                         >{:else if a.possible > 0}<span class="grade-label"
                           >{percentage((a.earned / a.possible) * 100)}</span
@@ -879,9 +898,6 @@
             </div>
             <div class="stat-card">
               <span>Courses</span><strong>{data.courses.length}</strong>
-            </div>
-            <div class="stat-card accent-stat">
-              <span>Ungraded</span><strong>{upcoming.length}</strong>
             </div>
           </section>
           <div class="content-columns">
@@ -941,7 +957,40 @@
                   </p>
                 </div>{/if}
             </div>
+            <section class="recent-assignments" aria-labelledby="recent-assignments-title">
+              <h2 id="recent-assignments-title">Recent assignments</h2>
+              <p class="recent-assignments-note">Latest due dates in this reporting period</p>
+              <ul class="recent-assignment-list">
+                {#each recentAssignments as assignment}
+                  <li>
+                    <button class="recent-assignment" onclick={() => openCourse(assignment.course)}>
+                      <span class="recent-assignment-title">{assignment.title || 'Untitled assignment'}</span>
+                      <span class="recent-assignment-course">{assignment.course.name}</span>
+                      <span class="recent-assignment-meta">
+                        <span>{assignment.due ? dateLabel(assignment.due) : 'No due date'}</span>
+                        <span class="recent-assignment-score">{assignment.excluded
+                          ? 'Not for grading'
+                          : assignment.earned === null
+                            ? 'Not graded'
+                            : `${assignment.earned} / ${assignment.possible}`}</span>
+                      </span>
+                    </button>
+                  </li>
+                {:else}
+                  <li class="recent-assignments-empty">{busy ? 'Loading assignments…' : 'No assignments in this reporting period.'}</li>
+                {/each}
+              </ul>
+            </section>
           </div>
+        {:else if recordResources.includes(tab)}
+          <div class="page-heading">
+            <h1>{navigation.find((item) => item.id === tab)?.label}</h1>
+            <button class="refresh-button" disabled={busy} onclick={() => loadResource(tab)}>↻ Refresh</button>
+          </div>
+          {#if refreshTimes[tab]}<p class="resource-freshness">Last updated {new Date(refreshTimes[tab]).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}</p>{/if}
+          {#if recordPages[tab]}
+            {#key recordPages[tab]}<StudentRecords page={recordPages[tab]} loadSubject={loadHistorySubject} />{/key}
+          {:else if !busy && !error}<p class="records-empty">No information has been loaded. <button class="text-button" onclick={() => loadResource(tab)}>Load {navigation.find((item) => item.id === tab)?.label}</button></p>{/if}
         {:else}
           <div class="page-heading">
             <div>
@@ -1215,7 +1264,8 @@
             Login is required to access your school information. The district
             feature coverage is still being verified across district responses.
             Grade estimates may differ from district rules. This first version
-            includes gradebook, calculator, schedule, inbox, and document-list
+            includes gradebook, calculator, schedule, student info, course history,
+            attendance, inbox, and document-list
             adapters, and document downloads.
           </p>
         </details>

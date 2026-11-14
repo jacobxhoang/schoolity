@@ -190,7 +190,81 @@ h3 {
 }
 .content-columns {
   gap: 24px;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 280px;
+  align-items: start;
+}
+.courses-column {
+  min-width: 0;
+}
+.recent-assignments {
+  min-width: 0;
+  padding-left: 24px;
+  border-left: 1px solid var(--border);
+}
+.recent-assignments h2 {
+  font-size: 16px;
+  line-height: 1.4;
+}
+.recent-assignments-note,
+.recent-assignments-empty {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.recent-assignments-note {
+  margin-top: 6px;
+}
+.recent-assignment-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+.recent-assignment-list li + li {
+  border-top: 1px solid var(--border);
+}
+.recent-assignment {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  min-height: 44px;
+  padding: 12px 8px;
+  text-align: left;
+  border-radius: var(--radius-sm);
+}
+.recent-assignment:hover {
+  background: var(--surface);
+}
+.recent-assignment-title {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 550;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.recent-assignment-course {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.recent-assignment-meta {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  width: 100%;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.recent-assignment-score {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.recent-assignments-empty {
+  padding: 12px 0;
 }
 .section-heading {
   margin-bottom: 14px;
@@ -449,6 +523,11 @@ form label,
   .content-columns {
     grid-template-columns: 1fr;
   }
+  .recent-assignments {
+    padding: 20px 0 0;
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
   .course-card > p > span {
     display: inline;
   }
@@ -664,7 +743,7 @@ input::placeholder {
 }
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0;
   border-bottom: 1px solid var(--border);
   padding-bottom: 16px;
@@ -1337,4 +1416,236 @@ td strong {
 .document-status {
   font-size: 11px;
   color: var(--muted);
+}
+
+.student-record-section {
+  padding: 24px 0;
+  border-bottom: 1px solid var(--border);
+}
+.graduation-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 16px;
+  margin: 24px 0 16px;
+}
+.graduation-heading h2 { font-size: 18px; }
+.graduation-heading > span { color: var(--muted); font-size: 13px; }
+.graduation-legend { display: flex; flex-wrap: wrap; gap: 12px 20px; margin-bottom: 24px; }
+.graduation-legend > span { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+.graduation-legend i { width: 12px; height: 12px; border: 1px solid var(--control-border); border-radius: 2px; }
+.completed-key, .graduation-completed { background: var(--ink); }
+.in-progress-key, .graduation-in-progress { background: var(--muted); }
+.remaining-key { background: var(--surface); }
+.graduation-columns, .graduation-requirement { display: grid; grid-template-columns: minmax(140px, 1fr) minmax(0, 3fr); gap: 24px; }
+.graduation-columns { color: var(--muted); font-size: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.graduation-requirements { list-style: none; padding: 0; margin: 0; }
+.graduation-requirement { padding: 20px 0; border-bottom: 1px solid var(--border); }
+.graduation-requirement h3 { font-size: 14px; line-height: 1.5; padding-top: 2px; overflow-wrap: anywhere; }
+.subject-toggle { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px; margin: -8px 0 -8px -8px; text-align: left; border-radius: var(--radius-sm); line-height: 1.5; font-weight: 550; }
+.subject-toggle:hover { background: var(--surface); }
+.subject-toggle svg { flex-shrink: 0; color: var(--muted); }
+.subject-toggle[aria-expanded='true'] svg { transform: rotate(90deg); }
+.subject-classes { grid-column: 1 / -1; padding: 8px 0 0; min-width: 0; }
+.subject-classes[hidden] { display: none; }
+.subject-course-group + .subject-course-group { margin-top: 20px; }
+.subject-course-group h4 { font-size: 14px; line-height: 1.5; font-weight: 550; margin: 0 0 12px; }
+.subject-course-group .records-intro { margin-bottom: 0; }
+.subject-course-table td, .subject-course-table th { white-space: normal; overflow-wrap: anywhere; }
+.subject-error { color: var(--error-text); font-size: 14px; line-height: 1.6; margin-bottom: 16px; }
+.subject-error p { max-width: 70ch; }
+.graduation-progress { display: grid; grid-template-columns: minmax(0, 1fr) 60px; gap: 12px; align-items: center; }
+.graduation-bar { height: 20px; display: flex; overflow: hidden; border: 1px solid var(--control-border); border-radius: 3px; background: var(--surface); }
+.graduation-bar > span { height: 100%; }
+.graduation-percentage { font-size: 13px; font-variant-numeric: tabular-nums; text-align: right; }
+.graduation-unavailable { grid-column: 1/-1; color: var(--muted); font-size: 13px; }
+.graduation-credits { grid-column: 1/-1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0; }
+.graduation-credits dt { color: var(--muted); font-size: 12px; line-height: 1.5; }
+.graduation-credits dd { font-size: 13px; font-variant-numeric: tabular-nums; margin: 4px 0 0; }
+.history-course-records { margin: 24px 0; }
+.history-course-records > summary { cursor: pointer; font-size: 16px; font-weight: 550; min-height: 44px; padding: 12px 0; }
+.history-course-records > summary > span { color: var(--muted); font-size: 12px; font-weight: 400; margin-left: 8px; }
+.history-course-records > .records-intro { margin-top: 16px; }
+@media (max-width: 760px) {
+  .graduation-columns { display: none; }
+  .graduation-requirement { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .graduation-credits { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+}
+#school-navigation {
+  overflow-y: auto;
+}
+#school-navigation > nav,
+#school-navigation > .brand,
+#school-navigation > .sidebar-bottom {
+  flex-shrink: 0;
+}
+.student-record-section:first-of-type {
+  padding-top: 8px;
+}
+.student-record-section h2 {
+  font-size: 16px;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.student-info-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 32px;
+  margin: 0;
+}
+.student-info-fields > div {
+  min-width: 0;
+}
+.student-info-fields dt,
+.attendance-totals dt {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.student-info-fields dd {
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+.records-intro,
+.records-empty,
+.attendance-note {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+  max-width: 70ch;
+}
+.records-empty {
+  padding: 24px 0;
+}
+.records-intro {
+  margin-bottom: 20px;
+}
+.record-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.record-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  min-width: 140px;
+  max-width: 100%;
+}
+.record-filters select {
+  min-height: 44px;
+  max-width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+}
+.record-filters > span {
+  padding-bottom: 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.history-table table { table-layout: fixed; width: 100%; }
+.history-table th { white-space: normal; }
+.history-table th:first-child { width: 28%; }
+.history-table th:nth-child(2) { width: 18%; }
+.history-table th:nth-child(5) { width: 7%; }
+.history-table td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+@media (min-width: 1001px) and (max-width: 1200px) {
+  .history-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .history-table tbody { display: block; }
+  .history-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    padding: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .history-table tbody tr:first-child { border-top: 0; }
+  .history-table tbody td {
+    display: block;
+    padding: 0;
+    border: 0;
+    text-align: left;
+  }
+  .history-table tbody td:first-child { grid-column: 1 / -1; }
+  .history-table tbody td:not(:first-child)::before {
+    content: attr(data-label);
+    display: block;
+    color: var(--muted);
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+}
+.history-table td small,
+.attendance-periods small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.attendance-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px 40px;
+  margin: 0 0 20px;
+  padding: 0 0 20px;
+  border-bottom: 1px solid var(--border);
+}
+.attendance-totals dd {
+  margin: 4px 0 0;
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+}
+.attendance-reason {
+  font-size: 14px;
+  line-height: 1.5;
+  margin-top: -8px;
+}
+.attendance-periods {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+}
+.attendance-periods li {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr) minmax(100px, auto);
+  gap: 16px;
+  padding: 12px 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.attendance-periods li + li {
+  border-top: 1px solid var(--border);
+}
+.attendance-period {
+  color: var(--muted);
+  font-size: 12px;
+}
+.attendance-course,
+.attendance-status {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 760px) {
+  .student-info-fields { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .record-filters label { flex: 1 1 140px; }
+  .attendance-periods li { grid-template-columns: 64px minmax(0, 1fr); gap: 8px 12px; }
+  .attendance-status { grid-column: 2; }
 }
