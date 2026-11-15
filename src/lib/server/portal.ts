@@ -361,11 +361,17 @@ export async function read(
   if (resource === 'profile') return profilePayload(data);
   if (resource === 'student') {
     const studentInfo = profilePayload(data);
-    if (!session.webCookie) return {studentInfo, studentInfoNotice:'Sign in again to load all StudentVUE information, including contacts, lockers, and transportation.'};
+    if (!session.webCookie) {
+      // Let BrowserAuth renew the browser cookie using the existing saved sign-in.
+      if (session.rememberKey) throw new PortalError('StudentVUE needs to reconnect.', 401);
+      return {studentInfo, studentInfoNotice:'Sign in again to load all StudentVUE information, including contacts, lockers, and transportation.'};
+    }
     try {
       const response = await page(session.base, '/PXP2_Student.aspx?AGU=0', {Cookie:session.webCookie});
       return {studentInfo, studentSections:parseStudentPage(response.text)};
     } catch (error) {
+      if (session.rememberKey && error instanceof PortalError && error.status === 401)
+        throw error;
       if (error instanceof Error && 'status' in error && error.status === 401)
         return {studentInfo, studentInfoNotice:'Your additional StudentVUE information needs to reconnect. Your available student details are shown below. Sign out and sign in again to load contacts, lockers, and transportation.'};
       return {studentInfo, studentInfoNotice:'Additional StudentVUE information could not be loaded. Refresh to try again.'};
