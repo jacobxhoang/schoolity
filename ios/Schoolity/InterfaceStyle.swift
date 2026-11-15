@@ -22,13 +22,31 @@ enum SchoolityMotion {
     }
 }
 
+/// The signed-in canvas: a soft accent wash behind every screen, so glass cards,
+/// glass buttons and the system's own translucent bars have depth to refract.
+struct SchoolityBackdrop: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        let intensity: Double = colorScheme == .dark ? 0.30 : 0.16
+        ZStack {
+            Color(uiColor: .systemGroupedBackground)
+            RadialGradient(colors: [SchoolityStyle.accent.opacity(intensity), .clear],
+                           center: .topLeading, startRadius: 0, endRadius: 520)
+            RadialGradient(colors: [SchoolityStyle.accent.opacity(intensity * 0.55), .clear],
+                           center: .bottomTrailing, startRadius: 0, endRadius: 480)
+        }
+        .ignoresSafeArea()
+    }
+}
+
 private struct SchoolityListStyle: ViewModifier {
     func body(content: Content) -> some View {
         content
             .listStyle(.insetGrouped)
             .listSectionSpacing(20)
             .scrollContentBackground(.hidden)
-            .background(Color(uiColor: .systemGroupedBackground))
+            .background { SchoolityBackdrop() }
             .environment(\.defaultMinListRowHeight, 52)
     }
 }
@@ -82,6 +100,33 @@ extension View {
     }
 }
 
+/// The prominent action on a screen: Liquid Glass on iOS 26, a bordered button before it.
+struct GlassButtonAppearance: ViewModifier {
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        #if compiler(>=6.2)
+        if #available(iOS 26.0, *) {
+            content.buttonStyle(.glassProminent)
+        } else {
+            bordered(content)
+        }
+        #else
+        bordered(content)
+        #endif
+    }
+
+    private func bordered(_ content: Content) -> some View {
+        content
+            .buttonStyle(.bordered)
+            .tint(.primary)
+            .buttonBorderShape(.roundedRectangle(radius: 14))
+    }
+}
+
+extension View {
+    func schoolityGlassButton() -> some View { modifier(GlassButtonAppearance()) }
+}
+
 /// Section footer text for the time a section last loaded from the district.
 struct LastUpdatedText: View {
     let date: Date?
@@ -99,9 +144,12 @@ struct LastUpdatedFooter: View {
         if let date {
             HStack {
                 Spacer(minLength: 0)
-                Text("Last updated \(date.formatted(date: .omitted, time: .shortened))")
+                Label("Last updated \(date.formatted(date: .omitted, time: .shortened))", systemImage: "clock")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .schoolityGlass(tint: SchoolityStyle.accent, cornerRadius: 100)
                     .accessibilityAddTraits(.isStaticText)
                 Spacer(minLength: 0)
             }

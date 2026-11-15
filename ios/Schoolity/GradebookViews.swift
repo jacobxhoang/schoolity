@@ -251,9 +251,7 @@ private struct HypotheticalAddButton: View {
                 .frame(maxWidth: .infinity, minHeight: 44)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .buttonStyle(.bordered)
-        .tint(.primary)
-        .buttonBorderShape(.roundedRectangle(radius: 14))
+        .schoolityGlassButton()
         .controlSize(.large)
         .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
         .listRowBackground(Color.clear)
