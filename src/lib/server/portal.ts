@@ -317,7 +317,7 @@ export async function read(
       ['studentInfoDetailXML', 'studentInfoXML'],
     ],
     student: ['GetStudentInfoData', {}, ['studentInfoDetailXML', 'studentInfoXML']],
-    attendance: ['Attendance', {}, ['attendance']],
+    attendance: ['GetStudentAttendanceList', {}, []],
     schedule: [
       'StudentClassList',
       {

@@ -139,6 +139,37 @@ export function courseHistory(payload: unknown): RecordPage & { kind: 'history' 
 
 export function attendance(payload: unknown): RecordPage & { kind: 'attendance' } {
   const wrapper = object(payload), data = object(wrapper.attendance ?? wrapper.Attendance ?? payload);
+  if (field(data, 'dailyAttendance') !== undefined || field(data, 'periodAttendance') !== undefined ||
+      Object.keys(data).some(key => /^(dailyAttendance|periodAttendance)$/i.test(key))) {
+    const dates = new Map<string, { absenceDate: string; reason: string; note: string; periods: unknown[] }>();
+    function visit(value: unknown, period: boolean, inheritedDate = '', depth = 0) {
+      if (depth > 12 || value === null || typeof value !== 'object') return;
+      if (Array.isArray(value)) { for (const item of value) visit(item, period, inheritedDate, depth + 1); return; }
+      const row = object(value);
+      const ownDate = text(row, 'absenceDate', 'attendanceDate', 'date', 'dayDate');
+      const date = ownDate || inheritedDate;
+      const number = text(row, 'number', 'period', 'periodNumber');
+      const reason = text(row, 'reason', 'absenceReason', 'codeAllDayDescription', 'absenceDescription', 'description');
+      const status = text(row, 'name', 'status', 'attendanceName', 'attendanceCodeDescription', 'codeDescription');
+      if (date && (ownDate || number)) {
+        const day = dates.get(date) ?? { absenceDate: date, reason: '', note: '', periods: [] };
+        if (period && number) day.periods.push({ number, name: status, reason,
+          course: text(row, 'course', 'courseTitle', 'courseName'), staff: text(row, 'staff', 'teacher', 'teacherName') });
+        else {
+          day.reason ||= reason || status;
+          day.note ||= text(row, 'note', 'notes', 'comment');
+        }
+        dates.set(date, day);
+      }
+      for (const [key, child] of Object.entries(row)) {
+        if (child !== null && typeof child === 'object')
+          visit(child, period || /period/i.test(key), date, depth + 1);
+      }
+    }
+    visit(field(data, 'dailyAttendance'), false);
+    visit(field(data, 'periodAttendance'), true);
+    return attendance({ absences: [...dates.values()] });
+  }
   const absenceValue = field(data, 'absences');
   const absenceList = Array.isArray(absenceValue) ? absenceValue : field(absenceValue, 'Absence');
   if (Object.keys(data).length && absenceValue === undefined)

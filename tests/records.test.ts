@@ -56,6 +56,29 @@ test('attendance maps daily and period reasons, newest dates first, without inve
   assert.throws(() => attendance({ unexpected: true }), /unsupported attendance/);
 });
 
+test('current daily and period attendance merge by date without inventing totals', () => {
+  const result = attendance({dailyAttendance:{entries:[{attendanceDate:'11/03/2026',reason:'Appointment'}]},
+    periodAttendance:{entries:[{attendanceDate:'11/03/2026',periodNumber:'1',codeDescription:'Excused',courseTitle:'Math'},
+      {attendanceDate:'11/04/2026',periodNumber:'2',status:'Tardy'}]}});
+  assert.equal(result.days.length,2);
+  assert.equal(result.days[0].date,'11/04/2026');
+  assert.equal(result.days[1].reason,'Appointment');
+  assert.equal(result.days[1].periods[0].course,'Math');
+  assert.equal(result.days[1].periods[0].status,'Excused');
+  assert.deepEqual(result.totals,[]);
+  assert.deepEqual(attendance({dailyAttendance:null,periodAttendance:[]}).days,[]);
+});
+
+test('attendance transport preserves both modern response sections', async () => {
+  const payload = {dailyAttendance:{entries:[]},periodAttendance:{entries:[]}};
+  const result = await read({base:DISTRICT_URL,token:'fixture',expires:Date.now()+10000},'attendance',undefined,
+    async (_base,method) => {
+      assert.equal(method,'GetStudentAttendanceList');
+      return {data:payload};
+    });
+  assert.deepEqual(result,payload);
+});
+
 test('attendance accepts singleton legacy periods and preserves zero totals', () => {
   const result = attendance({ Attendance: { Absences: { Absence: { _AbsenceDate: '10/01/2026', _Reason: 'Excused', Periods: { Period: { _Number: '01', _Name: 'Excused' } } } },
     TotalExcused: { PeriodTotal: { _Number: '01', _Total: '0' } } } });
@@ -65,7 +88,7 @@ test('attendance accepts singleton legacy periods and preserves zero totals', ()
 
 test('new district resources use the fixed read methods and history needs server-side cookies', async () => {
   const session = { base: DISTRICT_URL, token: 'synthetic', expires: Date.now() + 10000 };
-  for (const [resource, method] of [['student', 'GetStudentInfoData'], ['attendance', 'Attendance']]) {
+  for (const [resource, method] of [['student', 'GetStudentInfoData'], ['attendance', 'GetStudentAttendanceList']]) {
     await read(session, resource, undefined, async (_base, selected, auth, params) => {
       assert.equal(selected, method);
       assert.equal(auth, 'Bearer synthetic');

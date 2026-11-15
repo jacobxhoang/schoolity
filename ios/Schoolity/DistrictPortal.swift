@@ -173,7 +173,7 @@ final class DistrictPortal: SchoolPortal {
                 parameters["ReportPeriod"] = term; parameters["reportPeriod"] = term
             }
         case "profile", "student": method = "GetStudentInfoData"
-        case "attendance": method = "Attendance"
+        case "attendance": method = "GetStudentAttendanceList"
         case "schedule-terms":
             method = "StudentClassList"
             parameters.merge(["loadAllTerms": true, "conSchOrgYearGU": "", "conSchTermIndex": "-1", "termIndex": "-1"]) { _, new in new }

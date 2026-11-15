@@ -11,6 +11,8 @@ test('the shipped iOS parser is self-contained and matches the source parser', (
     ['normalize', {resource:'grades',payload:{reportingPeriod:{index:0},courses:[{courseID:'math',courseName:'Math &amp; Science',marks:[]}]}}],
     ['normalize', {resource:'profile',payload:{formattedName:'Sample Student',permID:'000123'}}],
     ['normalize', {resource:'attendance',payload:{absences:[]}}],
+    ['payload', {resource:'attendance',response:{data:{dailyAttendance:{entries:[]},periodAttendance:{entries:[]}}}}],
+    ['normalize', {resource:'attendance',payload:{dailyAttendance:[],periodAttendance:[{attendanceDate:'11/03/2026',periodNumber:'1',status:'Excused'}]}}],
     ['history', {html:'<script>throw new Error("never run");PXP.CourseHistory=[];</script>'}],
     ['subject', {text:JSON.stringify({d:{Data:{Columns:{Term:'Term',Mark:'Mark'},Rows:[{Term:'2025 - T1',Mark:'A'}]}}})}],
     ['download', {mail:false,response:{data:{studentAttachedDocumentData:{documentDatas:[{base64Code:'aGVsbG8='}]}}}}],
