@@ -74,6 +74,7 @@ private struct CategoryGradeRow: View {
 
 struct AssignmentDetailRow: View {
     let assignment: Assignment
+    let isExpanded: Binding<Bool>
     let edit: () -> Void
     var remove: (() -> Void)? = nil
 
@@ -83,7 +84,7 @@ struct AssignmentDetailRow: View {
     }
 
     var body: some View {
-        DisclosureGroup {
+        DisclosureGroup(isExpanded: isExpanded) {
             VStack(alignment: .leading, spacing: 10) {
                 detail("Category", assignment.category)
                 if !assignment.due.isEmpty { detail("Due", GradeMath.shortDate(assignment.due)) }
@@ -198,7 +199,9 @@ private enum CoursePreviewData {
                 .schoolityPageRow()
             GradeCategoryBreakdown(course: CoursePreviewData.course)
                 .schoolityCardRow()
-            AssignmentDetailRow(assignment: CoursePreviewData.course.assignments[0], edit: {})
+            AssignmentDetailRow(assignment: CoursePreviewData.course.assignments[0],
+                                isExpanded: .constant(false),
+                                edit: {})
                 .schoolityCardRow()
         }
         .schoolityPageList()

@@ -13,7 +13,6 @@ struct GradebookView: View {
 }
 
 private struct GradebookContent: View, Equatable {
-    @State private var selectedCourse: Course?
     let book: Gradebook?
     let isLoading: Bool
     let error: String?
@@ -49,8 +48,8 @@ private struct GradebookContent: View, Equatable {
                 }
 
                 ForEach(book.courses) { course in
-                    Button {
-                        selectedCourse = course
+                    NavigationLink {
+                        CourseDetailView(course: course)
                     } label: {
                         CourseRow(course: course)
                     }
@@ -96,17 +95,9 @@ private struct GradebookContent: View, Equatable {
             }
         }
         .schoolityPageList()
+        .animation(nil, value: book)
         .navigationTitle("Gradebook")
         .schoolityNavigationChrome()
-        .navigationDestination(isPresented: Binding(
-            get: { selectedCourse != nil },
-            set: { if !$0 { selectedCourse = nil } }
-        )) {
-            if let selectedCourse {
-                CourseDetailView(course: selectedCourse)
-                    .id("\(book?.currentTerm ?? 0)-\(selectedCourse.id)")
-            }
-        }
         .refreshable { await refresh(nil) }
         // A successful load, including a pull to refresh, lands with a tap.
         .sensoryFeedback(.success, trigger: updated)
@@ -147,6 +138,8 @@ private struct TermLine: View {
                     Text(currentName)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(SchoolityPalette.ink)
+                        .contentTransition(.opacity)
+                        .animation(.easeInOut(duration: 0.2), value: currentName)
                     Image(systemName: "chevron.down")
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(SchoolityPalette.muted)
@@ -372,6 +365,7 @@ struct CourseDetailView: View {
     @State private var presentedSheet: Assignment?
     @State private var showReset = false
     @State private var detailSection: DetailSection = .assignments
+    @State private var expandedAssignmentID: String?
 
     private enum DetailSection: String, CaseIterable {
         case assignments = "Assignments"
@@ -444,16 +438,14 @@ struct CourseDetailView: View {
     private var schoolGradeFigure: some View {
         GradeFigure(
             label: "School grade",
-            value: GradeMath.percent(original.official),
-            detail: "Reported by the district"
+            value: GradeMath.percent(original.official)
         )
     }
 
     private var estimateFigure: some View {
         GradeFigure(
             label: changed ? "Hypothetical estimate" : "Schoolity estimate",
-            value: GradeMath.percent(GradeMath.calculate(course)),
-            detail: "Estimated from assignments"
+            value: GradeMath.percent(GradeMath.calculate(course))
         )
         .accessibilityAddTraits(.updatesFrequently)
     }
@@ -507,6 +499,10 @@ struct CourseDetailView: View {
                     if index > 0 { HairlineDivider() }
                     AssignmentDetailRow(
                         assignment: assignment,
+                        isExpanded: Binding(
+                            get: { expandedAssignmentID == assignment.id },
+                            set: { expandedAssignmentID = $0 ? assignment.id : nil }
+                        ),
                         edit: { presentedSheet = assignment },
                         remove: removable(assignment) ? { course.assignments.removeAll { $0.id == assignment.id } } : nil
                     )
@@ -555,7 +551,6 @@ struct CourseDetailView: View {
 private struct GradeFigure: View {
     let label: String
     let value: String
-    let detail: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -569,10 +564,6 @@ private struct GradeFigure: View {
                 .monospacedDigit()
                 .minimumScaleFactor(0.7)
                 .lineLimit(1)
-            Text(detail)
-                .font(.caption)
-                .foregroundStyle(SchoolityPalette.faint)
-                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
