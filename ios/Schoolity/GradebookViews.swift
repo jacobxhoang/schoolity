@@ -13,6 +13,7 @@ struct GradebookView: View {
 }
 
 private struct GradebookContent: View, Equatable {
+    @State private var selectedCourse: Course?
     let book: Gradebook?
     let isLoading: Bool
     let error: String?
@@ -48,8 +49,8 @@ private struct GradebookContent: View, Equatable {
                 }
 
                 ForEach(book.courses) { course in
-                    NavigationLink {
-                        CourseDetailView(course: course)
+                    Button {
+                        selectedCourse = course
                     } label: {
                         CourseRow(course: course)
                     }
@@ -98,6 +99,9 @@ private struct GradebookContent: View, Equatable {
         .animation(nil, value: book)
         .navigationTitle("Gradebook")
         .schoolityNavigationChrome()
+        .navigationDestination(item: $selectedCourse) { course in
+            CourseDetailView(course: course)
+        }
         .refreshable { await refresh(nil) }
         // A successful load, including a pull to refresh, lands with a tap.
         .sensoryFeedback(.success, trigger: updated)
