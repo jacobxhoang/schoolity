@@ -115,24 +115,24 @@ private struct TermLine: View {
     }
 
     var body: some View {
-        HStack(spacing: 10) {
-            Circle()
-                .fill(SchoolityPalette.ink)
-                .frame(width: 6, height: 6)
-                .accessibilityHidden(true)
-            Menu {
-                ForEach(book.terms) { term in
-                    Button {
-                        select(term.id)
-                    } label: {
-                        if term.id == book.currentTerm {
-                            Label(term.name, systemImage: "checkmark")
-                        } else {
-                            Text(term.name)
-                        }
+        Menu {
+            ForEach(book.terms) { term in
+                Button {
+                    select(term.id)
+                } label: {
+                    if term.id == book.currentTerm {
+                        Label(term.name, systemImage: "checkmark")
+                    } else {
+                        Text(term.name)
                     }
                 }
-            } label: {
+            }
+        } label: {
+            HStack(spacing: 10) {
+                Circle()
+                    .fill(SchoolityPalette.ink)
+                    .frame(width: 6, height: 6)
+                    .accessibilityHidden(true)
                 HStack(spacing: 6) {
                     Text(currentName)
                         .font(.subheadline.weight(.medium))
@@ -141,31 +141,29 @@ private struct TermLine: View {
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(SchoolityPalette.muted)
                 }
-                .frame(minHeight: 44)
-                .contentShape(Rectangle())
+                Spacer(minLength: 8)
+                if isLoading {
+                    Text("Updating…")
+                        .font(SchoolityText.meta)
+                        .foregroundStyle(SchoolityPalette.faint)
+                } else if let updated {
+                    Text(updated.formatted(date: .omitted, time: .shortened))
+                        .font(SchoolityText.meta)
+                        .foregroundStyle(SchoolityPalette.faint)
+                }
             }
-            .disabled(isLoading)
-            .accessibilityLabel("Reporting period, \(currentName)")
-
-            Spacer(minLength: 8)
-
-            if isLoading {
-                Text("Updating…")
-                    .font(SchoolityText.meta)
-                    .foregroundStyle(SchoolityPalette.faint)
-            } else if let updated {
-                Text(updated.formatted(date: .omitted, time: .shortened))
-                    .font(SchoolityText.meta)
-                    .foregroundStyle(SchoolityPalette.faint)
+            .padding(.horizontal, 14)
+            .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
+            .contentShape(Rectangle())
+            .background(SchoolityPalette.panel, in: RoundedRectangle(cornerRadius: SchoolityRadius.panel, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: SchoolityRadius.panel, style: .continuous)
+                    .strokeBorder(SchoolityPalette.line, lineWidth: 1)
+                    .allowsHitTesting(false)
             }
         }
-        .padding(.horizontal, 14)
-        .frame(minHeight: 52)
-        .background(SchoolityPalette.panel, in: RoundedRectangle(cornerRadius: SchoolityRadius.panel, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: SchoolityRadius.panel, style: .continuous)
-                .strokeBorder(SchoolityPalette.line, lineWidth: 1)
-        }
+        .disabled(isLoading)
+        .accessibilityLabel("Reporting period, \(currentName)")
     }
 }
 
@@ -230,7 +228,7 @@ struct GradebookStatsCard: View {
     }
 
     private var coursesStat: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: typeSize.isAccessibilitySize ? .leading : .trailing, spacing: 2) {
             Text("Courses")
                 .font(SchoolityText.meta)
                 .foregroundStyle(SchoolityPalette.muted)
@@ -243,7 +241,7 @@ struct GradebookStatsCard: View {
                 .lineLimit(1)
                 .contentTransition(.numericText(value: Double(courses)))
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: typeSize.isAccessibilitySize ? .leading : .trailing)
     }
 }
 

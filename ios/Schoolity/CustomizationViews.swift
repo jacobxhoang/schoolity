@@ -56,10 +56,6 @@ private struct SettingsLinkRow<Destination: View>: View {
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(SchoolityPalette.ink)
                 Spacer(minLength: 8)
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(SchoolityPalette.faint)
-                    .accessibilityHidden(true)
             }
             .frame(minHeight: 56)
             .padding(.horizontal, 8)

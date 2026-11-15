@@ -74,10 +74,6 @@ private struct RecordDestinationRow: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            Image(systemName: "chevron.right")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(SchoolityPalette.faint)
-                .accessibilityHidden(true)
         }
         .frame(minHeight: 60)
         .padding(.horizontal, 12)
@@ -114,10 +110,6 @@ struct StudentInfoView: View {
                             .foregroundStyle(SchoolityPalette.muted)
                     }
                     Spacer(minLength: 8)
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(SchoolityPalette.faint)
-                        .accessibilityHidden(true)
                 }
                 .frame(minHeight: 60)
                 .contentShape(Rectangle())
