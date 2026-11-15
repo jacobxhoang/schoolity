@@ -148,10 +148,6 @@ struct AccountDetailsView: View {
                         .font(.headline)
                         .foregroundStyle(SchoolityPalette.ink)
                     Spacer(minLength: 8)
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(SchoolityPalette.faint)
-                        .accessibilityHidden(true)
                 }
                 .frame(minHeight: 60)
                 .contentShape(Rectangle())
