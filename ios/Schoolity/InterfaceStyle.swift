@@ -127,6 +127,21 @@ extension View {
     func schoolityGlassButton() -> some View { modifier(GlassButtonAppearance()) }
 }
 
+/// The small count the website puts beside a section heading.
+struct CountBadge: View {
+    let count: Int
+    var body: some View {
+        Text("\(count)")
+            .font(.caption2.weight(.semibold))
+            .monospacedDigit()
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 2)
+            .background(Color.secondary.opacity(0.14), in: Capsule())
+            .accessibilityLabel(count == 1 ? "1 item" : "\(count) items")
+    }
+}
+
 /// Section footer text for the time a section last loaded from the district.
 struct LastUpdatedText: View {
     let date: Date?

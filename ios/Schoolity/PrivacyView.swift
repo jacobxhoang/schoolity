@@ -33,6 +33,20 @@ struct PrivacyView: View {
             }
 
             Section {
+                DisclosureGroup("Connection details") {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("When you connect").font(.subheadline.weight(.semibold))
+                        Text("Schoolity signs in to the district from this iPhone. The district's session cookies stay in memory for the current session only.")
+                        Text("Where your information lives").font(.subheadline.weight(.semibold))
+                        Text("Nothing is sent to a Schoolity server. Grades, records, messages, and documents are read from the district and held in memory.")
+                        Text("About this version").font(.subheadline.weight(.semibold))
+                        Text("This build reads the same district records the StudentVUE website shows, including course history through your signed-in district session.")
+                    }
+                    .padding(.vertical, 6)
+                }
+            }
+
+            Section {
                 Text("Grade estimates come from your assignments. District-reported grades are shown separately and Schoolity never changes them.")
                 Text("Schoolity is an independent student project. It is not affiliated with or endorsed by Anoka-Hennepin Schools or Edupoint.")
             } footer: {

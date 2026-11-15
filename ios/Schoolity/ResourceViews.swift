@@ -35,6 +35,15 @@ struct ResourceView: View {
         }
         .schoolityList()
         .navigationTitle(resource.title)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { Task { await store.load(resource, refresh: true) } } label: {
+                    Label("Refresh", systemImage: "arrow.clockwise")
+                }
+                .disabled(store.loadingResources.contains(resource))
+                .accessibilityHint("Reload \(resource.title.lowercased()) from the district")
+            }
+        }
         .task { await store.load(resource) }
         .refreshable { await store.load(resource, refresh: true) }
         .quickLookPreview($previewURL)
