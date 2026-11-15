@@ -314,7 +314,7 @@ struct CourseRow: View {
     }
 
     private var grade: some View {
-        let score = course.official ?? GradeMath.calculate(course)
+        let score = GradeMath.calculate(course)
         return VStack(alignment: typeSize.isAccessibilitySize ? .leading : .trailing, spacing: 5) {
             Text(GradeMath.percent(score))
                 .font(SchoolityText.statSmall)
@@ -333,7 +333,7 @@ struct CourseRow: View {
         .monospacedDigit()
         .animation(SchoolityMotion.calm(SchoolityMotion.value, reduceMotion: reduceMotion), value: score)
         .fixedSize(horizontal: false, vertical: true)
-        .accessibilityLabel("\(GradeMath.percent(score)), \(GradeMath.letter(score)), \(course.official == nil ? "calculated grade" : "school grade")")
+        .accessibilityLabel("\(GradeMath.percent(score)), \(GradeMath.letter(score)), Schoolity estimate")
     }
 
     private var identity: some View {
