@@ -188,13 +188,25 @@ extension View {
     func schoolityList() -> some View { modifier(SchoolityListStyle()) }
     func schoolityPageList() -> some View { modifier(SchoolityPageListStyle()) }
 
-    /// The website's header bar: a quiet inline title over the canvas.
+    /// Use the native navigation bar so newer iOS releases can provide their
+    /// system material while older releases keep the app's canvas treatment.
     func schoolityNavigationChrome() -> some View {
         self
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.visible, for: .navigationBar)
-            .toolbarBackground(SchoolityPalette.canvas, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
+            .modifier(SchoolityNavigationBarBackground())
+    }
+}
+
+private struct SchoolityNavigationBarBackground: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.toolbarBackground(.automatic, for: .navigationBar)
+        } else {
+            content
+                .toolbarBackground(SchoolityPalette.canvas, for: .navigationBar)
+                .toolbarBackground(.visible, for: .navigationBar)
+        }
     }
 }
 
