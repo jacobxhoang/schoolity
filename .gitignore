@@ -11,5 +11,4 @@ ios/build/
 ios/TestResults/
 **/xcuserdata/
 *.xcuserstate
-.taste-skill/chrome*/
-.taste-skill/review/
+.taste-skill/

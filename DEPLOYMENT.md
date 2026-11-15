@@ -8,6 +8,7 @@
    - `SCHOOLITY_REMEMBER_KEY` — a 32-byte standard-base64 key used to encrypt opt-in saved sign-ins. Generate one with `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` or `openssl rand -base64 32`. Use the same value in every environment that shares a store; rotating it invalidates existing saved sign-ins.
 
    Existing integrations using `KV_REST_API_URL` and `KV_REST_API_TOKEN` are also supported. Never prefix these variables with `PUBLIC_` or put credentials into GitHub.
+
 4. Use separate databases or different `SCHOOLITY_STORE_PREFIX` values for Production and Preview (for example, `schoolity-production` and `schoolity-preview`). If Production and Preview share a database, use the same `SCHOOLITY_REMEMBER_KEY` so saved sign-ins remain readable across deployments.
 5. Deploy or redeploy after connecting storage. Do not set localhost `HOST`, `PORT`, or `ORIGIN` on Vercel. The HTTPS deployment hostname is used for same-origin requests and secure session cookies.
 

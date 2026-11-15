@@ -17,10 +17,16 @@ Open http://127.0.0.1:5180. Sign in with your StudentVUE username and password. 
 
 ```
 npm run check
+npm run format:check
 npm test
 npm run build
 npm start
 ```
+
+Use `npm run format` to format supported source and documentation files. Formatting
+is checked in CI. Generated iOS parser resources are excluded: rebuild those with
+`npm run ios:parser` after changing shared parser code. Native Swift sources are
+validated by the macOS iOS workflow, not by the web formatter.
 
 For the production Node server set HOST=127.0.0.1, PORT=5180, and ORIGIN=http://127.0.0.1:5180 locally. Use HTTPS and the correct ORIGIN for deployment. Local sessions live in server memory. On Vercel, sessions and login limits use shared Upstash Redis storage. See [DEPLOYMENT.md](DEPLOYMENT.md) for project settings, required environment variables, and verification.
 

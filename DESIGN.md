@@ -10,7 +10,7 @@ The main action is opening a course. Put the course title and secondary teacher/
 
 ## Shared system
 
-- Lightly tinted canvas, one surface level, fine separators, consistent 16–20 point/pixel surface corners. Keep dark mode equally restrained, with brighter text and pastel icon marks.
+- Lightly tinted canvas, one surface level, fine separators, consistent 16–20 point/pixel surface corners. Keep dark mode equally restrained, with brighter text and neutral icon marks.
 - A 44 point/pixel minimum control target and a visible keyboard focus ring on the web.
 - Equal page gutters. Mobile layouts stack before text or controls become compressed.
 - Course grades use tabular numerals, clear weight, and restrained color; the graph line keeps its fixed Schoolity color.
@@ -20,7 +20,7 @@ The main action is opening a course. Put the course title and secondary teacher/
 
 ## Screens
 
-Gradebook: compact summary, reporting-period selection, courses, and the existing web recent-assignment sidebar. Both surfaces now carry the same summary and recent assignments; iOS presents them as list sections where the web places a sidebar, and its summary is a tinted card pairing a grade ring with the exact figure, drawn as Liquid Glass on iOS 26 and as a translucent card on earlier versions. The signed-in canvas behind every screen carries a soft accent wash, so the glass card, the glass primary action and the update-time pill have depth to refract.
+Gradebook: compact summary, reporting-period selection, courses, and the existing web recent-assignment sidebar. Both surfaces now carry the same summary and recent assignments; iOS presents them as list sections where the web places a sidebar, and its summary is a tinted card pairing a grade ring with the exact figure, drawn as Liquid Glass on iOS 26 and as a translucent card on earlier versions. The signed-in iOS canvas uses plain black in Dark Mode and the system grouped background in light mode.
 
 Course: clear grade heading, assignments/breakdown control, grade history, and hypothetical editing only in Assignments. Every workspace screen keeps the website's refresh control, count badges, loading placeholders, dismissible failures, and the privacy connection-details disclosure.
 

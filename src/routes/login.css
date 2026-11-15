@@ -303,7 +303,7 @@
   font-size: 13.5px;
   cursor: pointer;
 }
-.remember-sign-in input[type='checkbox'] {
+.remember-sign-in input[type="checkbox"] {
   flex: 0 0 18px;
   width: 18px;
   height: 18px;

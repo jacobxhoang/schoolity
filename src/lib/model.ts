@@ -68,7 +68,7 @@ export interface EventItem {
 }
 
 export function calculate(
-  course: Pick<Course, 'assignments' | 'categories'>,
+  course: Pick<Course, "assignments" | "categories">,
 ): number | null {
   const active = course.assignments.filter(
     (a) =>
@@ -104,19 +104,19 @@ export function calculate(
   return weight > 0 ? (result / weight) * 100 : null;
 }
 export function letter(score: number | null): string {
-  if (score === null) return '—';
+  if (score === null) return "—";
   return score >= 90
-    ? 'A'
+    ? "A"
     : score >= 80
-      ? 'B'
+      ? "B"
       : score >= 70
-        ? 'C'
+        ? "C"
         : score >= 60
-          ? 'D'
-          : 'F';
+          ? "D"
+          : "F";
 }
 export function percentage(score: number | null): string {
-  return score === null ? '—' : `${score.toFixed(2)}%`;
+  return score === null ? "—" : `${score.toFixed(2)}%`;
 }
 export function trend(course: Course): number[] {
   const ordered = course.assignments

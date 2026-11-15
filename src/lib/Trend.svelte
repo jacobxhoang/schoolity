@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { chartRange } from './workspace';
+  import { chartRange } from "./workspace";
   let {
     values = [],
     dates = [],
@@ -15,7 +15,7 @@
         (value, i) =>
           `${clean.length > 1 ? (i / (clean.length - 1)) * width : width / 2},${height - 8 - ((value - range.low) / (range.high - range.low)) * (height - 16)}`,
       )
-      .join(' '),
+      .join(" "),
   );
   const plotted = $derived(
     clean.map((value, index) => {
@@ -31,12 +31,12 @@
   const summary = $derived(
     clean.length
       ? `Calculated grade changed from ${clean[0].toFixed(1)}% to ${clean.at(-1)!.toFixed(1)}%, with a low of ${Math.min(...clean).toFixed(1)}% and a high of ${Math.max(...clean).toFixed(1)}% across ${clean.length} scored assignments.`
-      : 'No scored assignments are available for a trend.',
+      : "No scored assignments are available for a trend.",
   );
   const date = (value: string) => {
     const parsed = new Date(value);
     return Number.isFinite(parsed.getTime())
-      ? parsed.toLocaleDateString([], { month: 'short', day: 'numeric' })
+      ? parsed.toLocaleDateString([], { month: "short", day: "numeric" })
       : value;
   };
   const pointDate = (index: number) =>
@@ -84,26 +84,25 @@
               ><span class="trend-dot"></span><span
                 class="trend-point-label"
                 class:below={(point.index % 2 === 1 || point.y < 12) &&
-                  point.y < 84}
-                >{point.value.toFixed(1)}%</span
+                  point.y < 84}>{point.value.toFixed(1)}%</span
               ></span
             >{/each}
         </div>
       </div>
     </div>
     {#if large}<div class="trend-dates">
-        <span>{dates[0] ? date(dates[0]) : 'First scored assignment'}</span
+        <span>{dates[0] ? date(dates[0]) : "First scored assignment"}</span
         ><span
           >{dates.at(-1)
             ? date(dates.at(-1)!)
-            : 'Latest scored assignment'}</span
+            : "Latest scored assignment"}</span
         >
       </div>
       <figcaption class="sr-only">{summary}</figcaption>{/if}
     <ul class="sr-only">
-      {#each plotted as point (point.index)}<li
-          >{pointDate(point.index)}: {point.value.toFixed(1)}%</li
-        >{/each}
+      {#each plotted as point (point.index)}<li>
+          {pointDate(point.index)}: {point.value.toFixed(1)}%
+        </li>{/each}
     </ul>
   {:else}<p class="trend-empty">No scored assignments yet.</p>{/if}
 </figure>

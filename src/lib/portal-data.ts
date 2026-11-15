@@ -5,11 +5,11 @@ import type {
   EventItem,
   ScheduleClass,
   ScheduleData,
-} from './model';
-import { decodeHTMLStrict } from 'entities';
+} from "./model";
+import { decodeHTMLStrict } from "entities";
 export type JsonObject = Record<string, unknown>;
 export function object(value: unknown): JsonObject {
-  return value !== null && typeof value === 'object' && !Array.isArray(value)
+  return value !== null && typeof value === "object" && !Array.isArray(value)
     ? (value as JsonObject)
     : {};
 }
@@ -19,16 +19,16 @@ export function rows(value: unknown): JsonObject[] {
   );
 }
 export function string(value: unknown): string {
-  return typeof value === 'string' || typeof value === 'number'
+  return typeof value === "string" || typeof value === "number"
     ? String(value)
-    : '';
+    : "";
 }
 // Decode display text only. IDs, tokens, URLs and numeric data stay untouched.
 export function displayText(value: unknown): string {
-  return decodeHTMLStrict(string(value)).replace(/\u00a0/g, ' ');
+  return decodeHTMLStrict(string(value)).replace(/\u00a0/g, " ");
 }
 export function number(value: unknown): number | null {
-  if (value === null || value === undefined || value === '') return null;
+  if (value === null || value === undefined || value === "") return null;
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
 }
@@ -39,7 +39,7 @@ export function grades(payload: unknown): GradeData {
   const term = object(g.reportingPeriod);
   if (number(term.index) === null)
     throw new Error(
-      'The district did not return a usable gradebook reporting period.',
+      "The district did not return a usable gradebook reporting period.",
     );
   const courses: Course[] = rows(g.courses).map((c, i) => {
     const marks = rows(c.marks),
@@ -52,7 +52,7 @@ export function grades(payload: unknown): GradeData {
       period: displayText(c.period),
       official: number(mark.calculatedScoreRaw),
       categories: rows(mark.gradeCalculationSummary)
-        .filter((x) => string(x.type).toUpperCase() !== 'TOTAL')
+        .filter((x) => string(x.type).toUpperCase() !== "TOTAL")
         .map((x) => ({
           name: displayText(x.type),
           weight: Number.parseFloat(string(x.weight)) || 0,
@@ -64,7 +64,7 @@ export function grades(payload: unknown): GradeData {
         earned: number(a.point ?? a.scoreCalValue ?? a.score),
         possible: number(a.pointPossible ?? a.scoreMaxValue) ?? 0,
         due: string(a.dueDate),
-        excluded: string(a.notes).startsWith('(Not For Grading)'),
+        excluded: string(a.notes).startsWith("(Not For Grading)"),
       })),
     };
   });
@@ -83,7 +83,7 @@ export function profilePayload(payload: unknown): JsonObject {
   return Object.fromEntries([
     ...Object.entries(object(raw.studentInfoXML)),
     ...Object.entries(object(raw.studentInfoDetailXML)).filter(
-      ([, value]) => value !== null && value !== undefined && value !== '',
+      ([, value]) => value !== null && value !== undefined && value !== "",
     ),
   ]);
 }
@@ -91,12 +91,26 @@ export function profile(payload: unknown): Profile {
   const p = profilePayload(payload);
   // A district student number is distinct from an account/GUID or child index.
   // Keep it as text, preserving leading zeros and never guessing from a login.
-  const studentId = [p.permID, p.permId, p.PermID, p.studentID, p.studentId, p.StudentID, p.studentNumber]
-    .map((value) => typeof value === 'string' ? value.trim() : Number.isSafeInteger(value) && Number(value) >= 0 ? String(value) : '')
+  const studentId = [
+    p.permID,
+    p.permId,
+    p.PermID,
+    p.studentID,
+    p.studentId,
+    p.StudentID,
+    p.studentNumber,
+  ]
+    .map((value) =>
+      typeof value === "string"
+        ? value.trim()
+        : Number.isSafeInteger(value) && Number(value) >= 0
+          ? String(value)
+          : "",
+    )
     .find((value) => value.length > 0);
   return {
-    name: displayText(p.formattedName) || 'Student',
-    school: displayText(p.schoolName) || 'Your school',
+    name: displayText(p.formattedName) || "Student",
+    school: displayText(p.schoolName) || "Your school",
     grade: string(p.grade),
     ...(studentId ? { studentId } : {}),
   };
@@ -104,7 +118,7 @@ export function profile(payload: unknown): Profile {
 function scheduleClass(c: JsonObject, index: number): ScheduleClass {
   const meeting = c.meetingDays;
   const meetingDays = Array.isArray(meeting)
-    ? meeting.map(string).filter(Boolean).join(', ')
+    ? meeting.map(string).filter(Boolean).join(", ")
     : string(meeting);
   return {
     id: string(c.sectionGU ?? c.sectionId) || `class-${index}`,
@@ -122,7 +136,7 @@ export function schedule(payload: unknown): ScheduleData {
   const all =
     Object.keys(wrappedAll).length > 0
       ? wrappedAll
-      : 'termLists' in top || 'studentClassScheduleForTerms' in top
+      : "termLists" in top || "studentClassScheduleForTerms" in top
         ? top
         : {};
   const single = Object.keys(wrappedSingle).length ? wrappedSingle : {};
@@ -177,7 +191,9 @@ export function schedule(payload: unknown): ScheduleData {
   };
   const terms = [...metadata.entries()].map(([id, row]) => {
     const group = groupDates.get(id);
-    const beginDate = string(group?.beginDate ?? row.beginDate ?? row.startDate);
+    const beginDate = string(
+      group?.beginDate ?? row.beginDate ?? row.startDate,
+    );
     const endDate = string(group?.endDate ?? row.endDate);
     return {
       id,
@@ -204,8 +220,8 @@ export function schedule(payload: unknown): ScheduleData {
     hint !== null && metadata.has(hint)
       ? hint
       : (terms.find((term) => {
-          const begin = new Date(term.beginDate ?? '');
-          const end = new Date(term.endDate ?? '');
+          const begin = new Date(term.beginDate ?? "");
+          const end = new Date(term.endDate ?? "");
           return (
             !Number.isNaN(begin.getTime()) &&
             !Number.isNaN(end.getTime()) &&
@@ -220,7 +236,7 @@ export function schedule(payload: unknown): ScheduleData {
 }
 export function events(payload: unknown, kind: string): EventItem[] {
   const data = object(payload);
-  if (kind === 'mail')
+  if (kind === "mail")
     return rows(data.inboxItemListings).map((m) => ({
       id: string(m.smMessageGU ?? m.smMsgPersonGU),
       attachments: rows(m.attachments)
@@ -235,35 +251,35 @@ export function events(payload: unknown, kind: string): EventItem[] {
           filename:
             displayText(a.documentName) ||
             displayText(a.fileName) ||
-            'Attachment',
+            "Attachment",
         })),
       title: displayText(m.subject),
       author: rows(m.from)
         .map((sender) => displayText(sender.details1).trim())
         .filter(Boolean)
-        .join(', '),
+        .join(", "),
       detail: displayText(
         string(m.messageText)
-          .replace(/<br\s*\/?\s*>/gi, '\n')
-          .replace(/<\/(?:p|div|li)>/gi, '\n')
-          .replace(/<[^>]*>/g, ' '),
+          .replace(/<br\s*\/?\s*>/gi, "\n")
+          .replace(/<\/(?:p|div|li)>/gi, "\n")
+          .replace(/<[^>]*>/g, " "),
       ),
       date: string(m.sendDateTimeFormattedShort ?? m.sendDateTime),
     }));
-  if (kind === 'schedule') {
+  if (kind === "schedule") {
     const parsed = schedule(payload);
     const term =
       parsed.terms.find((entry) => entry.id === parsed.currentTerm) ??
       parsed.terms[0];
     return (term?.classes ?? []).map((c) => ({
       title: c.title,
-      detail: [c.teacher, c.room ? `Room ${c.room}` : '']
+      detail: [c.teacher, c.room ? `Room ${c.room}` : ""]
         .filter(Boolean)
-        .join(' · '),
-      date: c.period ? `Period ${c.period}` : '',
+        .join(" · "),
+      date: c.period ? `Period ${c.period}` : "",
     }));
   }
-  if (kind === 'documents')
+  if (kind === "documents")
     return rows(data.studentDocumentDatas).map((d) => ({
       id: string(d.documentGU),
       filename: displayText(d.documentFileName),
@@ -277,7 +293,7 @@ export function events(payload: unknown, kind: string): EventItem[] {
 // Opt-in, stable display models for the native client. The web client's raw
 // response contract stays unchanged; authentication still precedes this mapping.
 export function nativeData(payload: unknown, resource: string): unknown {
-  if (resource === 'grades') return grades(payload);
-  if (resource === 'profile') return profile(payload);
+  if (resource === "grades") return grades(payload);
+  if (resource === "profile") return profile(payload);
   return events(payload, resource);
 }
