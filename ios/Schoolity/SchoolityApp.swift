@@ -93,13 +93,6 @@ struct AccountDetailsView: View {
 
     var body: some View {
         List {
-            SchoolityPageHeader(
-                title: "Account",
-                isRefreshing: store.isLoadingProfile,
-                refresh: { Task { await store.loadProfile(refresh: true) } }
-            )
-            .schoolityPageRow(top: 8, bottom: 18)
-
             if let profile = store.profile {
                 HStack(spacing: 14) {
                     IconTile(symbol: "person.fill", size: 52, background: .soft)

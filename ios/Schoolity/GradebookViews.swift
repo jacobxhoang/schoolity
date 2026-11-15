@@ -13,6 +13,7 @@ struct GradebookView: View {
 }
 
 private struct GradebookContent: View, Equatable {
+    @State private var selectedCourse: Course?
     let book: Gradebook?
     let isLoading: Bool
     let error: String?
@@ -26,13 +27,6 @@ private struct GradebookContent: View, Equatable {
 
     var body: some View {
         List {
-            SchoolityPageHeader(
-                title: "Gradebook",
-                isRefreshing: isLoading && book != nil,
-                refresh: { Task { await refresh(nil) } }
-            )
-            .schoolityPageRow(top: 8, bottom: 18)
-
             if let book {
                 GradebookStatsCard(average: book.calculatedAverage, courses: book.courses.count)
                     .schoolityPageRow(bottom: 22)
@@ -48,8 +42,8 @@ private struct GradebookContent: View, Equatable {
                 }
 
                 ForEach(book.courses) { course in
-                    NavigationLink {
-                        CourseDetailView(course: course)
+                    Button {
+                        selectedCourse = course
                     } label: {
                         CourseRow(course: course)
                     }
@@ -98,6 +92,14 @@ private struct GradebookContent: View, Equatable {
         .animation(nil, value: book)
         .navigationTitle("Gradebook")
         .schoolityNavigationChrome()
+        .navigationDestination(isPresented: Binding(
+            get: { selectedCourse != nil },
+            set: { if !$0 { selectedCourse = nil } }
+        )) {
+            if let selectedCourse {
+                CourseDetailView(course: selectedCourse)
+            }
+        }
         .refreshable { await refresh(nil) }
         // A successful load, including a pull to refresh, lands with a tap.
         .sensoryFeedback(.success, trigger: updated)
@@ -314,7 +316,7 @@ struct CourseRow: View {
     }
 
     private var grade: some View {
-        let score = course.official ?? GradeMath.calculate(course)
+        let score = GradeMath.calculate(course)
         return VStack(alignment: typeSize.isAccessibilitySize ? .leading : .trailing, spacing: 5) {
             Text(GradeMath.percent(score))
                 .font(SchoolityText.statSmall)
@@ -333,7 +335,7 @@ struct CourseRow: View {
         .monospacedDigit()
         .animation(SchoolityMotion.calm(SchoolityMotion.value, reduceMotion: reduceMotion), value: score)
         .fixedSize(horizontal: false, vertical: true)
-        .accessibilityLabel("\(GradeMath.percent(score)), \(GradeMath.letter(score)), \(course.official == nil ? "calculated grade" : "school grade")")
+        .accessibilityLabel("\(GradeMath.percent(score)), \(GradeMath.letter(score)), Schoolity estimate")
     }
 
     private var identity: some View {
@@ -381,9 +383,6 @@ struct CourseDetailView: View {
 
     var body: some View {
         List {
-            SchoolityPageHeader(title: customization.name(for: course.name), subtitle: courseDetails)
-                .schoolityPageRow(top: 8, bottom: 16)
-
             VStack(alignment: .leading, spacing: 18) {
                 gradeComparison
                 GradeHistoryView(course: course).equatable()
