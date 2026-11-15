@@ -123,10 +123,15 @@ struct LoginView: View {
                         LoginIntro(
                             eyebrow: "StudentVUE sign-in · Anoka-Hennepin",
                             title: "The Anoka-Hennepin student dashboard.",
-                            deck: "Your gradebook, schedule, attendance and records in one place."
+                            deck: ""
                         )
 
                         signInPanel
+
+                        Text("Your gradebook, schedule, attendance and records in one place. Schoolity reads the record your district already keeps, and never changes it.")
+                            .font(SchoolityText.body)
+                            .foregroundStyle(SchoolityLoginPalette.muted)
+                            .fixedSize(horizontal: false, vertical: true)
 
                         Text("Schoolity is an independent student project. It is not affiliated with or endorsed by Anoka-Hennepin Schools or Edupoint.")
                             .font(.caption)
@@ -338,10 +343,12 @@ private struct LoginIntro: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
 
-            Text(deck)
-                .font(SchoolityText.body)
-                .foregroundStyle(SchoolityLoginPalette.muted)
-                .fixedSize(horizontal: false, vertical: true)
+            if !deck.isEmpty {
+                Text(deck)
+                    .font(SchoolityText.body)
+                    .foregroundStyle(SchoolityLoginPalette.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 }
