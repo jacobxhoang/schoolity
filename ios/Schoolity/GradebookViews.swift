@@ -92,8 +92,13 @@ private struct GradebookContent: View, Equatable {
         .animation(nil, value: book)
         .navigationTitle("Gradebook")
         .schoolityNavigationChrome()
-        .navigationDestination(item: $selectedCourse) { course in
-            CourseDetailView(course: course)
+        .navigationDestination(isPresented: Binding(
+            get: { selectedCourse != nil },
+            set: { if !$0 { selectedCourse = nil } }
+        )) {
+            if let selectedCourse {
+                CourseDetailView(course: selectedCourse)
+            }
         }
         .refreshable { await refresh(nil) }
         // A successful load, including a pull to refresh, lands with a tap.
