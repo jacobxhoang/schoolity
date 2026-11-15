@@ -148,7 +148,9 @@ jobs:
           data = json.load(sys.stdin)
           print("Result:", data.get("result", "unknown"))
           for failure in data.get("testFailures", []):
-              print("- " + str(failure.get("testName", "unknown")) + ": " + str(failure.get("failureText", "")))' |
+              location = failure.get("sourceCodeContext", {}).get("location", {})
+              where = " (" + str(location.get("filePath", "?")) + ":" + str(location.get("lineNumber", "?")) + ")" if location else ""
+              print("- " + str(failure.get("testName", "unknown")) + ": " + str(failure.get("failureText", "")) + where)' |
                 tee -a /tmp/failure-details.txt || true
             done
             for log in build/ui-light.log build/ui-dark.log; do
