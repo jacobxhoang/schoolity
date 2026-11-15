@@ -199,7 +199,6 @@ private struct StudentInfoSkeleton: View {
 }
 
 private struct SectionContent: View {
-    @Environment(\.dynamicTypeSize) private var typeSize
     let section: InfoSection
 
     var body: some View {
@@ -254,22 +253,10 @@ private struct SectionContent: View {
         }
     }
 
-    @ViewBuilder private func fields(_ fields: [InfoField]) -> some View {
-        if typeSize.isAccessibilitySize {
-            VStack(alignment: .leading, spacing: 14) {
-                ForEach(Array(fields.enumerated()), id: \.offset) { _, field in
-                    StudentInfoFieldRow(field: field)
-                }
-            }
-        } else {
-            LazyVGrid(
-                columns: [GridItem(.flexible(), alignment: .topLeading), GridItem(.flexible(), alignment: .topLeading)],
-                alignment: .leading,
-                spacing: 16
-            ) {
-                ForEach(Array(fields.enumerated()), id: \.offset) { _, field in
-                    StudentInfoFieldRow(field: field)
-                }
+    private func fields(_ fields: [InfoField]) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ForEach(Array(fields.enumerated()), id: \.offset) { _, field in
+                StudentInfoFieldRow(field: field)
             }
         }
     }
@@ -280,22 +267,28 @@ private struct StudentInfoFieldRow: View {
     let field: InfoField
 
     var body: some View {
-        Group {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: symbol)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(SchoolityPalette.muted)
+                .frame(width: 28, height: 28)
+                .background(SchoolityPalette.field, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .accessibilityHidden(true)
             if typeSize.isAccessibilitySize {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     label
                     value
                 }
             } else {
-                LabeledContent {
+                LabeledContent(field.label) {
                     value
-                        .multilineTextAlignment(.leading)
-                } label: {
-                    label
+                        .multilineTextAlignment(.trailing)
                 }
+                .padding(.top, 3)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.vertical, 2)
     }
 
     private var label: some View {
@@ -310,6 +303,20 @@ private struct StudentInfoFieldRow: View {
             .foregroundStyle(SchoolityPalette.ink)
             .fixedSize(horizontal: false, vertical: true)
             .textSelection(.enabled)
+    }
+
+    private var symbol: String {
+        let label = field.label.lowercased()
+        if label.contains("mail") { return "envelope.fill" }
+        if label.contains("phone") { return "phone.fill" }
+        if label.contains("address") || label.contains("stop") { return "house.fill" }
+        if label.contains("birth") || label.contains("date") { return "calendar" }
+        if label.contains("grade") || label.contains("school") { return "graduationcap.fill" }
+        if label.contains("bus") { return "bus.fill" }
+        if label.contains("room") || label.contains("locker") { return "door.left.hand.closed" }
+        if label.contains("physician") || label.contains("dentist") || label.contains("hospital") { return "cross.case.fill" }
+        if label.contains("id") { return "person.text.rectangle" }
+        return "person.fill"
     }
 }
 
