@@ -10,14 +10,25 @@ struct GradeCategoryBreakdown: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Category breakdown").font(.headline)
-            ForEach(Array(categories.enumerated()), id: \.offset) { _, category in
-                CategoryGradeRow(category: category, assignments: course.assignments)
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Category breakdown")
+                .font(SchoolityText.sectionTitle)
+                .tracking(-0.4)
+                .foregroundStyle(SchoolityPalette.ink)
+                .padding(.bottom, 4)
+
+            if categories.isEmpty {
+                Text("No categories provided.")
+                    .font(SchoolityText.body)
+                    .foregroundStyle(SchoolityPalette.muted)
+                    .padding(.vertical, 14)
+            } else {
+                ForEach(Array(categories.enumerated()), id: \.offset) { index, category in
+                    if index > 0 { HairlineDivider() }
+                    CategoryGradeRow(category: category, assignments: course.assignments)
+                }
             }
-            if categories.isEmpty { Text("No categories provided.").foregroundStyle(.secondary) }
         }
-        .padding(.vertical, 12)
     }
 }
 
@@ -33,57 +44,38 @@ private struct CategoryGradeRow: View {
         let earned = active.reduce(0.0) { $0 + ($1.earned ?? 0) }
         let possible = active.reduce(0.0) { $0 + $1.possible }
         let score: Double? = possible > 0 ? earned / possible * 100 : nil
-        VStack(alignment: .leading, spacing: 6) {
-            LabeledContent(category.name.isEmpty ? "Assignments" : category.name, value: GradeMath.percent(score))
-                .font(.subheadline.weight(.medium))
-            if let score { ProgressView(value: min(100, max(0, score)), total: 100).tint(customization.gradeColor(score)) }
-            HStack {
-                Text("\(GradeMath.points(earned)) / \(GradeMath.points(possible)) points")
-                Spacer()
-                if category.weight > 0 { Text("\(GradeMath.points(category.weight))% weight") }
-            }.font(.caption).foregroundStyle(.secondary)
-        }
-    }
-}
 
-struct CourseGradeHeading: View {
-    @EnvironmentObject private var customization: CustomizationStore
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    let course: Course
-    let districtScore: Double?
-    let changed: Bool
-
-    private var score: Double? { changed ? GradeMath.calculate(course) : districtScore ?? GradeMath.calculate(course) }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline, spacing: 12) {
-                Text(GradeMath.letter(score)).font(.system(.largeTitle, design: .rounded, weight: .bold))
-                    .foregroundStyle(customization.gradeColor(score))
-                    .contentTransition(.numericText())
+                Text(category.name.isEmpty ? "Assignments" : category.name)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(SchoolityPalette.ink)
+                if category.weight > 0 {
+                    SchoolityTag(text: "\(GradeMath.points(category.weight))% weight")
+                }
+                Spacer(minLength: 8)
                 Text(GradeMath.percent(score))
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .contentTransition(.numericText(value: score ?? 0))
-                Spacer(minLength: 0)
+                    .font(.subheadline.weight(.semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(SchoolityPalette.ink)
             }
-            .monospacedDigit()
-            .animation(SchoolityMotion.calm(SchoolityMotion.value, reduceMotion: reduceMotion), value: score)
             if let score {
-                ProgressView(value: min(100, max(0, score)), total: 100)
-                    .tint(customization.gradeColor(score))
-                    .accessibilityLabel(changed ? "Hypothetical grade progress" : "Course grade progress")
-                    .accessibilityValue(GradeMath.percent(score))
+                SchoolityBar(value: score / 100, tint: customization.gradeColor(score), height: 5)
             }
+            Text("\(GradeMath.points(earned)) / \(GradeMath.points(possible)) points")
+                .font(.caption)
+                .foregroundStyle(SchoolityPalette.muted)
+                .monospacedDigit()
         }
-        .padding(.vertical, 8)
-        .listRowSeparator(.hidden)
+        .padding(.vertical, 14)
+        .accessibilityElement(children: .combine)
     }
 }
 
 struct AssignmentDetailRow: View {
     let assignment: Assignment
     let edit: () -> Void
+    var remove: (() -> Void)? = nil
 
     private var score: Double? {
         guard assignment.excluded != true, let earned = assignment.earned, assignment.possible > 0 else { return nil }
@@ -92,28 +84,76 @@ struct AssignmentDetailRow: View {
 
     var body: some View {
         DisclosureGroup {
-            VStack(alignment: .leading, spacing: 12) {
-                LabeledContent("Category", value: assignment.category)
-                if !assignment.due.isEmpty { LabeledContent("Due", value: GradeMath.shortDate(assignment.due)) }
-                if let score { LabeledContent("Score", value: GradeMath.percent(score)) }
-                else if assignment.earned != nil && assignment.possible <= 0 { LabeledContent("Score", value: "Extra credit") }
-                if assignment.excluded == true { Text("Not for grading").foregroundStyle(.secondary) }
-                if assignment.hypothetical == true { Label("Hypothetical", systemImage: "pencil").foregroundStyle(.secondary) }
-                Button("Edit hypothetical score", systemImage: "pencil", action: edit)
-                    .frame(minHeight: 44)
+            VStack(alignment: .leading, spacing: 10) {
+                detail("Category", assignment.category)
+                if !assignment.due.isEmpty { detail("Due", GradeMath.shortDate(assignment.due)) }
+                if let score { detail("Score", GradeMath.percent(score)) }
+                else if assignment.earned != nil && assignment.possible <= 0 { detail("Score", "Extra credit") }
+                if assignment.excluded == true {
+                    Text("Not for grading")
+                        .font(SchoolityText.meta)
+                        .foregroundStyle(SchoolityPalette.muted)
+                }
+                if assignment.hypothetical == true {
+                    SchoolityTag(text: "Hypothetical", emphasis: true)
+                }
+                HStack(spacing: 18) {
+                    Button("Edit hypothetical score", systemImage: "pencil", action: edit)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(SchoolityPalette.ink)
+                        .frame(minHeight: 44)
+                    if let remove {
+                        Button(role: .destructive, action: remove) {
+                            Label("Remove", systemImage: "trash")
+                                .font(.subheadline.weight(.medium))
+                                .frame(minHeight: 44)
+                        }
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(.top, 2)
             }
-            .font(.subheadline)
             .padding(.vertical, 8)
         } label: {
             HStack(spacing: 12) {
                 AssignmentScoreIndicator(score: score)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(assignment.title).font(.headline).foregroundStyle(.primary)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(assignment.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(SchoolityPalette.ink)
+                        .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
-                    Text(points).font(.footnote).foregroundStyle(.secondary).monospacedDigit()
+                    HStack(spacing: 6) {
+                        Text(points)
+                            .font(.caption)
+                            .foregroundStyle(SchoolityPalette.muted)
+                            .monospacedDigit()
+                        if !assignment.category.isEmpty {
+                            SchoolityTag(text: assignment.category)
+                        }
+                        if assignment.hypothetical == true {
+                            SchoolityTag(text: "Hypothetical", emphasis: true)
+                        }
+                    }
                 }
-                .padding(.vertical, 4)
+                Spacer(minLength: 0)
             }
+            .frame(minHeight: 52)
+            .contentShape(Rectangle())
+        }
+        .tint(SchoolityPalette.muted)
+    }
+
+    private func detail(_ label: String, _ value: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Text(label)
+                .font(SchoolityText.meta)
+                .foregroundStyle(SchoolityPalette.muted)
+            Spacer(minLength: 8)
+            Text(value)
+                .font(.subheadline)
+                .foregroundStyle(SchoolityPalette.ink)
+                .multilineTextAlignment(.trailing)
         }
     }
 
@@ -127,16 +167,18 @@ struct AssignmentDetailRow: View {
 private struct AssignmentScoreIndicator: View {
     @EnvironmentObject private var customization: CustomizationStore
     let score: Double?
+
     var body: some View {
         ZStack {
-            Circle().stroke(Color.secondary.opacity(0.2), lineWidth: 3)
+            Circle().stroke(SchoolityPalette.soft, lineWidth: 3)
             if let score {
-                Circle().trim(from: 0, to: CGFloat(min(1, max(0, score / 100))))
+                Circle()
+                    .trim(from: 0, to: CGFloat(min(1, max(0, score / 100))))
                     .stroke(customization.gradeColor(score), style: StrokeStyle(lineWidth: 3, lineCap: .round))
                     .rotationEffect(.degrees(-90))
             }
         }
-        .frame(width: 25, height: 25)
+        .frame(width: 26, height: 26)
         .accessibilityHidden(true)
     }
 }
@@ -153,20 +195,28 @@ private enum CoursePreviewData {
     NavigationStack {
         List {
             CourseRow(course: CoursePreviewData.course)
-            CourseGradeHeading(course: CoursePreviewData.course, districtScore: 92, changed: false)
-            AssignmentDetailRow(assignment: CoursePreviewData.course.assignments[0], edit: {})
+                .schoolityPageRow()
             GradeCategoryBreakdown(course: CoursePreviewData.course)
-        }.schoolityList().navigationTitle("Gradebook")
-    }.tint(SchoolityStyle.accent).environmentObject(CustomizationStore())
+                .schoolityCardRow()
+            AssignmentDetailRow(assignment: CoursePreviewData.course.assignments[0], edit: {})
+                .schoolityCardRow()
+        }
+        .schoolityPageList()
+        .navigationTitle("Gradebook")
+        .schoolityNavigationChrome()
+    }
+    .tint(SchoolityPalette.ink)
+    .environmentObject(CustomizationStore())
 }
 
 #Preview("Course rows – large text, dark") {
     List {
         CourseRow(course: CoursePreviewData.course)
+            .schoolityPageRow()
         InformationRow(title: "Home address", value: "101 Sample Road\nExample, MN 00000", symbol: "house.fill")
-        AssignmentDetailRow(assignment: CoursePreviewData.course.assignments[0], edit: {})
+            .schoolityCardRow()
     }
-    .schoolityList()
+    .schoolityPageList()
     .environment(\.dynamicTypeSize, .accessibility3)
     .preferredColorScheme(.dark)
     .environmentObject(CustomizationStore())

@@ -31,7 +31,7 @@ struct SchoolityApp: App {
             .environmentObject(store)
             .environmentObject(customization)
             .accentColor(Color("ActionAccent"))
-            .preferredColorScheme(customization.colorScheme)
+            .preferredColorScheme(preferredColorScheme)
             .task { if scenePhase == .active { await store.start() } }
             .task(id: gradeNotifications.enabled && scenePhase == .active && store.access == .signedIn) {
                 guard gradeNotifications.enabled, scenePhase == .active, store.access == .signedIn else { return }
@@ -55,131 +55,12 @@ struct SchoolityApp: App {
             await store.checkForGradedAssignments()
         }
     }
-}
 
-struct SavedSignInView: View {
-    @EnvironmentObject private var store: AppStore
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Image(systemName: store.unlockSymbol).font(.largeTitle).foregroundStyle(SchoolityStyle.accent).accessibilityHidden(true)
-                        Text("Schoolity").font(.largeTitle.bold())
-                    }
-                    .padding(.vertical, 24)
-                    .listRowBackground(Color.clear)
-                }
-                Section {
-                    Button { Task { await store.unlockSavedSignIn() } } label: {
-                        HStack {
-                            Spacer()
-                            if store.isUnlocking { ProgressView().tint(Color(uiColor: .systemBackground)) }
-                            else { Text("Sign in").fontWeight(.semibold) }
-                            Spacer()
-                        }.frame(minHeight: 44)
-                    }
-                    .listRowBackground(SchoolityStyle.accent)
-                    .foregroundStyle(Color(uiColor: .systemBackground))
-                    .disabled(store.isUnlocking)
-                    .accessibilityIdentifier("login.unlock")
-                    .accessibilityHint("Use saved sign-in with \(store.unlockMethod)")
-                    Button("Sign in again") { store.usePasswordInstead() }
-                        .frame(minHeight: 44)
-                        .accessibilityIdentifier("login.usePassword")
-                }
-                if let error = store.unlockError {
-                    Section { Label(error, systemImage: "exclamationmark.circle").accessibilityAddTraits(.updatesFrequently) }
-                }
-            }
-        }
-    }
-}
-
-struct LoginView: View {
-    @EnvironmentObject private var store: AppStore
-    @State private var username = ""
-    @State private var password = ""
-    @State private var reveal = false
-    @FocusState private var focus: Field?
-    private enum Field { case username, password }
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Image(systemName: "graduationcap.fill").font(.largeTitle).foregroundStyle(SchoolityStyle.accent).accessibilityHidden(true)
-                        Text("Schoolity").font(.largeTitle.bold())
-                    }
-                    .padding(.vertical, 24)
-                    .listRowBackground(Color.clear)
-                }
-                Section {
-                    TextField("Username", text: $username, prompt: Text("Username").foregroundStyle(Color.primary.opacity(0.65)))
-                        .textContentType(.username)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .submitLabel(.next)
-                        .focused($focus, equals: .username)
-                        .onSubmit { focus = .password }
-                        .accessibilityIdentifier("login.username")
-                    HStack {
-                        Group {
-                            if reveal { TextField("Password", text: $password, prompt: Text("Password").foregroundStyle(Color.primary.opacity(0.65))) }
-                            else { SecureField("Password", text: $password, prompt: Text("Password").foregroundStyle(Color.primary.opacity(0.65))) }
-                        }
-                        .textContentType(.password)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .focused($focus, equals: .password)
-                        .submitLabel(.go)
-                        .onSubmit(signIn)
-                        .accessibilityIdentifier("login.password")
-                        Button { reveal.toggle() } label: {
-                            Image(systemName: reveal ? "eye.slash" : "eye").frame(minWidth: 44, minHeight: 44)
-                        }
-                        .buttonStyle(.borderless)
-                        .accessibilityLabel(reveal ? "Hide password" : "Show password")
-                    }
-                }
-                .disabled(store.isLoading || store.signingOut)
-                Section {
-                    Button(action: signIn) {
-                        HStack {
-                            Spacer()
-                            if store.isLoading || store.signingOut { ProgressView().tint(Color(uiColor: .systemBackground)) }
-                            else { Text("Sign in").fontWeight(.semibold) }
-                            Spacer()
-                        }.frame(minHeight: 44)
-                    }
-                    .listRowBackground(SchoolityStyle.accent)
-                    .foregroundStyle(Color(uiColor: .systemBackground))
-                    .disabled(username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || password.isEmpty || store.isLoading || store.signingOut)
-                    .accessibilityIdentifier("login.submit")
-                }
-                if let error = store.loginError {
-                    Section { Label(error, systemImage: "exclamationmark.circle").accessibilityAddTraits(.updatesFrequently) }
-                }
-                Section {
-                    NavigationLink { PrivacyView() } label: {
-                        Label("Privacy & Connection", systemImage: "hand.raised.fill")
-                    }
-                } footer: {
-                    Text("Schoolity is an independent student project. It is not affiliated with or endorsed by Anoka-Hennepin Schools or Edupoint.")
-                }
-            }
-            .scrollDismissesKeyboard(.interactively)
-        }
-    }
-
-    private func signIn() {
-        guard !username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              !password.isEmpty, !store.isLoading, !store.signingOut else { return }
-        focus = nil
-        let submitted = password
-        password = ""
-        Task { await store.signIn(username: username, password: submitted) }
+    /// Sign-in keeps the website's dark surface; only the signed-in workspace
+    /// follows the reader's Light, Dark, or System preference.
+    private var preferredColorScheme: ColorScheme? {
+        if case .signedIn = store.access { return customization.colorScheme }
+        return .dark
     }
 }
 
@@ -201,62 +82,98 @@ struct WorkspaceView: View {
         .task { await store.preloadWorkspace() }
         .tint(customization.accentColor)
         .accentColor(customization.accentColor)
+        .toolbarBackground(SchoolityPalette.panel, for: .tabBar)
+        .toolbarBackground(.visible, for: .tabBar)
     }
 }
 
 struct AccountDetailsView: View {
     @EnvironmentObject private var store: AppStore
+
     var body: some View {
         List {
+            SchoolityPageHeader(
+                title: "Account",
+                isRefreshing: store.isLoadingProfile,
+                refresh: { Task { await store.loadProfile(refresh: true) } }
+            )
+            .schoolityPageRow(top: 8, bottom: 18)
+
             if let profile = store.profile {
-                Section {
-                    HStack(spacing: 14) {
-                        Image(systemName: "person.crop.circle.fill")
-                            .font(.system(size: 48)).foregroundStyle(SchoolityStyle.accent)
-                            .accessibilityHidden(true)
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(profile.name).font(.title3.weight(.semibold))
-                            Text(profile.school).font(.footnote).foregroundStyle(.secondary)
+                HStack(spacing: 14) {
+                    IconTile(symbol: "person.fill", size: 52, background: .soft)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(profile.name)
+                            .font(.system(.title3, weight: .semibold))
+                            .foregroundStyle(SchoolityPalette.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(profile.school)
+                            .font(SchoolityText.meta)
+                            .foregroundStyle(SchoolityPalette.muted)
+                        if !profile.grade.isEmpty {
+                            Text("Grade \(profile.grade)")
+                                .font(.caption)
+                                .foregroundStyle(SchoolityPalette.faint)
                         }
-                    }.padding(.vertical, 8)
-                    if !profile.grade.isEmpty { InformationRow(title: "Grade", value: profile.grade, symbol: "graduationcap.fill") }
+                    }
+                    Spacer(minLength: 0)
                 }
-            }
-            Section("Student ID") { StudentIDSection() }
-            Section {
-                NavigationLink {
-                    CustomizationView()
-                } label: {
-                    Label("Settings", systemImage: "gearshape.fill")
+                .schoolityCardRow(bottom: 20)
+            } else if store.isLoadingProfile {
+                HStack(spacing: 14) {
+                    RoundedRectangle(cornerRadius: 13, style: .continuous)
+                        .fill(SchoolityPalette.soft)
+                        .frame(width: 52, height: 52)
+                    VStack(alignment: .leading, spacing: 9) {
+                        SkeletonBlock(width: 170, height: 16)
+                        SkeletonBlock(width: 130, height: 12)
+                    }
+                    Spacer(minLength: 0)
                 }
+                .schoolityCardRow(bottom: 20)
             }
-            Section {
-                Button("Sign out", role: .destructive) { Task { await store.signOut() } }
+
+            SectionHeading(title: "Student ID")
+                .schoolityPageRow(bottom: 10)
+
+            StudentIDSection()
+                .schoolityPageRow(bottom: 20)
+
+            NavigationLink {
+                CustomizationView()
+            } label: {
+                HStack(spacing: 12) {
+                    IconTile(symbol: "gearshape.fill", size: 40, background: .field)
+                    Text("Settings")
+                        .font(.headline)
+                        .foregroundStyle(SchoolityPalette.ink)
+                    Spacer(minLength: 8)
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(SchoolityPalette.faint)
+                        .accessibilityHidden(true)
+                }
+                .frame(minHeight: 60)
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .schoolityCardRow(bottom: 20, padding: 16)
+
+            Button(role: .destructive) {
+                Task { await store.signOut() }
+            } label: {
+                Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(SchoolitySecondaryButtonStyle())
+            .schoolityPageRow(bottom: 24)
         }
-        .schoolityList()
+        .schoolityPageList()
         .task { await store.loadProfile(refresh: store.profile?.studentId == nil) }
         .refreshable { await store.loadProfile(refresh: true) }
         .privacySensitive()
         .navigationTitle("Account")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-struct FailureRow: View {
-    let message: String
-    var dismiss: (() -> Void)? = nil
-    var retry: () -> Void
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label(message, systemImage: "exclamationmark.circle")
-            HStack(spacing: 18) {
-                Button("Try again", action: retry)
-                if let dismiss {
-                    Button("Dismiss", action: dismiss).foregroundStyle(.secondary)
-                }
-            }
-            .frame(minHeight: 44)
-        }.padding(.vertical, 4)
+        .schoolityNavigationChrome()
     }
 }
