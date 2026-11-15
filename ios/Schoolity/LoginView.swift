@@ -116,35 +116,12 @@ struct LoginView: View {
         NavigationStack {
             ZStack {
                 LoginBackdrop()
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 18) {
-                        LoginTopBar()
-
-                        LoginIntro(
-                            eyebrow: "StudentVUE sign-in · Anoka-Hennepin",
-                            title: "The Anoka-Hennepin student dashboard.",
-                            deck: ""
-                        )
-
-                        signInPanel
-
-                        Text("Your gradebook, schedule, attendance and records in one place. Schoolity reads the record your district already keeps, and never changes it.")
-                            .font(SchoolityText.body)
-                            .foregroundStyle(SchoolityLoginPalette.muted)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                        Text("Schoolity is an independent student project. It is not affiliated with or endorsed by Anoka-Hennepin Schools or Edupoint.")
-                            .font(.caption)
-                            .foregroundStyle(SchoolityLoginPalette.faint)
-                            .fixedSize(horizontal: false, vertical: true)
+                GeometryReader { proxy in
+                    ScrollView {
+                        loginContent(compact: proxy.size.height < 700)
                     }
-                    .frame(maxWidth: 560, alignment: .leading)
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 20)
-                    .padding(.top, 18)
-                    .padding(.bottom, 32)
+                    .scrollDismissesKeyboard(.interactively)
                 }
-                .scrollDismissesKeyboard(.interactively)
             }
             .toolbar(.hidden, for: .navigationBar)
             .tint(SchoolityLoginPalette.ink)
@@ -152,18 +129,65 @@ struct LoginView: View {
         }
     }
 
-    private var signInPanel: some View {
-        LoginPanel {
-            VStack(alignment: .leading, spacing: 16) {
-                HStack(alignment: .firstTextBaseline, spacing: 12) {
-                    Text("Sign in")
-                        .font(.system(.title3, weight: .semibold))
-                        .tracking(-0.4)
-                        .foregroundStyle(SchoolityLoginPalette.ink)
-                    Spacer(minLength: 8)
-                    Text("StudentVUE")
+    private func loginContent(compact: Bool) -> some View {
+        VStack(alignment: .leading, spacing: compact ? 14 : 18) {
+            LoginTopBar()
+
+            if compact {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("StudentVUE sign-in · Anoka-Hennepin")
                         .font(.caption.weight(.medium))
-                        .foregroundStyle(SchoolityLoginPalette.faint)
+                        .tracking(0.8)
+                        .foregroundStyle(SchoolityLoginPalette.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("The Anoka-Hennepin student dashboard.")
+                        .font(.system(.title2, weight: .semibold))
+                        .tracking(-0.6)
+                        .foregroundStyle(SchoolityLoginPalette.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityAddTraits(.isHeader)
+                }
+            } else {
+                LoginIntro(
+                    eyebrow: "StudentVUE sign-in · Anoka-Hennepin",
+                    title: "The Anoka-Hennepin student dashboard.",
+                    deck: ""
+                )
+            }
+
+            signInPanel(compact: compact)
+
+            Text("Your gradebook, schedule, attendance and records in one place. Schoolity reads the record your district already keeps, and never changes it.")
+                .font(SchoolityText.body)
+                .foregroundStyle(SchoolityLoginPalette.muted)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text("Schoolity is an independent student project. It is not affiliated with or endorsed by Anoka-Hennepin Schools or Edupoint.")
+                .font(.caption)
+                .foregroundStyle(SchoolityLoginPalette.faint)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: 560, alignment: .leading)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 20)
+        .padding(.top, compact ? 14 : 18)
+        .padding(.bottom, 32)
+    }
+
+    private func signInPanel(compact: Bool) -> some View {
+        LoginPanel(padding: compact ? 16 : 20) {
+            VStack(alignment: .leading, spacing: compact ? 12 : 16) {
+                if !compact {
+                    HStack(alignment: .firstTextBaseline, spacing: 12) {
+                        Text("Sign in")
+                            .font(.system(.title3, weight: .semibold))
+                            .tracking(-0.4)
+                            .foregroundStyle(SchoolityLoginPalette.ink)
+                        Spacer(minLength: 8)
+                        Text("StudentVUE")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(SchoolityLoginPalette.faint)
+                    }
                 }
 
                 VStack(alignment: .leading, spacing: 6) {
@@ -354,15 +378,17 @@ private struct LoginIntro: View {
 }
 
 private struct LoginPanel<Content: View>: View {
+    let padding: CGFloat
     let content: () -> Content
 
-    init(@ViewBuilder content: @escaping () -> Content) {
+    init(padding: CGFloat = 20, @ViewBuilder content: @escaping () -> Content) {
+        self.padding = padding
         self.content = content
     }
 
     var body: some View {
         content()
-            .padding(20)
+            .padding(padding)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(SchoolityLoginPalette.panel, in: RoundedRectangle(cornerRadius: SchoolityRadius.large, style: .continuous))
             .overlay {

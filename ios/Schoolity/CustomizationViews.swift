@@ -3,11 +3,8 @@ import SwiftUI
 struct CustomizationView: View {
     var body: some View {
         List {
-            SchoolityPageHeader(title: "Settings")
-                .schoolityPageRow(top: 8, bottom: 18)
-
             SectionHeading(title: "Customization")
-                .schoolityPageRow(bottom: 10)
+                .schoolityPageRow(top: 8, bottom: 10)
             VStack(spacing: 0) {
                 SettingsLinkRow(title: "Grade Colors", symbol: "paintpalette.fill") { GradeColorsView() }
                 HairlineDivider()

@@ -276,20 +276,40 @@ private struct SectionContent: View {
 }
 
 private struct StudentInfoFieldRow: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     let field: InfoField
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(field.label)
-                .font(SchoolityText.meta)
-                .foregroundStyle(SchoolityPalette.muted)
-            Text(StudentRecordFormat.value(field.value))
-                .font(.subheadline)
-                .foregroundStyle(SchoolityPalette.ink)
-                .fixedSize(horizontal: false, vertical: true)
-                .textSelection(.enabled)
+        Group {
+            if typeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 2) {
+                    label
+                    value
+                }
+            } else {
+                LabeledContent {
+                    value
+                        .multilineTextAlignment(.leading)
+                } label: {
+                    label
+                }
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var label: some View {
+        Text(field.label)
+            .font(SchoolityText.meta)
+            .foregroundStyle(SchoolityPalette.muted)
+    }
+
+    private var value: some View {
+        Text(StudentRecordFormat.value(field.value))
+            .font(.subheadline)
+            .foregroundStyle(SchoolityPalette.ink)
+            .fixedSize(horizontal: false, vertical: true)
+            .textSelection(.enabled)
     }
 }
 
@@ -486,14 +506,6 @@ struct CourseHistoryView: View {
 
     var body: some View {
         List {
-            SchoolityPageHeader(
-                title: "Course History",
-                updated: store.lastUpdated[StudentRecordFeature.history.rawValue],
-                isRefreshing: store.loadingRecords.contains(.history),
-                refresh: { Task { await store.loadRecord(.history, refresh: true) } }
-            )
-            .schoolityPageRow(top: 8, bottom: 18)
-
             if let page = store.courseHistory {
                 if page.requirements.isEmpty && page.courses.isEmpty {
                     SchoolityEmptyState(
@@ -505,7 +517,7 @@ struct CourseHistoryView: View {
                 }
 
                 graduationCard(page)
-                    .schoolityPageRow(bottom: 14)
+                    .schoolityPageRow(top: 8, bottom: 14)
 
                 courseRecordsCard(page)
                     .schoolityPageRow(bottom: 14)
