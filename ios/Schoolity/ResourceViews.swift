@@ -10,14 +10,6 @@ struct ResourceView: View {
 
     var body: some View {
         List {
-            SchoolityPageHeader(
-                title: resource.title,
-                updated: store.lastUpdated[resource.rawValue],
-                isRefreshing: store.loadingResources.contains(resource),
-                refresh: { Task { await store.load(resource, refresh: true) } }
-            )
-            .schoolityPageRow(top: 8, bottom: 18)
-
             if let error = store.failures[resource] {
                 FailureCard(message: error, dismiss: { store.failures[resource] = nil }) {
                     Task { await store.load(resource, refresh: true) }

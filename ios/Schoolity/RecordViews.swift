@@ -9,9 +9,6 @@ struct RecordsView: View {
 
     var body: some View {
         List {
-            SchoolityPageHeader(title: "Records")
-                .schoolityPageRow(top: 8, bottom: 18)
-
             Button {
                 route = .studentInfo
             } label: {
@@ -107,14 +104,6 @@ struct StudentInfoView: View {
 
     var body: some View {
         List {
-            SchoolityPageHeader(
-                title: "Student Info",
-                updated: store.lastUpdated[StudentRecordFeature.student.rawValue],
-                isRefreshing: store.loadingRecords.contains(.student),
-                refresh: { Task { await store.loadRecord(.student, refresh: true) } }
-            )
-            .schoolityPageRow(top: 8, bottom: 18)
-
             Button {
                 showStudentID = true
             } label: {
@@ -374,14 +363,6 @@ struct AttendanceView: View {
 
     var body: some View {
         List {
-            SchoolityPageHeader(
-                title: "Attendance",
-                updated: store.lastUpdated[StudentRecordFeature.attendance.rawValue],
-                isRefreshing: store.loadingRecords.contains(.attendance),
-                refresh: { Task { await store.loadRecord(.attendance, refresh: true) } }
-            )
-            .schoolityPageRow(top: 8, bottom: 18)
-
             if let page = store.attendance {
                 if !page.totals.isEmpty {
                     AttendanceTotalsCard(totals: page.totals)

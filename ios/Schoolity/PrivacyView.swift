@@ -5,12 +5,6 @@ import SwiftUI
 struct PrivacyView: View {
     var body: some View {
         List {
-            SchoolityPageHeader(
-                title: "Privacy & Connection",
-                subtitle: "Schoolity connects directly to Anoka-Hennepin StudentVUE from this iPhone."
-            )
-            .schoolityPageRow(top: 8, bottom: 18)
-
             section(
                 title: "Connection",
                 paragraphs: [
