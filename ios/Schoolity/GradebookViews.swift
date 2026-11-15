@@ -6,7 +6,8 @@ struct GradebookView: View {
     var body: some View {
         GradebookContent(book: store.gradebook, isLoading: store.isLoading,
                          error: store.gradeError, updated: store.lastUpdated["grades"],
-                         refresh: { await store.refreshGrades(term: $0) })
+                         refresh: { await store.refreshGrades(term: $0) },
+                         dismiss: { store.gradeError = nil })
             .equatable()
     }
 }
@@ -17,6 +18,7 @@ private struct GradebookContent: View, Equatable {
     let error: String?
     let updated: Date?
     let refresh: (Int?) async -> Void
+    let dismiss: () -> Void
 
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.book == rhs.book && lhs.isLoading == rhs.isLoading && lhs.error == rhs.error && lhs.updated == rhs.updated
@@ -42,12 +44,24 @@ private struct GradebookContent: View, Equatable {
                         LastUpdatedText(date: updated)
                     }
                 }
-                Section("Courses") {
+                Section {
                     ForEach(book.courses) { course in
                         NavigationLink { CourseDetailView(course: course).id("\(book.currentTerm)-\(course.id)") } label: { CourseRow(course: course) }
                             .accessibilityIdentifier("course-\(course.id)")
                     }
-                    if book.courses.isEmpty { ContentUnavailableView("No courses", systemImage: "books.vertical", description: Text("Try another reporting period.")) }
+                    if book.courses.isEmpty {
+                        if isLoading {
+                            ForEach(0..<3, id: \.self) { _ in SkeletonCourseCard() }
+                        } else {
+                            ContentUnavailableView("No courses yet", systemImage: "books.vertical",
+                                                   description: Text("No courses are available for this reporting period. Try another period or refresh."))
+                        }
+                    }
+                } header: {
+                    HStack(spacing: 8) {
+                        Text("Your courses")
+                        CountBadge(count: book.courses.count)
+                    }
                 }
                 if !book.recentAssignments.isEmpty {
                     Section {
@@ -63,16 +77,30 @@ private struct GradebookContent: View, Equatable {
                     } footer: {
                         Text("Latest due dates in this reporting period.")
                     }
+                } else {
+                    Section("Recent assignments") {
+                        Text("No assignments in this reporting period.")
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             if isLoading && book == nil { ProgressView("Loading grades…") }
             if let error {
-                Section { FailureRow(message: error) { Task { await refresh(nil) } } }
+                Section {
+                    FailureRow(message: error, dismiss: dismiss) { Task { await refresh(nil) } }
+                }
             }
         }
         .schoolityList()
         .navigationTitle("Gradebook")
         .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { Task { await refresh(nil) } } label: {
+                    Label("Refresh", systemImage: "arrow.clockwise")
+                }
+                .disabled(isLoading)
+                .accessibilityHint("Reload grades from the district")
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 if isLoading && book != nil { ProgressView().accessibilityLabel("Updating grades") }
             }
@@ -188,12 +216,15 @@ struct CourseDetailView: View {
                         HypotheticalAddButton {
                             presentedSheet = Assignment(id: UUID().uuidString, title: "", category: categoryNames.first ?? "Assignments", earned: nil, possible: 10, due: "", hypothetical: true)
                         }
+                        Text("Local changes only.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                     if changed { Button("Reset changes", role: .destructive) { showReset = true }.frame(minHeight: 44) }
                 }
             }
             if detailSection == .assignments {
-                Section("Assignments") {
+                Section {
                     if course.assignments.isEmpty { Text("No assignments yet.").foregroundStyle(.secondary) }
                     ForEach(course.assignments) { assignment in
                         AssignmentDetailRow(assignment: assignment) { presentedSheet = assignment }
@@ -202,6 +233,11 @@ struct CourseDetailView: View {
                                 Button("Delete", role: .destructive) { course.assignments.removeAll { $0.id == assignment.id } }
                             }
                         }
+                    }
+                } header: {
+                    HStack(spacing: 8) {
+                        Text("Assignments")
+                        CountBadge(count: course.assignments.count)
                     }
                 }
             }
@@ -425,6 +461,21 @@ private struct GradeAverageRing: View {
             }
         }
         .frame(width: 62, height: 62)
+        .accessibilityHidden(true)
+    }
+}
+
+/// The website's loading cards: quiet placeholders instead of a spinner while the
+/// first gradebook loads. Static on purpose, so the UI tests never wait on motion.
+struct SkeletonCourseCard: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(.quaternary).frame(width: 132, height: 14)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(.quaternary).frame(width: 196, height: 11)
+        }
+        .padding(.vertical, 12)
         .accessibilityHidden(true)
     }
 }

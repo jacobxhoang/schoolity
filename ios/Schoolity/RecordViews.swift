@@ -124,6 +124,15 @@ struct StudentInfoView: View {
         }
         .schoolityList()
         .navigationTitle("Student Info")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { Task { await store.loadRecord(.student, refresh: true) } } label: {
+                    Label("Refresh", systemImage: "arrow.clockwise")
+                }
+                .disabled(store.loadingRecords.contains(.student))
+                .accessibilityHint("Reload student information from the district")
+            }
+        }
         .task { await store.loadRecord(.student) }
         .refreshable { await store.loadRecord(.student, refresh: true) }
     }
@@ -278,6 +287,15 @@ struct AttendanceView: View {
         }
         .schoolityList()
         .navigationTitle("Attendance")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { Task { await store.loadRecord(.attendance, refresh: true) } } label: {
+                    Label("Refresh", systemImage: "arrow.clockwise")
+                }
+                .disabled(store.loadingRecords.contains(.attendance))
+                .accessibilityHint("Reload attendance from the district")
+            }
+        }
         .task { await store.loadRecord(.attendance) }
         .refreshable { await store.loadRecord(.attendance, refresh: true) }
     }
@@ -439,6 +457,15 @@ struct CourseHistoryView: View {
         }
         .schoolityList()
         .navigationTitle("Course History")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { Task { await store.loadRecord(.history, refresh: true) } } label: {
+                    Label("Refresh", systemImage: "arrow.clockwise")
+                }
+                .disabled(store.loadingRecords.contains(.history))
+                .accessibilityHint("Reload course history from the district")
+            }
+        }
         .task { await store.loadRecord(.history) }
         .refreshable {
             openRequirement = nil

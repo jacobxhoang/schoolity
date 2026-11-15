@@ -245,11 +245,18 @@ struct AccountDetailsView: View {
 
 struct FailureRow: View {
     let message: String
+    var dismiss: (() -> Void)? = nil
     var retry: () -> Void
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Label(message, systemImage: "exclamationmark.circle")
-            Button("Try again", action: retry).frame(minHeight: 44)
+            HStack(spacing: 18) {
+                Button("Try again", action: retry)
+                if let dismiss {
+                    Button("Dismiss", action: dismiss).foregroundStyle(.secondary)
+                }
+            }
+            .frame(minHeight: 44)
         }.padding(.vertical, 4)
     }
 }
