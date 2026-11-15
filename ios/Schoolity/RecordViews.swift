@@ -1,13 +1,19 @@
 import SwiftUI
 
+private enum RecordRoute: Hashable {
+    case studentInfo, attendance, courseHistory, documents
+}
+
 struct RecordsView: View {
+    @State private var route: RecordRoute?
+
     var body: some View {
         List {
             SchoolityPageHeader(title: "Records")
                 .schoolityPageRow(top: 8, bottom: 18)
 
-            NavigationLink {
-                StudentInfoView()
+            Button {
+                route = .studentInfo
             } label: {
                 RecordDestinationRow(title: "Student Info", detail: "School, contacts, and transportation", symbol: "person.text.rectangle")
                     .schoolityCard(padding: 4)
@@ -15,8 +21,8 @@ struct RecordsView: View {
             .buttonStyle(.plain)
             .schoolityPageRow(bottom: 8)
 
-            NavigationLink {
-                AttendanceView()
+            Button {
+                route = .attendance
             } label: {
                 RecordDestinationRow(title: "Attendance", detail: "Absences and period details", symbol: "checkmark.circle")
                     .schoolityCard(padding: 4)
@@ -24,8 +30,8 @@ struct RecordsView: View {
             .buttonStyle(.plain)
             .schoolityPageRow(bottom: 8)
 
-            NavigationLink {
-                CourseHistoryView()
+            Button {
+                route = .courseHistory
             } label: {
                 RecordDestinationRow(title: "Course History", detail: "Credits and graduation progress", symbol: "clock.arrow.circlepath")
                     .schoolityCard(padding: 4)
@@ -33,8 +39,8 @@ struct RecordsView: View {
             .buttonStyle(.plain)
             .schoolityPageRow(bottom: 8)
 
-            NavigationLink {
-                ResourceView(resource: .documents)
+            Button {
+                route = .documents
             } label: {
                 RecordDestinationRow(title: "Documents", detail: "Reports and school files", symbol: "doc")
                     .schoolityCard(padding: 4)
@@ -50,6 +56,14 @@ struct RecordsView: View {
         .schoolityPageList()
         .navigationTitle("Records")
         .schoolityNavigationChrome()
+        .navigationDestination(item: $route) { route in
+            switch route {
+            case .studentInfo: StudentInfoView()
+            case .attendance: AttendanceView()
+            case .courseHistory: CourseHistoryView()
+            case .documents: ResourceView(resource: .documents)
+            }
+        }
     }
 }
 
@@ -74,6 +88,10 @@ private struct RecordDestinationRow: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(SchoolityPalette.faint)
+                .accessibilityHidden(true)
         }
         .frame(minHeight: 60)
         .padding(.horizontal, 12)
@@ -85,6 +103,7 @@ private struct RecordDestinationRow: View {
 
 struct StudentInfoView: View {
     @EnvironmentObject private var store: AppStore
+    @State private var showStudentID = false
 
     var body: some View {
         List {
@@ -96,8 +115,8 @@ struct StudentInfoView: View {
             )
             .schoolityPageRow(top: 8, bottom: 18)
 
-            NavigationLink {
-                StudentIDPage()
+            Button {
+                showStudentID = true
             } label: {
                 HStack(spacing: 12) {
                     IconTile(symbol: "barcode", size: 40, background: .field)
@@ -110,12 +129,17 @@ struct StudentInfoView: View {
                             .foregroundStyle(SchoolityPalette.muted)
                     }
                     Spacer(minLength: 8)
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(SchoolityPalette.faint)
+                        .accessibilityHidden(true)
                 }
                 .frame(minHeight: 60)
                 .contentShape(Rectangle())
+                .schoolityCard(padding: 16)
             }
             .buttonStyle(.plain)
-            .schoolityCardRow(bottom: 12, padding: 16)
+            .schoolityPageRow(bottom: 12)
 
             if let page = store.studentInfo {
                 if let notice = page.notice, !notice.isEmpty {
@@ -169,6 +193,7 @@ struct StudentInfoView: View {
         .schoolityPageList()
         .navigationTitle("Student Info")
         .schoolityNavigationChrome()
+        .navigationDestination(isPresented: $showStudentID) { StudentIDPage() }
         .task { await store.loadRecord(.student) }
         .refreshable { await store.loadRecord(.student, refresh: true) }
     }

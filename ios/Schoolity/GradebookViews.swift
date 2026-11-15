@@ -13,6 +13,7 @@ struct GradebookView: View {
 }
 
 private struct GradebookContent: View, Equatable {
+    @State private var selectedCourse: Course?
     let book: Gradebook?
     let isLoading: Bool
     let error: String?
@@ -48,8 +49,8 @@ private struct GradebookContent: View, Equatable {
                 }
 
                 ForEach(book.courses) { course in
-                    NavigationLink {
-                        CourseDetailView(course: course).id("\(book.currentTerm)-\(course.id)")
+                    Button {
+                        selectedCourse = course
                     } label: {
                         CourseRow(course: course)
                     }
@@ -97,6 +98,15 @@ private struct GradebookContent: View, Equatable {
         .schoolityPageList()
         .navigationTitle("Gradebook")
         .schoolityNavigationChrome()
+        .navigationDestination(isPresented: Binding(
+            get: { selectedCourse != nil },
+            set: { if !$0 { selectedCourse = nil } }
+        )) {
+            if let selectedCourse {
+                CourseDetailView(course: selectedCourse)
+                    .id("\(book?.currentTerm ?? 0)-\(selectedCourse.id)")
+            }
+        }
         .refreshable { await refresh(nil) }
         // A successful load, including a pull to refresh, lands with a tap.
         .sensoryFeedback(.success, trigger: updated)
@@ -195,6 +205,7 @@ struct GradebookStatsCard: View {
                         .frame(width: 1, height: 56)
                         .accessibilityHidden(true)
                     coursesStat
+                        .frame(width: 72, alignment: .trailing)
                 }
             }
         }
@@ -296,6 +307,10 @@ struct CourseRow: View {
                     identity
                     Spacer(minLength: 8)
                     grade
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(SchoolityPalette.faint)
+                        .accessibilityHidden(true)
                 }
             }
         }
