@@ -1,18 +1,18 @@
 <script lang="ts">
-  import { page } from '$app/state';
-  import './tokens.css';
+  import { page } from "$app/state";
+  import "./tokens.css";
 
   const title = $derived(
     page.status === 404
-      ? 'Page not found'
+      ? "Page not found"
       : page.status === 403
-        ? 'Not available'
-        : 'Something went wrong',
+        ? "Not available"
+        : "Something went wrong",
   );
   const message = $derived(
     page.status === 404
-      ? 'That address is not part of Schoolity. Open your workspace to continue.'
-      : page.error?.message || 'The page could not be loaded. Try again.',
+      ? "That address is not part of Schoolity. Open your workspace to continue."
+      : page.error?.message || "The page could not be loaded. Try again.",
   );
 </script>
 

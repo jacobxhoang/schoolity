@@ -1,0 +1,13 @@
+node_modules/
+.git/
+.svelte-kit/
+.vercel/
+.taste-skill/
+.impeccable/
+build/
+package-lock.json
+ios/Schoolity/Resources/
+ios/DerivedData/
+ios/build/
+ios/TestResults/
+**/*.xcodeproj/

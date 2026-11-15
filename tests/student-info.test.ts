@@ -1,9 +1,9 @@
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
-import { parseStudentPage } from '../src/lib/server/student-info.ts';
-import { studentInformation, studentText } from '../src/lib/records.ts';
-import { read, PortalError } from '../src/lib/server/portal.ts';
-import { DISTRICT_URL } from '../src/lib/config.ts';
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { parseStudentPage } from "../src/lib/server/student-info.ts";
+import { studentInformation, studentText } from "../src/lib/records.ts";
+import { read, PortalError } from "../src/lib/server/portal.ts";
+import { DISTRICT_URL } from "../src/lib/config.ts";
 
 const html = `<div id="MainDiv">
 <table class="info_tbl"><tr><td>Student Information</td></tr><tr>
@@ -25,58 +25,140 @@ const html = `<div id="MainDiv">
 <table class="info_tbl"><tr><td>Activity Screening</td></tr><tr class="row_subhdr"><td>Screen Date</td><td>Screen Type</td><td>Result</td></tr><tr><td colspan="3">No health screen activity information provided</td></tr></table>
 </div><script>throw new Error('never execute');</script>`;
 
-test('student values turn raw and encoded HTML breaks into text lines without rendering markup', () => {
-  for (const br of ['<br>','<BR />','&lt;br&gt;'])
-    assert.equal(studentText(`101 Sample Road${br}Example, MN 00000`),'101 Sample Road\nExample, MN 00000');
-  assert.equal(studentText('<p>A &amp; B</p><script>doNotExecute()</script><p>Second line</p>'),'A & B\nSecond line');
-  assert.equal(studentText(0),'0');
+test("student values turn raw and encoded HTML breaks into text lines without rendering markup", () => {
+  for (const br of ["<br>", "<BR />", "&lt;br&gt;"])
+    assert.equal(
+      studentText(`101 Sample Road${br}Example, MN 00000`),
+      "101 Sample Road\nExample, MN 00000",
+    );
+  assert.equal(
+    studentText(
+      "<p>A &amp; B</p><script>doNotExecute()</script><p>Second line</p>",
+    ),
+    "A & B\nSecond line",
+  );
+  assert.equal(studentText(0), "0");
 });
 
-test('StudentVUE page mapping preserves every information section and missing fields', () => {
+test("StudentVUE page mapping preserves every information section and missing fields", () => {
   const sections = parseStudentPage(html);
-  assert.equal(sections.length,7);
-  assert.equal(sections[0].fields.find(f=>f.label==='Nick Name')?.value,'');
-  assert.equal(sections[0].fields.find(f=>f.label==='Meals Balance')?.value,'0.00');
-  assert.equal(sections[1].groups?.length,2);
-  assert.equal(sections[1].groups?.[0].fields[1].label,'Other Phone');
-  assert.deepEqual(sections[2].groups?.map(g=>g.title),['Physician','Dentist']);
-  assert.equal(sections[3].table?.rows[0][0],'0012');
-  assert.equal(sections[3].table?.rows[0][4],'01-02-03');
-  assert.equal(sections[4].fields.find(f=>f.label==='Bus to School')?.value,'007');
-  assert.equal(sections[4].fields.find(f=>f.label==='Activity Bus Stop')?.value,'Sample Road\nExample Town');
-  assert.equal(sections[5].fields[0].label,'Case Manager');
-  assert.match(sections[6].note!,/No health screen/);
-  assert.equal(sections[6].table,undefined);
+  assert.equal(sections.length, 7);
+  assert.equal(
+    sections[0].fields.find((f) => f.label === "Nick Name")?.value,
+    "",
+  );
+  assert.equal(
+    sections[0].fields.find((f) => f.label === "Meals Balance")?.value,
+    "0.00",
+  );
+  assert.equal(sections[1].groups?.length, 2);
+  assert.equal(sections[1].groups?.[0].fields[1].label, "Other Phone");
+  assert.deepEqual(
+    sections[2].groups?.map((g) => g.title),
+    ["Physician", "Dentist"],
+  );
+  assert.equal(sections[3].table?.rows[0][0], "0012");
+  assert.equal(sections[3].table?.rows[0][4], "01-02-03");
+  assert.equal(
+    sections[4].fields.find((f) => f.label === "Bus to School")?.value,
+    "007",
+  );
+  assert.equal(
+    sections[4].fields.find((f) => f.label === "Activity Bus Stop")?.value,
+    "Sample Road\nExample Town",
+  );
+  assert.equal(sections[5].fields[0].label, "Case Manager");
+  assert.match(sections[6].note!, /No health screen/);
+  assert.equal(sections[6].table, undefined);
 });
 
-test('complete web sections retain the fuller mobile address without mutating the response', () => {
+test("complete web sections retain the fuller mobile address without mutating the response", () => {
   const studentSections = parseStudentPage(html);
-  const result = studentInformation({studentInfo:{permID:'000123',homeAddress:'101 Sample Road<br>Example, MN 00000'},studentSections});
-  assert.equal(result.sections.length,7);
-  assert.equal(result.sections[0].fields.find(f=>f.label==='Home Address')?.value,'101 Sample Road\nExample, MN 00000');
-  assert.equal(studentSections[0].fields.find(f=>f.label==='Home Address')?.value,'MN');
+  const result = studentInformation({
+    studentInfo: {
+      permID: "000123",
+      homeAddress: "101 Sample Road<br>Example, MN 00000",
+    },
+    studentSections,
+  });
+  assert.equal(result.sections.length, 7);
+  assert.equal(
+    result.sections[0].fields.find((f) => f.label === "Home Address")?.value,
+    "101 Sample Road\nExample, MN 00000",
+  );
+  assert.equal(
+    studentSections[0].fields.find((f) => f.label === "Home Address")?.value,
+    "MN",
+  );
 });
 
-test('student page errors remain explicit rather than appearing as complete empty information', async () => {
-  assert.throws(()=>parseStudentPage('<input type="password">'),(e:unknown)=>e instanceof Error&&'status' in e&&e.status===401);
-  assert.throws(()=>parseStudentPage('<div id="MainDiv"></div>'),/No readable/);
-  const session={base:DISTRICT_URL,token:'synthetic',expires:Date.now()+10000};
-  const send = async () => ({data:{studentInfoXML:{formattedName:'Sample Student'}}});
-  const partial=studentInformation(await read(session,'student',undefined,send));
-  assert.match(partial.notice!,/Sign in again/);
-  const complete=studentInformation(await read({...session,webCookie:'ASP.NET_SessionId=fixture'},'student',undefined,send,async (base,path,headers)=>{
-    assert.equal(base,DISTRICT_URL); assert.equal(path,'/PXP2_Student.aspx?AGU=0'); assert.equal(headers.Cookie,'ASP.NET_SessionId=fixture');
-    return {text:html,cookie:''};
-  }));
-  assert.equal(complete.sections.length,7);
-  const retry=studentInformation(await read({...session,webCookie:'fixture'},'student',undefined,send,async()=>{throw new Error('Unavailable');}));
-  assert.match(retry.notice!,/could not be loaded/);
+test("student page errors remain explicit rather than appearing as complete empty information", async () => {
+  assert.throws(
+    () => parseStudentPage('<input type="password">'),
+    (e: unknown) => e instanceof Error && "status" in e && e.status === 401,
+  );
+  assert.throws(
+    () => parseStudentPage('<div id="MainDiv"></div>'),
+    /No readable/,
+  );
+  const session = {
+    base: DISTRICT_URL,
+    token: "synthetic",
+    expires: Date.now() + 10000,
+  };
+  const send = async () => ({
+    data: { studentInfoXML: { formattedName: "Sample Student" } },
+  });
+  const partial = studentInformation(
+    await read(session, "student", undefined, send),
+  );
+  assert.match(partial.notice!, /Sign in again/);
+  const complete = studentInformation(
+    await read(
+      { ...session, webCookie: "ASP.NET_SessionId=fixture" },
+      "student",
+      undefined,
+      send,
+      async (base, path, headers) => {
+        assert.equal(base, DISTRICT_URL);
+        assert.equal(path, "/PXP2_Student.aspx?AGU=0");
+        assert.equal(headers.Cookie, "ASP.NET_SessionId=fixture");
+        return { text: html, cookie: "" };
+      },
+    ),
+  );
+  assert.equal(complete.sections.length, 7);
+  const retry = studentInformation(
+    await read(
+      { ...session, webCookie: "fixture" },
+      "student",
+      undefined,
+      send,
+      async () => {
+        throw new Error("Unavailable");
+      },
+    ),
+  );
+  assert.match(retry.notice!, /could not be loaded/);
   for (const page of [
-    async()=>({text:'<input type="password">',cookie:''}),
-    async()=>{throw new PortalError('Expired district web session',401);},
+    async () => ({ text: '<input type="password">', cookie: "" }),
+    async () => {
+      throw new PortalError("Expired district web session", 401);
+    },
   ]) {
-    const expired=studentInformation(await read({...session,webCookie:'fixture'},'student',undefined,send,page));
-    assert.match(expired.notice!,/needs to reconnect/);
-    assert.equal(expired.sections[0].fields.find(f=>f.label==='Name')?.value,'Sample Student');
+    const expired = studentInformation(
+      await read(
+        { ...session, webCookie: "fixture" },
+        "student",
+        undefined,
+        send,
+        page,
+      ),
+    );
+    assert.match(expired.notice!, /needs to reconnect/);
+    assert.equal(
+      expired.sections[0].fields.find((f) => f.label === "Name")?.value,
+      "Sample Student",
+    );
   }
 });

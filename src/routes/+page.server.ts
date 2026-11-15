@@ -1,14 +1,14 @@
-import type { PageServerLoad } from './$types';
-import { PortalError } from '$lib/server/portal';
+import type { PageServerLoad } from "./$types";
+import { PortalError } from "$lib/server/portal";
 import {
   browserAuth,
   REMEMBER_COOKIE,
   SESSION_COOKIE,
-} from '$lib/server/browser-auth';
-import { gradeCacheIdentity } from '$lib/server/grade-cache-identity';
+} from "$lib/server/browser-auth";
+import { gradeCacheIdentity } from "$lib/server/grade-cache-identity";
 
 export const load: PageServerLoad = async ({ cookies, setHeaders }) => {
-  setHeaders({ 'Cache-Control': 'private, no-store' });
+  setHeaders({ "Cache-Control": "private, no-store" });
   const savedSignIn = !!cookies.get(REMEMBER_COOKIE);
   try {
     // Only read an existing session while rendering. An expired saved sign-in
@@ -20,7 +20,7 @@ export const load: PageServerLoad = async ({ cookies, setHeaders }) => {
       cacheIdentity: session
         ? gradeCacheIdentity(cookies.get(SESSION_COOKIE))
         : null,
-      signInError: '',
+      signInError: "",
       retrySavedSignIn: !session && savedSignIn,
     };
   } catch (error) {
@@ -30,7 +30,7 @@ export const load: PageServerLoad = async ({ cookies, setHeaders }) => {
       signInError:
         error instanceof PortalError
           ? error.message
-          : 'Could not restore sign-in. Try again.',
+          : "Could not restore sign-in. Try again.",
       retrySavedSignIn: savedSignIn,
     };
   }

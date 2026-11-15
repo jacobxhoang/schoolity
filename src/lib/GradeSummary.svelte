@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { calculate, percentage, type Course } from './model';
-  import { scoreChange } from './workspace';
+  import { calculate, percentage, type Course } from "./model";
+  import { scoreChange } from "./workspace";
   let {
     course,
     starting,
@@ -19,8 +19,8 @@
       >{percentage(estimate)}</strong
     >{#if scenario}<small aria-label={scoreChange(estimate, baseline)}
         >{change === null
-          ? 'No comparison'
-          : `${change >= 0 ? '+' : '−'}${Math.abs(change).toFixed(1)} pts`}</small
+          ? "No comparison"
+          : `${change >= 0 ? "+" : "−"}${Math.abs(change).toFixed(1)} pts`}</small
       >{/if}
   </div>
 </section>

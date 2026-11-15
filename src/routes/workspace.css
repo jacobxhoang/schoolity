@@ -251,10 +251,14 @@ nav button svg {
   animation: update-spin 0.8s linear infinite;
 }
 @keyframes update-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .update-spinner { animation: none; }
+  .update-spinner {
+    animation: none;
+  }
 }
 .mobile-toggle {
   display: none;
@@ -388,7 +392,10 @@ select option {
   min-width: 120px;
   padding: 0;
 }
-.stat-card + .stat-card { padding-left:24px; border-left:1px solid var(--summary-line); }
+.stat-card + .stat-card {
+  padding-left: 24px;
+  border-left: 1px solid var(--summary-line);
+}
 .stat-card > span {
   display: flex;
   align-items: center;
@@ -506,25 +513,6 @@ select option {
   border-radius: 50%;
   background: var(--ink);
 }
-.term-line select {
-  min-height: var(--s6);
-  padding: 0 28px 0 8px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-chip);
-  background-color: var(--field);
-  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236e6e6e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 9px center;
-  appearance: none;
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-}
-.term-line select:hover {
-  border-color: var(--line-strong);
-  background-color: var(--panel);
-}
 .term-line > span:last-child {
   margin-left: auto;
   color: var(--faint);
@@ -569,7 +557,8 @@ select option {
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: var(--accent-soft); color: var(--accent-ink);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
 }
 .course-card-top > .subject-icon {
   grid-column: 1;
@@ -689,11 +678,11 @@ select option {
   display: none;
 }
 .estimate-details summary::after {
-  content: '+';
+  content: "+";
   font-size: 14px;
 }
 .estimate-details[open] summary::after {
-  content: '−';
+  content: "−";
 }
 .estimate-details p {
   max-width: 32ch;
@@ -786,7 +775,7 @@ select option {
   background: var(--line-strong);
 }
 .toggle-control > span::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 3px;
   left: 3px;
@@ -873,8 +862,7 @@ td small {
   background: var(--field);
 }
 .title-input,
-.score-inputs input,
-.category-select {
+.score-inputs input {
   min-height: var(--s6);
   padding: 0 10px;
   border: 1px solid var(--line);
@@ -886,9 +874,6 @@ td small {
 .title-input {
   width: 100%;
   min-width: 150px;
-}
-.category-select {
-  max-width: 170px;
 }
 .score-inputs {
   display: flex;
@@ -1125,12 +1110,7 @@ td small {
   min-width: 0;
   max-width: 100%;
 }
-.record-filters select {
-  padding: 0 10px;
-  border-radius: var(--r-chip);
-  font-size: var(--t-meta);
-}
-.record-filters [role='status'] {
+.record-filters [role="status"] {
   color: var(--faint);
   font-size: var(--t-mini);
 }
@@ -1305,7 +1285,7 @@ td small {
 .subject-toggle svg {
   color: var(--muted);
 }
-.subject-toggle[aria-expanded='true'] svg {
+.subject-toggle[aria-expanded="true"] svg {
   transform: rotate(90deg);
 }
 .graduation-progress {
@@ -1736,10 +1716,27 @@ td small {
   }
 }
 
-.course-card:hover { border-color:var(--accent); }
+.course-card:hover {
+  border-color: var(--accent);
+}
 @media (prefers-reduced-motion: no-preference) {
- .main-shell > main { animation:workspace-arrive 320ms ease-out both; }
- .refresh-button:hover { transform:translateY(-1px); }
- .course-card:active { transform:translateY(0) scale(.995); }
- @keyframes workspace-arrive { from { opacity:.5; transform:translateY(6px); } to { opacity:1; transform:none; } }
+  .main-shell > main {
+    animation: workspace-arrive 320ms ease-out both;
+  }
+  .refresh-button:hover {
+    transform: translateY(-1px);
+  }
+  .course-card:active {
+    transform: translateY(0) scale(0.995);
+  }
+  @keyframes workspace-arrive {
+    from {
+      opacity: 0.5;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
 }

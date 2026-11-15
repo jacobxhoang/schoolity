@@ -1,7 +1,7 @@
 // Keep the district's validity window, bounded to 30 days. Never extend its token.
 export function sessionLifetime(expiresIn: unknown): number {
   const seconds =
-    typeof expiresIn === 'number' || typeof expiresIn === 'string'
+    typeof expiresIn === "number" || typeof expiresIn === "string"
       ? Number(expiresIn)
       : NaN;
   return Number.isFinite(seconds) && seconds >= 1
@@ -10,10 +10,10 @@ export function sessionLifetime(expiresIn: unknown): number {
 }
 export function sessionCookieOptions(url: URL, maxAge: number) {
   return {
-    path: '/',
+    path: "/",
     httpOnly: true,
-    sameSite: 'lax' as const,
-    secure: url.protocol === 'https:',
+    sameSite: "lax" as const,
+    secure: url.protocol === "https:",
     maxAge,
   };
 }

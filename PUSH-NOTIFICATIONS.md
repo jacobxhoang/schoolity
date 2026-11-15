@@ -20,15 +20,15 @@ Credentials, district tokens, device tokens, and grade flags are encrypted toget
 
 Use the existing shared Upstash store or another supported Redis REST store. Set these **server-only** variables in the chosen host's secret manager:
 
-| Variable | Value |
-| --- | --- |
-| `SCHOOLITY_PUSH_ENABLED` | `true` only after the full setup is verified |
-| `SCHOOLITY_PUSH_ENCRYPTION_KEY` | Separate random 32-byte standard-base64 key |
-| `SCHOOLITY_APNS_PRIVATE_KEY` | APNs `.p8` PEM, with real newlines or escaped `\n` |
-| `SCHOOLITY_APNS_KEY_ID` | Apple Key ID |
-| `SCHOOLITY_APNS_TEAM_ID` | Apple Team ID |
-| `SCHOOLITY_APNS_TOPIC` | The signed app's exact bundle identifier |
-| `CRON_SECRET` | Random secret of at least 32 characters |
+| Variable                        | Value                                              |
+| ------------------------------- | -------------------------------------------------- |
+| `SCHOOLITY_PUSH_ENABLED`        | `true` only after the full setup is verified       |
+| `SCHOOLITY_PUSH_ENCRYPTION_KEY` | Separate random 32-byte standard-base64 key        |
+| `SCHOOLITY_APNS_PRIVATE_KEY`    | APNs `.p8` PEM, with real newlines or escaped `\n` |
+| `SCHOOLITY_APNS_KEY_ID`         | Apple Key ID                                       |
+| `SCHOOLITY_APNS_TEAM_ID`        | Apple Team ID                                      |
+| `SCHOOLITY_APNS_TOPIC`          | The signed app's exact bundle identifier           |
+| `CRON_SECRET`                   | Random secret of at least 32 characters            |
 
 Generate secrets locally with `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. Keep production and preview stores/keys separate. Changing encryption keys invalidates stored subscriptions; coordinate rotation and remove old encrypted records. Enrollment must explicitly explain that the notification service retains an encrypted school sign-in while closed-app alerts are enabled, and disabling/signing out must revoke it.
 

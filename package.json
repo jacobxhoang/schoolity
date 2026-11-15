@@ -10,7 +10,9 @@
     "start": "node build",
     "preview": "vite preview --host 127.0.0.1 --port 5180",
     "check": "svelte-kit sync && svelte-check --tsconfig tsconfig.json",
-    "test": "node --experimental-strip-types --test tests/*.test.ts"
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
     "@sveltejs/adapter-node": "^5.5.0",
@@ -19,6 +21,8 @@
     "@sveltejs/vite-plugin-svelte": "^6.2.4",
     "@types/node": "^24.0.0",
     "esbuild": "0.28.2",
+    "prettier": "3.7.4",
+    "prettier-plugin-svelte": "3.4.1",
     "svelte": "^5.46.4",
     "svelte-check": "^4.3.5",
     "typescript": "^5.9.3",

@@ -1,28 +1,41 @@
 <script lang="ts">
-  import { onMount, untrack, tick } from 'svelte';
-  import { fly } from 'svelte/transition';
+  import { onMount, untrack, tick } from "svelte";
+  import { fly } from "svelte/transition";
   let reducedMotion = $state(false);
-  import { readGradeCache, saveGradeCache, clearGradeCache } from '$lib/grade-cache';
-  import GradeSummary from '$lib/GradeSummary.svelte';
-  import SelectMenu from '$lib/SelectMenu.svelte';
-  import { HistorySubjectCache } from '$lib/history-subject-cache';
-  import StudentRecords from '$lib/StudentRecords.svelte';
-  import { readRecords, type RecordPage, type SubjectDetails } from '$lib/records';
+  import {
+    readGradeCache,
+    saveGradeCache,
+    clearGradeCache,
+  } from "$lib/grade-cache";
+  import GradeSummary from "$lib/GradeSummary.svelte";
+  import SelectMenu from "$lib/SelectMenu.svelte";
+  import { HistorySubjectCache } from "$lib/history-subject-cache";
+  import StudentRecords from "$lib/StudentRecords.svelte";
+  import {
+    readRecords,
+    type RecordPage,
+    type SubjectDetails,
+  } from "$lib/records";
   import {
     requestPortal,
     requestWorkspacePortal,
     RequestFailure,
-  } from '$lib/portal-request';
-  import {
-    readLocation,
-    courseLocation,
-    scoreChange,
-  } from '$lib/workspace';
-  let { data: sessionData }: { data: { authenticated: boolean; cacheIdentity?: string | null; signInError?: string; retrySavedSignIn?: boolean } } = $props();
+  } from "$lib/portal-request";
+  import { readLocation, courseLocation, scoreChange } from "$lib/workspace";
+  let {
+    data: sessionData,
+  }: {
+    data: {
+      authenticated: boolean;
+      cacheIdentity?: string | null;
+      signInError?: string;
+      retrySavedSignIn?: boolean;
+    };
+  } = $props();
   let cacheIdentity = untrack(() => sessionData.cacheIdentity ?? null);
   let authenticated = $state(untrack(() => sessionData.authenticated));
-  import Icon from '$lib/Icon.svelte';
-  import Trend from '$lib/Trend.svelte';
+  import Icon from "$lib/Icon.svelte";
+  import Trend from "$lib/Trend.svelte";
   import {
     calculate,
     letter,
@@ -33,75 +46,75 @@
     type EventItem,
     type Profile,
     type ScheduleData,
-  } from '$lib/model';
+  } from "$lib/model";
   import {
     grades,
     profile,
     events,
     schedule as readSchedule,
-  } from '$lib/portal-data';
-  import './tokens.css';
-  import './app.css';
-  import './login.css';
-  import './workspace.css';
+  } from "$lib/portal-data";
+  import "./tokens.css";
+  import "./app.css";
+  import "./login.css";
+  import "./workspace.css";
   const navigation = [
-    { id: 'grades', label: 'Gradebook', icon: 'book' },
-    { id: 'schedule', label: 'Schedule', icon: 'calendar' },
-    { id: 'attendance', label: 'Attendance', icon: 'check' },
-    { id: 'history', label: 'Course History', icon: 'history' },
-    { id: 'student', label: 'Student Info', icon: 'person' },
-    { id: 'mail', label: 'Inbox', icon: 'mail' },
-    { id: 'documents', label: 'Documents', icon: 'file' },
+    { id: "grades", label: "Gradebook", icon: "book" },
+    { id: "schedule", label: "Schedule", icon: "calendar" },
+    { id: "attendance", label: "Attendance", icon: "check" },
+    { id: "history", label: "Course History", icon: "history" },
+    { id: "student", label: "Student Info", icon: "person" },
+    { id: "mail", label: "Inbox", icon: "mail" },
+    { id: "documents", label: "Documents", icon: "file" },
   ];
   // One nav model, grouped the way the phone groups it: work first, records,
   // then messages. Section ids are unchanged, so routing stays as it was.
   const navGroups: { label: string; items: typeof navigation }[] = [
     {
-      label: '',
+      label: "",
       items: navigation.filter((item) =>
-        ['grades', 'schedule'].includes(item.id),
+        ["grades", "schedule"].includes(item.id),
       ),
     },
     {
-      label: 'Records',
+      label: "Records",
       items: navigation.filter((item) =>
-        ['student', 'attendance', 'history'].includes(item.id),
+        ["student", "attendance", "history"].includes(item.id),
       ),
     },
     {
-      label: '',
+      label: "",
       items: navigation.filter((item) =>
-        ['mail', 'documents'].includes(item.id),
+        ["mail", "documents"].includes(item.id),
       ),
     },
   ];
   const indexRows = [
     {
-      icon: 'book',
-      name: 'Gradebook',
-      detail: 'Courses, assignments and estimates',
+      icon: "book",
+      name: "Gradebook",
+      detail: "Courses, assignments and estimates",
     },
     {
-      icon: 'person',
-      name: 'Records',
-      detail: 'Student info, attendance, course history',
+      icon: "person",
+      name: "Records",
+      detail: "Student info, attendance, course history",
     },
     {
-      icon: 'mail',
-      name: 'Messages',
-      detail: 'Inbox and document downloads',
+      icon: "mail",
+      name: "Messages",
+      detail: "Inbox and document downloads",
     },
   ];
-  let tab = $state('grades'),
+  let tab = $state("grades"),
     data = $state<GradeData>({ courses: [], terms: [], currentTerm: 0 }),
     person = $state<Profile>({
-      name: 'Student',
-      school: 'Anoka-Hennepin',
-      grade: '',
+      name: "Student",
+      school: "Anoka-Hennepin",
+      grade: "",
     }),
     busy = $state(untrack(() => sessionData.authenticated)),
-    error = $state(''),
-    notice = $state('');
+    error = $state(""),
+    notice = $state("");
   let selected = $state<string | null>(null),
     mobileMenu = $state(false),
     privacyOpen = $state(false),
@@ -114,12 +127,12 @@
     retryAction = $state<null | (() => Promise<void>)>(null);
   let sidebar = $state<HTMLElement>(),
     mainContent = $state<HTMLElement>();
-  let username = $state(''),
-    password = $state(''),
+  let username = $state(""),
+    password = $state(""),
     rememberSignIn = $state(false),
     loginBusy = $state(false),
     restoring = $state(false),
-    loginError = $state(untrack(() => sessionData.signInError ?? '')),
+    loginError = $state(untrack(() => sessionData.signInError ?? "")),
     hypothetical = $state(false);
   let edits = $state<Record<string, Course>>({}),
     resourceData = $state<Record<string, EventItem[]>>({}),
@@ -130,8 +143,8 @@
   const subjectCache = new HistorySubjectCache();
   let subjectPreload: Promise<void> | null = null;
   let recordPages = $state<Record<string, RecordPage>>({});
-  const recordResources = ['student', 'history', 'attendance'];
-  const remoteResources = ['schedule', 'mail', 'documents', ...recordResources];
+  const recordResources = ["student", "history", "attendance"];
+  const remoteResources = ["schedule", "mail", "documents", ...recordResources];
   const activeCourse = $derived(
     selected
       ? ((hypothetical ? edits[selected] : undefined) ??
@@ -159,20 +172,20 @@
   );
   const scenarioAnnouncement = $derived(
     hypothetical
-      ? 'Hypothetical estimate: ' +
+      ? "Hypothetical estimate: " +
           percentage(currentEstimate) +
-          '. ' +
+          ". " +
           scoreChange(currentEstimate, baselineEstimate)
-      : '',
+      : "",
   );
   const refreshLabel = $derived(
     lastRefresh
-      ? 'Last updated ' +
+      ? "Last updated " +
           new Date(lastRefresh).toLocaleTimeString([], {
-            hour: 'numeric',
-            minute: '2-digit',
+            hour: "numeric",
+            minute: "2-digit",
           })
-      : 'Not yet loaded',
+      : "Not yet loaded",
   );
   const scores = $derived(
     data.courses
@@ -184,13 +197,8 @@
   );
   const recentAssignments = $derived(
     data.courses
-      .flatMap((c) =>
-        c.assignments
-          .map((a) => ({ ...a, course: c })),
-      )
-      .toSorted(
-        (a, b) => (Date.parse(b.due) || 0) - (Date.parse(a.due) || 0),
-      )
+      .flatMap((c) => c.assignments.map((a) => ({ ...a, course: c })))
+      .toSorted((a, b) => (Date.parse(b.due) || 0) - (Date.parse(a.due) || 0))
       .slice(0, 8),
   );
   const selectedScheduleTerm = $derived(
@@ -200,25 +208,25 @@
   const scheduleRecords: EventItem[] = $derived(
     (selectedScheduleTerm?.classes ?? []).map((course) => ({
       title: course.title,
-      detail: [course.teacher, course.room ? `Room ${course.room}` : '']
+      detail: [course.teacher, course.room ? `Room ${course.room}` : ""]
         .filter(Boolean)
-        .join(' · '),
+        .join(" · "),
       date: [
-        course.period ? `Period ${course.period}` : '',
-        course.meetingDays ?? '',
+        course.period ? `Period ${course.period}` : "",
+        course.meetingDays ?? "",
       ]
         .filter(Boolean)
-        .join(' · '),
+        .join(" · "),
     })),
   );
   const shownRecords = $derived(
-    tab === 'schedule' ? scheduleRecords : (resourceData[tab] ?? []),
+    tab === "schedule" ? scheduleRecords : (resourceData[tab] ?? []),
   );
   const dateLabel = (value: string) => {
     const d = new Date(value);
     return Number.isNaN(d.getTime())
       ? value
-      : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
   const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
   async function api(
@@ -232,7 +240,7 @@
       if (
         e instanceof RequestFailure &&
         e.status === 401 &&
-        body.action !== 'login' &&
+        body.action !== "login" &&
         version === generation &&
         !background
       ) {
@@ -247,28 +255,32 @@
     const version = ++generation;
     resourceLoads.clear();
     busy = true;
-    error = '';
+    error = "";
     retryAction = null;
     try {
       const [g, p] = await Promise.all([
         api({
-          action: 'read',
-          resource: 'grades',
+          action: "read",
+          resource: "grades",
           ...(term === undefined ? {} : { term }),
         }),
-        api({ action: 'read', resource: 'profile' }).catch(() => null),
+        api({ action: "read", resource: "profile" }).catch(() => null),
       ]);
       if (version !== generation || !authenticated) return;
       data = grades(g.data);
-      if (typeof g.cacheIdentity === 'string') cacheIdentity = g.cacheIdentity;
+      if (typeof g.cacheIdentity === "string") cacheIdentity = g.cacheIdentity;
       if (p) person = profile(p.data);
       lastRefresh = Date.now();
-      try { saveGradeCache(localStorage, cacheIdentity, data, lastRefresh); } catch { /* Storage unavailable. */ }
+      try {
+        saveGradeCache(localStorage, cacheIdentity, data, lastRefresh);
+      } catch {
+        /* Storage unavailable. */
+      }
       if (selected && !data.courses.some((c) => c.id === selected)) {
         selected = null;
         hypothetical = false;
         notice =
-          'This course is not available in the selected reporting period.';
+          "This course is not available in the selected reporting period.";
       }
       applyLocation();
     } catch (e) {
@@ -276,7 +288,7 @@
         error =
           e instanceof Error
             ? e.message
-            : 'School data could not be loaded. Try again.';
+            : "School data could not be loaded. Try again.";
         retryAction = () => load(term);
       }
     } finally {
@@ -287,7 +299,7 @@
     mobileMenu = false;
     if (restore)
       void tick().then(() =>
-        document.getElementById('navigation-toggle')?.focus(),
+        document.getElementById("navigation-toggle")?.focus(),
       );
   }
   function applyLocation() {
@@ -303,16 +315,16 @@
       selected = null;
   }
   function writeLocation(hash: string) {
-    if (location.hash !== hash) history.pushState(null, '', hash);
+    if (location.hash !== hash) history.pushState(null, "", hash);
   }
   async function navigate(id: string, record = true) {
-    if (record) writeLocation('#' + id);
+    if (record) writeLocation("#" + id);
     tab = id;
     selected = null;
     hypothetical = false;
     closeMenu(false);
-    notice = '';
-    error = '';
+    notice = "";
+    error = "";
     retryAction = null;
     window.scrollTo(0, 0);
     await tick();
@@ -322,7 +334,7 @@
   }
   function hasResource(id: string) {
     if (recordResources.includes(id)) return !!recordPages[id];
-    return id === 'schedule' ? schedule.terms.length > 0 : !!resourceData[id];
+    return id === "schedule" ? schedule.terms.length > 0 : !!resourceData[id];
   }
   async function loadHistorySubject(
     id: string,
@@ -330,46 +342,57 @@
   ): Promise<SubjectDetails> {
     const version = generation;
     return subjectCache.load(id, async () => {
-    const response = await api(
-      { action: 'read', resource: 'history-subject', subject: id },
-      background,
-    );
-    if (version !== generation || !authenticated) throw new Error('Your workspace changed. Open the subject again.');
-    const details = response.data as SubjectDetails;
-    return details;
+      const response = await api(
+        { action: "read", resource: "history-subject", subject: id },
+        background,
+      );
+      if (version !== generation || !authenticated)
+        throw new Error("Your workspace changed. Open the subject again.");
+      const details = response.data as SubjectDetails;
+      return details;
     });
   }
   function preloadHistorySubjects() {
     const version = generation;
     const page = recordPages.history;
-    if (subjectPreload || page?.kind !== 'history') return;
+    if (subjectPreload || page?.kind !== "history") return;
     subjectPreload = (async () => {
       try {
         for (const requirement of page.requirements) {
-          if (!requirement.id || !authenticated || version !== generation || page !== recordPages.history)
+          if (
+            !requirement.id ||
+            !authenticated ||
+            version !== generation ||
+            page !== recordPages.history
+          )
             return;
           if (!subjectCache.has(requirement.id))
             await loadHistorySubject(requirement.id, true).catch(() => {});
         }
       } finally {
-        if (version === generation && page === recordPages.history) subjectPreload = null;
+        if (version === generation && page === recordPages.history)
+          subjectPreload = null;
       }
     })();
   }
   function loadResource(
     id: string,
-    mode: 'foreground' | 'background' = 'foreground',
+    mode: "foreground" | "background" = "foreground",
   ): Promise<void> {
     const running = resourceLoads.get(id);
     if (running) {
-      if (mode === 'background') return running;
+      if (mode === "background") return running;
       const version = generation;
       busy = true;
-      return running.then(() => {
-        if (version !== generation || tab !== id) return;
-        error = resourceFailures.get(id) ?? '';
-        if (error) retryAction = () => loadResource(id);
-      }).finally(() => { if (version === generation) busy = false; });
+      return running
+        .then(() => {
+          if (version !== generation || tab !== id) return;
+          error = resourceFailures.get(id) ?? "";
+          if (error) retryAction = () => loadResource(id);
+        })
+        .finally(() => {
+          if (version === generation) busy = false;
+        });
     }
     const task = fetchResource(id, mode).finally(() => {
       if (resourceLoads.get(id) === task) resourceLoads.delete(id);
@@ -379,25 +402,22 @@
   }
   async function fetchResource(
     id: string,
-    mode: 'foreground' | 'background',
+    mode: "foreground" | "background",
   ): Promise<void> {
     const version = generation;
-    const foreground = mode === 'foreground';
+    const foreground = mode === "foreground";
     resourceFailures.delete(id);
     if (foreground) {
       busy = true;
-      error = '';
+      error = "";
       retryAction = null;
     }
     try {
-      const res = await api(
-        { action: 'read', resource: id },
-        !foreground,
-      );
+      const res = await api({ action: "read", resource: id }, !foreground);
       if (version !== generation || !authenticated) return;
       if (recordResources.includes(id)) {
         recordPages = { ...recordPages, [id]: readRecords(id, res.data) };
-      } else if (id === 'schedule') {
+      } else if (id === "schedule") {
         const previous = schedule.currentTerm;
         const next = readSchedule(res.data);
         schedule = next.terms.some((term) => term.id === previous)
@@ -407,17 +427,20 @@
         resourceData = { ...resourceData, [id]: events(res.data, id) };
       }
       refreshTimes = { ...refreshTimes, [id]: Date.now() };
-      if (id === 'history') {
+      if (id === "history") {
         subjectCache.clear();
         subjectPreload = null;
         preloadHistorySubjects();
       }
     } catch (e) {
       if (version === generation)
-        resourceFailures.set(id, e instanceof Error ? e.message : 'Could not load this information.');
+        resourceFailures.set(
+          id,
+          e instanceof Error ? e.message : "Could not load this information.",
+        );
       if (foreground && version === generation && tab === id) {
         error =
-          e instanceof Error ? e.message : 'Could not load this information.';
+          e instanceof Error ? e.message : "Could not load this information.";
         retryAction = () => loadResource(id);
       }
     } finally {
@@ -434,7 +457,7 @@
         Promise.allSettled(
           remoteResources
             .filter((id) => !hasResource(id))
-            .map((id) => loadResource(id, 'background')),
+            .map((id) => loadResource(id, "background")),
         ),
       )
       .then(() => preloadHistorySubjects());
@@ -442,7 +465,7 @@
   function openCourse(course: Course) {
     writeLocation(courseLocation(course.id));
     selected = course.id;
-    tab = 'grades';
+    tab = "grades";
     hypothetical = false;
     closeMenu(false);
     window.scrollTo(0, 0);
@@ -462,7 +485,7 @@
   }
   function editAssignment(
     id: string,
-    key: 'earned' | 'possible' | 'title' | 'category',
+    key: "earned" | "possible" | "title" | "category",
     value: string,
   ) {
     if (!activeCourse) return;
@@ -472,14 +495,12 @@
         ? {
             ...a,
             [key]:
-              key === 'title' || key === 'category'
+              key === "title" || key === "category"
                 ? value
-                : value === '' && key === 'earned'
+                : value === "" && key === "earned"
                   ? null
                   : Math.max(0, Number(value) || 0),
-            ...(key === 'possible'
-              ? { emptyPossible: value === '' }
-              : {}),
+            ...(key === "possible" ? { emptyPossible: value === "" } : {}),
           }
         : a,
     );
@@ -495,8 +516,8 @@
     const course = clone(activeCourse);
     course.assignments.unshift({
       id: crypto.randomUUID(),
-      title: 'Hypothetical assignment',
-      category: course.categories[0]?.name ?? 'Practice',
+      title: "Hypothetical assignment",
+      category: course.categories[0]?.name ?? "Practice",
       earned: null,
       possible: 0,
       due: new Date().toISOString().slice(0, 10),
@@ -514,25 +535,33 @@
   }
   async function login(event: SubmitEvent) {
     event.preventDefault();
-    loginError = '';
+    loginError = "";
     loginBusy = true;
     try {
-      const signedIn = await api({ action: 'login', username, password, remember: rememberSignIn });
-      cacheIdentity = typeof signedIn.cacheIdentity === 'string' ? signedIn.cacheIdentity : null;
-      password = '';
+      const signedIn = await api({
+        action: "login",
+        username,
+        password,
+        remember: rememberSignIn,
+      });
+      cacheIdentity =
+        typeof signedIn.cacheIdentity === "string"
+          ? signedIn.cacheIdentity
+          : null;
+      password = "";
       showPassword = false;
       authenticated = true;
       data = { courses: [], terms: [], currentTerm: 0 };
-      person = { name: 'Student', school: 'Your school', grade: '' };
+      person = { name: "Student", school: "Your school", grade: "" };
       resourceData = {};
       recordPages = {};
       schedule = { terms: [], currentTerm: 0 };
-      tab = 'grades';
-      writeLocation('#grades');
+      tab = "grades";
+      writeLocation("#grades");
       await load();
       void preloadWorkspace();
     } catch (e) {
-      loginError = e instanceof Error ? e.message : 'Unable to sign in.';
+      loginError = e instanceof Error ? e.message : "Unable to sign in.";
     } finally {
       loginBusy = false;
     }
@@ -542,16 +571,16 @@
   async function restoreSavedSignIn() {
     if (restoring || authenticated) return;
     restoring = true;
-    loginError = '';
+    loginError = "";
     try {
-      const answer = await requestPortal({ action: 'session' });
+      const answer = await requestPortal({ action: "session" });
       if (answer.connected !== true) {
         loginError =
-          'Your saved sign-in has ended. Enter your username and password.';
+          "Your saved sign-in has ended. Enter your username and password.";
         return;
       }
       cacheIdentity =
-        typeof answer.cacheIdentity === 'string' ? answer.cacheIdentity : null;
+        typeof answer.cacheIdentity === "string" ? answer.cacheIdentity : null;
       authenticated = true;
       try {
         const cached = readGradeCache(localStorage, cacheIdentity);
@@ -566,7 +595,9 @@
       void preloadWorkspace();
     } catch (e) {
       loginError =
-        e instanceof Error ? e.message : 'Could not restore sign-in. Try again.';
+        e instanceof Error
+          ? e.message
+          : "Could not restore sign-in. Try again.";
     } finally {
       restoring = false;
     }
@@ -574,9 +605,9 @@
   let downloading = $state<Record<string, boolean>>({});
   let downloadErrors = $state<Record<string, string>>({});
   const downloadKey = (id: string, messageId?: string) =>
-    messageId ? 'mail:' + messageId + ':' + id : id;
+    messageId ? "mail:" + messageId + ":" + id : id;
   async function downloadFile(
-    item: Pick<EventItem, 'id' | 'filename'>,
+    item: Pick<EventItem, "id" | "filename">,
     messageId?: string,
   ) {
     if (!item.id || downloading[downloadKey(item.id, messageId)]) return;
@@ -584,34 +615,34 @@
       key = downloadKey(item.id, messageId),
       version = generation;
     downloading = { ...downloading, [key]: true };
-    downloadErrors = { ...downloadErrors, [key]: '' };
+    downloadErrors = { ...downloadErrors, [key]: "" };
     try {
-      const response = await fetch('/api/documents', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/documents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id,
-          ...(messageId ? { kind: 'mail', messageId } : {}),
+          ...(messageId ? { kind: "mail", messageId } : {}),
         }),
-        cache: 'no-store',
+        cache: "no-store",
       });
       if (!response.ok) {
         const answer = await response.json().catch(() => ({}));
         if (response.status === 401) {
           authenticated = false;
           clearWorkspace();
-          loginError = answer.error || 'Sign in again to download.';
+          loginError = answer.error || "Sign in again to download.";
         }
-        throw new Error(answer.error || 'Download failed. Try again.');
+        throw new Error(answer.error || "Download failed. Try again.");
       }
       const blob = await response.blob();
       if (version !== generation || !authenticated) return;
-      const disposition = response.headers.get('Content-Disposition') || '';
+      const disposition = response.headers.get("Content-Disposition") || "";
       const match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
       const filename = match
         ? decodeURIComponent(match[1])
-        : item.filename || 'document';
-      const link = document.createElement('a'),
+        : item.filename || "document";
+      const link = document.createElement("a"),
         url = URL.createObjectURL(blob);
       link.href = url;
       link.download = filename;
@@ -623,7 +654,7 @@
       if (version === generation)
         downloadErrors = {
           ...downloadErrors,
-          [key]: e instanceof Error ? e.message : 'Download failed. Try again.',
+          [key]: e instanceof Error ? e.message : "Download failed. Try again.",
         };
     } finally {
       if (version === generation)
@@ -631,19 +662,23 @@
     }
   }
   function clearWorkspace() {
-    try { clearGradeCache(localStorage); } catch { /* Storage unavailable. */ }
+    try {
+      clearGradeCache(localStorage);
+    } catch {
+      /* Storage unavailable. */
+    }
     cacheIdentity = null;
     downloading = {};
     downloadErrors = {};
     generation++;
     data = { courses: [], terms: [], currentTerm: 0 };
-    person = { name: 'Student', school: 'Anoka-Hennepin', grade: '' };
+    person = { name: "Student", school: "Anoka-Hennepin", grade: "" };
     resourceData = {};
     recordPages = {};
     schedule = { terms: [], currentTerm: 0 };
     edits = {};
     selected = null;
-    password = '';
+    password = "";
     lastRefresh = null;
     refreshTimes = {};
     retryAction = null;
@@ -654,37 +689,38 @@
     subjectPreload = null;
   }
   async function logout() {
-    let message = '';
+    let message = "";
     try {
-      await api({ action: 'logout' });
+      await api({ action: "logout" });
     } catch (e) {
-      message = e instanceof Error ? e.message : 'Could not fully sign out. Try again.';
+      message =
+        e instanceof Error ? e.message : "Could not fully sign out. Try again.";
     }
     // The server deletes cookies even when cleanup partially fails.
     authenticated = false;
     clearWorkspace();
     rememberSignIn = false;
-    error = '';
+    error = "";
     loginError = message;
   }
   async function changeTerm(value: string) {
     edits = {};
     selected = null;
     hypothetical = false;
-    writeLocation('#grades');
+    writeLocation("#grades");
     await load(Number(value));
   }
   function changeScheduleTerm(value: string) {
     schedule = { ...schedule, currentTerm: Number(value) };
-    notice = '';
+    notice = "";
   }
   function focusDialog(node: HTMLElement) {
     const previous = document.activeElement as HTMLElement | null;
     queueMicrotask(() =>
-      node.querySelector<HTMLElement>('input,button')?.focus(),
+      node.querySelector<HTMLElement>("input,button")?.focus(),
     );
     const listener = (event: KeyboardEvent) => {
-      if (event.key !== 'Tab') return;
+      if (event.key !== "Tab") return;
       const controls = [
         ...node.querySelectorAll<HTMLElement>(
           'button:not(:disabled),input,select,[tabindex="0"]',
@@ -700,36 +736,36 @@
         first?.focus();
       }
     };
-    node.addEventListener('keydown', listener);
+    node.addEventListener("keydown", listener);
     return {
       destroy() {
-        node.removeEventListener('keydown', listener);
+        node.removeEventListener("keydown", listener);
         previous?.focus();
       },
     };
   }
   function toggleTheme() {
     dark = !dark;
-    localStorage.setItem('schoolity_theme', dark ? 'dark' : 'light');
+    localStorage.setItem("schoolity_theme", dark ? "dark" : "light");
   }
   $effect(() => {
     if (!isMobile || !mobileMenu || !sidebar || privacyOpen) return;
     const panel = sidebar;
     const before = document.activeElement as HTMLElement | null;
     const overflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = "hidden";
     void tick().then(() =>
-      sidebar?.querySelector<HTMLElement>('button,a')?.focus(),
+      sidebar?.querySelector<HTMLElement>("button,a")?.focus(),
     );
     const trap = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         e.preventDefault();
         closeMenu();
         return;
       }
-      if (e.key !== 'Tab') return;
+      if (e.key !== "Tab") return;
       const list = [
-        ...panel.querySelectorAll<HTMLElement>('button,a[href],input,select'),
+        ...panel.querySelectorAll<HTMLElement>("button,a[href],input,select"),
       ].filter((n) => n.getBoundingClientRect().width > 0);
       if (!list.length) return;
       const first = list[0],
@@ -742,33 +778,43 @@
         first.focus();
       }
     };
-    document.addEventListener('keydown', trap);
+    document.addEventListener("keydown", trap);
     return () => {
-      document.removeEventListener('keydown', trap);
+      document.removeEventListener("keydown", trap);
       document.body.style.overflow = overflow;
       if (before?.isConnected) before.focus();
     };
   });
   onMount(() => {
-    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const updateMotion = () => { reducedMotion = motionQuery.matches; };
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updateMotion = () => {
+      reducedMotion = motionQuery.matches;
+    };
     updateMotion();
-    motionQuery.addEventListener('change', updateMotion);
+    motionQuery.addEventListener("change", updateMotion);
     try {
-      const cached = readGradeCache(localStorage, authenticated ? cacheIdentity : null);
-      if (authenticated && cached) { data = cached.book; lastRefresh = cached.savedAt; }
-    } catch { /* Normal network loading works without local storage. */ }
-    const storedTheme = localStorage.getItem('schoolity_theme');
+      const cached = readGradeCache(
+        localStorage,
+        authenticated ? cacheIdentity : null,
+      );
+      if (authenticated && cached) {
+        data = cached.book;
+        lastRefresh = cached.savedAt;
+      }
+    } catch {
+      /* Normal network loading works without local storage. */
+    }
+    const storedTheme = localStorage.getItem("schoolity_theme");
     dark = storedTheme
-      ? storedTheme === 'dark'
-      : window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const mq = window.matchMedia('(max-width:760px)');
+      ? storedTheme === "dark"
+      : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const mq = window.matchMedia("(max-width:760px)");
     const resize = () => {
       isMobile = mq.matches;
       if (!mq.matches) mobileMenu = false;
     };
     resize();
-    mq.addEventListener('change', resize);
+    mq.addEventListener("change", resize);
     applyLocation();
     const back = () => {
       applyLocation();
@@ -776,18 +822,18 @@
       if (remoteResources.includes(tab) && !hasResource(tab))
         void loadResource(tab);
     };
-    window.addEventListener('popstate', back);
+    window.addEventListener("popstate", back);
     const returned = (event: PageTransitionEvent) => {
       if (event.persisted && authenticated && !busy) void load();
     };
-    window.addEventListener('pageshow', returned);
+    window.addEventListener("pageshow", returned);
     if (authenticated) void load().then(() => void preloadWorkspace());
     else if (sessionData.retrySavedSignIn) void restoreSavedSignIn();
     return () => {
-      motionQuery.removeEventListener('change', updateMotion);
-      mq.removeEventListener('change', resize);
-      window.removeEventListener('popstate', back);
-      window.removeEventListener('pageshow', returned);
+      motionQuery.removeEventListener("change", updateMotion);
+      mq.removeEventListener("change", resize);
+      window.removeEventListener("popstate", back);
+      window.removeEventListener("pageshow", returned);
     };
   });
 </script>
@@ -812,7 +858,7 @@
 >
 <svelte:window
   onkeydown={(e) => {
-    if (e.key === 'Escape') {
+    if (e.key === "Escape") {
       privacyOpen = false;
       accountOpen = false;
       closeMenu();
@@ -840,7 +886,7 @@
         class="brand"
         onclick={(e) => {
           e.preventDefault();
-          void navigate('grades');
+          void navigate("grades");
         }}><span class="brand-symbol">S</span>Schoolity</a
       >
       <nav aria-label="Main navigation">
@@ -850,7 +896,7 @@
           {/if}
           {#each group.items as item (item.id)}<button
               class:active={tab === item.id}
-              aria-current={tab === item.id ? 'page' : undefined}
+              aria-current={tab === item.id ? "page" : undefined}
               onclick={() => navigate(item.id)}
               ><Icon name={item.icon} /><span>{item.label}</span></button
             >{/each}
@@ -868,10 +914,10 @@
         >
           <span class="avatar"
             >{person.name
-              .split(' ')
+              .split(" ")
               .map((s) => s[0])
               .slice(0, 2)
-              .join('')}</span
+              .join("")}</span
           ><span
             ><strong>{person.name}</strong><small>Student account</small></span
           >
@@ -890,11 +936,16 @@
     <div class="main-shell" inert={(isMobile && mobileMenu) || privacyOpen}>
       <div class="update-toast">
         {#if busy}
-          <div class="update-status" role="status" aria-live="polite" aria-atomic="true"
+          <div
+            class="update-status"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
             in:fly={{ y: -90, duration: reducedMotion ? 0 : 240 }}
-            out:fly={{ y: -90, duration: reducedMotion ? 0 : 180 }}>
+            out:fly={{ y: -90, duration: reducedMotion ? 0 : 180 }}
+          >
             <span class="update-spinner" aria-hidden="true"></span>
-            <span>{data.courses.length ? 'Updating…' : 'Loading…'}</span>
+            <span>{data.courses.length ? "Updating…" : "Loading…"}</span>
           </div>
         {/if}
       </div>
@@ -933,14 +984,14 @@
                   class="primary small"
                   disabled={busy}
                   onclick={() => retryAction?.()}>Retry</button
-                >{/if}<button class="text-button" onclick={() => (error = '')}
+                >{/if}<button class="text-button" onclick={() => (error = "")}
                 >Dismiss</button
               >
             </div>
           </div>{/if}
         {#if notice}<div class="notice" role="status">{notice}</div>{/if}
         {#if activeCourse}
-          <button class="back-link" onclick={() => navigate('grades')}
+          <button class="back-link" onclick={() => navigate("grades")}
             >← All courses</button
           >
           <div class="page-heading course-heading">
@@ -963,7 +1014,9 @@
               <Trend
                 values={trend(activeCourse)}
                 dates={activeCourse.assignments
-                  .filter((a) => a.earned !== null && !a.excluded && !a.emptyPossible)
+                  .filter(
+                    (a) => a.earned !== null && !a.excluded && !a.emptyPossible,
+                  )
                   .toSorted((a, b) => Date.parse(a.due) - Date.parse(b.due))
                   .map((a) => a.due)}
                 large
@@ -1030,7 +1083,7 @@
                           oninput={(e) =>
                             editAssignment(
                               a.id,
-                              'title',
+                              "title",
                               e.currentTarget.value,
                             )}
                         />{:else}<strong>{a.title}</strong
@@ -1040,7 +1093,16 @@
                           >Excluded from calculation</small
                         >{/if}</td
                     ><td data-label="Category"
-                      >{#if hypothetical}<SelectMenu label={`Category for ${a.title}`} value={a.category} options={categoryOptions.map(category => ({ value: category, label: category }))} onchange={(value) => editAssignment(a.id, 'category', value)} />{:else}<span class="subtle-tag">{a.category}</span
+                      >{#if hypothetical}<SelectMenu
+                          label={`Category for ${a.title}`}
+                          value={a.category}
+                          options={categoryOptions.map((category) => ({
+                            value: category,
+                            label: category,
+                          }))}
+                          onchange={(value) =>
+                            editAssignment(a.id, "category", value)}
+                        />{:else}<span class="subtle-tag">{a.category}</span
                         >{/if}</td
                     ><td data-label="Due">{dateLabel(a.due)}</td><td
                       data-label="Score"
@@ -1049,38 +1111,38 @@
                             aria-label={`Points earned for ${a.title}`}
                             type="number"
                             min="0"
-                            value={a.earned ?? ''}
+                            value={a.earned ?? ""}
                             placeholder="—"
                             oninput={(e) =>
                               editAssignment(
                                 a.id,
-                                'earned',
+                                "earned",
                                 e.currentTarget.value,
                               )}
                           /><span>/</span><input
                             aria-label={`Points possible for ${a.title}`}
                             type="number"
                             min="0"
-                            value={a.emptyPossible ? '' : a.possible}
+                            value={a.emptyPossible ? "" : a.possible}
                             oninput={(e) =>
                               editAssignment(
                                 a.id,
-                                'possible',
+                                "possible",
                                 e.currentTarget.value,
                               )}
                           />
-                        </div>{:else}{a.earned === null ? '—' : a.earned}
+                        </div>{:else}{a.earned === null ? "—" : a.earned}
                         <span class="muted">/ {a.possible}</span>{/if}</td
                     ><td data-label="Grade"
-                      >{#if a.earned === null || a.emptyPossible}<span class="pending"
-                          >Not graded</span
+                      >{#if a.earned === null || a.emptyPossible}<span
+                          class="pending">Not graded</span
                         >{:else if a.possible > 0}<span class="grade-label"
                           >{percentage((a.earned / a.possible) * 100)}</span
                         >{:else}Extra credit{/if}</td
                     >{#if hypothetical}<td
                         >{#if a.hypothetical}<button
                             class="remove-assignment icon-button"
-                            aria-label={'Remove ' + a.title}
+                            aria-label={"Remove " + a.title}
                             onclick={() => removeAssignment(a.id)}
                             ><Icon name="close" size={16} /></button
                           >{/if}</td
@@ -1092,12 +1154,10 @@
               >
             </table>
           </div>
-        {:else if tab === 'grades'}
+        {:else if tab === "grades"}
           <div class="page-heading" id="grades">
             <div>
-              <h1>
-                Gradebook
-              </h1>
+              <h1>Gradebook</h1>
             </div>
             <button
               class="refresh-button"
@@ -1125,7 +1185,16 @@
                 </div>
               </div>
               <div class="term-line">
-                <label for="reporting-period">Term</label><SelectMenu id="reporting-period" label="Reporting period" value={String(data.currentTerm)} options={data.terms.map(term => ({ value: String(term.id), label: term.name }))} onchange={changeTerm} /><span>{refreshLabel}</span>
+                <label for="reporting-period">Term</label><SelectMenu
+                  id="reporting-period"
+                  label="Reporting period"
+                  value={String(data.currentTerm)}
+                  options={data.terms.map((term) => ({
+                    value: String(term.id),
+                    label: term.name,
+                  }))}
+                  onchange={changeTerm}
+                /><span>{refreshLabel}</span>
               </div>
               <div class="course-grid">
                 {#each data.courses as course}<button
@@ -1140,12 +1209,8 @@
                     <p>{course.teacher} <span>· Room {course.room}</span></p>
                     <div class="course-card-bottom">
                       <div>
-                        <strong
-                          >{percentage(
-                            calculate(course),
-                          )}</strong
-                        ><span class="letter-grade"
-                          >{letter(calculate(course))}</span
+                        <strong>{percentage(calculate(course))}</strong><span
+                          class="letter-grade">{letter(calculate(course))}</span
                         >
                       </div>
                     </div></button
@@ -1155,7 +1220,9 @@
                 <div class="course-grid" aria-hidden="true">
                   {#each [0, 1, 2] as row (row)}
                     <div class="skeleton-card">
-                      <div class="skeleton" style="width: 42%; height: 14px"
+                      <div
+                        class="skeleton"
+                        style="width: 42%; height: 14px"
                       ></div>
                       <div
                         class="skeleton"
@@ -1174,27 +1241,49 @@
                   </p>
                 </div>{/if}
             </div>
-            <section class="recent-assignments" aria-labelledby="recent-assignments-title">
+            <section
+              class="recent-assignments"
+              aria-labelledby="recent-assignments-title"
+            >
               <h2 id="recent-assignments-title">Recent assignments</h2>
-              <p class="recent-assignments-note">Latest due dates in this reporting period</p>
+              <p class="recent-assignments-note">
+                Latest due dates in this reporting period
+              </p>
               <ul class="recent-assignment-list">
                 {#each recentAssignments as assignment}
                   <li>
-                    <button class="recent-assignment" onclick={() => openCourse(assignment.course)}>
-                      <span class="recent-assignment-title">{assignment.title || 'Untitled assignment'}</span>
-                      <span class="recent-assignment-course">{assignment.course.name}</span>
+                    <button
+                      class="recent-assignment"
+                      onclick={() => openCourse(assignment.course)}
+                    >
+                      <span class="recent-assignment-title"
+                        >{assignment.title || "Untitled assignment"}</span
+                      >
+                      <span class="recent-assignment-course"
+                        >{assignment.course.name}</span
+                      >
                       <span class="recent-assignment-meta">
-                        <span>{assignment.due ? dateLabel(assignment.due) : 'No due date'}</span>
-                        <span class="recent-assignment-score">{assignment.excluded
-                          ? 'Not for grading'
-                          : assignment.earned === null
-                            ? 'Not graded'
-                            : `${assignment.earned} / ${assignment.possible}`}</span>
+                        <span
+                          >{assignment.due
+                            ? dateLabel(assignment.due)
+                            : "No due date"}</span
+                        >
+                        <span class="recent-assignment-score"
+                          >{assignment.excluded
+                            ? "Not for grading"
+                            : assignment.earned === null
+                              ? "Not graded"
+                              : `${assignment.earned} / ${assignment.possible}`}</span
+                        >
                       </span>
                     </button>
                   </li>
                 {:else}
-                  <li class="recent-assignments-empty">{busy ? 'Loading assignments…' : 'No assignments in this reporting period.'}</li>
+                  <li class="recent-assignments-empty">
+                    {busy
+                      ? "Loading assignments…"
+                      : "No assignments in this reporting period."}
+                  </li>
                 {/each}
               </ul>
             </section>
@@ -1202,11 +1291,23 @@
         {:else if recordResources.includes(tab)}
           <div class="page-heading">
             <h1>{navigation.find((item) => item.id === tab)?.label}</h1>
-            <button class="refresh-button" disabled={busy} onclick={() => loadResource(tab)}>↻ Refresh</button>
+            <button
+              class="refresh-button"
+              disabled={busy}
+              onclick={() => loadResource(tab)}>↻ Refresh</button
+            >
           </div>
-          {#if refreshTimes[tab]}<p class="resource-freshness">Last updated {new Date(refreshTimes[tab]).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}</p>{/if}
+          {#if refreshTimes[tab]}<p class="resource-freshness">
+              Last updated {new Date(refreshTimes[tab]).toLocaleTimeString([], {
+                hour: "numeric",
+                minute: "2-digit",
+              })}
+            </p>{/if}
           {#if recordPages[tab]}
-            {#key recordPages[tab]}<StudentRecords page={recordPages[tab]} loadSubject={loadHistorySubject} />{/key}
+            {#key recordPages[tab]}<StudentRecords
+                page={recordPages[tab]}
+                loadSubject={loadHistorySubject}
+              />{/key}
           {:else if busy}
             <div class="records-list" aria-hidden="true">
               {#each [0, 1] as row (row)}
@@ -1222,18 +1323,19 @@
           {:else if !error}<p class="records-empty">
               No information has been loaded.
               <button class="text-button" onclick={() => loadResource(tab)}
-                >Load {navigation.find((item) => item.id === tab)?.label}</button
+                >Load {navigation.find((item) => item.id === tab)
+                  ?.label}</button
               >
             </p>{/if}
         {:else}
           <div class="page-heading">
             <div>
               <h1>
-                {tab === 'schedule'
-                  ? 'Schedule'
-                  : tab === 'mail'
-                    ? 'Inbox'
-                    : 'Documents'}
+                {tab === "schedule"
+                  ? "Schedule"
+                  : tab === "mail"
+                    ? "Inbox"
+                    : "Documents"}
               </h1>
             </div>
             <button
@@ -1242,17 +1344,23 @@
               onclick={() => loadResource(tab)}>↻ Refresh</button
             >
           </div>
-          {#if tab === 'schedule' && schedule.terms.length}
+          {#if tab === "schedule" && schedule.terms.length}
             <div class="term-line">
-              <span class="green-dot"></span><SelectMenu label="Schedule term" value={String(schedule.currentTerm)} options={schedule.terms.map(term => ({ value: String(term.id), label: term.name }))} onchange={changeScheduleTerm} /><span
-                >{selectedScheduleTerm?.classes.length ?? 0} classes</span
-              >
+              <span class="green-dot"></span><SelectMenu
+                label="Schedule term"
+                value={String(schedule.currentTerm)}
+                options={schedule.terms.map((term) => ({
+                  value: String(term.id),
+                  label: term.name,
+                }))}
+                onchange={changeScheduleTerm}
+              /><span>{selectedScheduleTerm?.classes.length ?? 0} classes</span>
             </div>
           {/if}
           {#if refreshTimes[tab]}<p class="resource-freshness">
               Last updated {new Date(refreshTimes[tab]).toLocaleTimeString([], {
-                hour: 'numeric',
-                minute: '2-digit',
+                hour: "numeric",
+                minute: "2-digit",
               })}
             </p>{/if}
           {#if busy && !shownRecords.length}
@@ -1269,20 +1377,20 @@
             </div>
           {/if}
           <section class="records-list">
-            {#each shownRecords as item}{#if tab === 'mail'}{#key item}<details
+            {#each shownRecords as item}{#if tab === "mail"}{#key item}<details
                     class="mail-message"
                   >
                     <summary
                       ><span class="mail-heading"
-                        ><span>{item.title || 'Untitled message'}</span><span
+                        ><span>{item.title || "Untitled message"}</span><span
                           class="mail-author"
-                          >{item.author || 'Unknown sender'}</span
+                          >{item.author || "Unknown sender"}</span
                         ></span
                       ><Icon name="chevron" size={16} /></summary
                     >
                     <div class="mail-content">
                       <small>{item.date}</small>
-                      <p>{item.detail || 'No message content.'}</p>
+                      <p>{item.detail || "No message content."}</p>
                       {#if item.attachments?.length}<section
                           class="mail-attachments"
                           aria-label="Message attachments"
@@ -1294,7 +1402,7 @@
                                   >{attachment.filename}</span
                                 ><button
                                   class="primary small"
-                                  aria-label={'Download ' + attachment.filename}
+                                  aria-label={"Download " + attachment.filename}
                                   disabled={!item.id ||
                                     !attachment.id ||
                                     downloading[
@@ -1305,10 +1413,10 @@
                                   >{downloading[
                                     downloadKey(attachment.id, item.id)
                                   ]
-                                    ? 'Downloading…'
+                                    ? "Downloading…"
                                     : !item.id || !attachment.id
-                                      ? 'Unavailable'
-                                      : 'Download'}</button
+                                      ? "Unavailable"
+                                      : "Download"}</button
                                 >
                                 {#if downloadErrors[downloadKey(attachment.id, item.id)]}<p
                                     class="document-error"
@@ -1322,10 +1430,10 @@
                           </ul>
                         </section>{/if}
                     </div>
-                  </details>{/key}{:else if tab === 'documents'}<button
+                  </details>{/key}{:else if tab === "documents"}<button
                   class="record-card document-card"
                   disabled={!item.id || downloading[item.id]}
-                  aria-label={'Download ' + item.title}
+                  aria-label={"Download " + item.title}
                   aria-busy={!!item.id && !!downloading[item.id]}
                   onclick={() => downloadFile(item)}
                 >
@@ -1337,7 +1445,7 @@
                   {#if !item.id || downloading[item.id]}<span
                       class="document-status"
                       role="status"
-                      >{item.id ? 'Downloading…' : 'Unavailable'}</span
+                      >{item.id ? "Downloading…" : "Unavailable"}</span
                     >{/if}
                 </button>{#if item.id && downloadErrors[item.id]}<p
                     class="document-error"
@@ -1347,11 +1455,11 @@
                   </p>{/if}{:else}<article class="record-card">
                   <span class="record-icon"
                     ><Icon
-                      name={tab === 'schedule'
-                        ? 'clock'
-                        : tab === 'mail'
-                          ? 'mail'
-                          : 'file'}
+                      name={tab === "schedule"
+                        ? "clock"
+                        : tab === "mail"
+                          ? "mail"
+                          : "file"}
                       size={18}
                     /></span
                   >
@@ -1367,12 +1475,12 @@
                   name={navigation.find((n) => n.id === tab)?.icon}
                   size={36}
                 />
-                {#if tab === 'schedule'}
+                {#if tab === "schedule"}
                   <h2>No classes to show</h2>
                   <p>
                     {schedule.terms.length
-                      ? 'No classes were returned for this term. Try another term or refresh.'
-                      : 'No schedule was returned. Try refreshing.'}
+                      ? "No classes were returned for this term. Try another term or refresh."
+                      : "No schedule was returned. Try refreshing."}
                   </p>
                 {:else}
                   <h2>No records to show</h2>
@@ -1383,7 +1491,7 @@
                 {/if}
               </div>{/if}
           </section>
-          {#if tab === 'mail'}<p class="calculation-note">
+          {#if tab === "mail"}<p class="calculation-note">
               Latest 50 messages.
             </p>{/if}
         {/if}
@@ -1397,13 +1505,14 @@
         <div class="login-primary">
           <div class="login-topbar">
             <div class="login-brand" aria-label="Schoolity">
-              <span class="login-mark" aria-hidden="true">S</span
-              ><span class="login-wordmark">Schoolity</span>
+              <span class="login-mark" aria-hidden="true">S</span><span
+                class="login-wordmark">Schoolity</span
+              >
             </div>
             <div class="login-meta">
               <span class="login-district"
-                ><span class="district-dot" aria-hidden="true"></span
-                >Anoka-Hennepin Schools</span
+                ><span class="district-dot" aria-hidden="true"
+                ></span>Anoka-Hennepin Schools</span
               ><button
                 class="login-privacy"
                 onclick={() => (privacyOpen = true)}
@@ -1455,7 +1564,7 @@
                     <input
                       id="school-password"
                       required
-                      type={showPassword ? 'text' : 'password'}
+                      type={showPassword ? "text" : "password"}
                       bind:value={password}
                       autocomplete="current-password"
                     /><button
@@ -1464,7 +1573,7 @@
                       aria-controls="school-password"
                       aria-pressed={showPassword}
                       onclick={() => (showPassword = !showPassword)}
-                      >{showPassword ? 'Hide' : 'Show'}<span class="sr-only">
+                      >{showPassword ? "Hide" : "Show"}<span class="sr-only">
                         password</span
                       ></button
                     >
@@ -1494,7 +1603,7 @@
                   class="primary login-submit"
                   type="submit"
                   disabled={loginBusy || restoring}
-                  ><span>{loginBusy ? 'Signing in…' : 'Sign in'}</span><span
+                  ><span>{loginBusy ? "Signing in…" : "Sign in"}</span><span
                     class="submit-arrow"
                     aria-hidden="true"><Icon name="arrow" size={15} /></span
                   ></button
@@ -1516,7 +1625,6 @@
                 >{/if}
             </section>
           </div>
-
         </div>
 
         <aside class="login-index" aria-labelledby="index-title">
@@ -1542,8 +1650,9 @@
               </p>
               <p><span>Graphing review</span><span>20 / 20</span></p>
               <p>
-                <span>Unit 3 quiz</span
-                ><span class="preview-pending">Not graded</span>
+                <span>Unit 3 quiz</span><span class="preview-pending"
+                  >Not graded</span
+                >
               </p>
             </div>
             <div class="preview-pair">
@@ -1570,7 +1679,9 @@
           <ul class="index-list" data-rise style="--i: 3">
             {#each indexRows as row (row.name)}
               <li>
-                <span class="index-icon"><Icon name={row.icon} size={17} /></span>
+                <span class="index-icon"
+                  ><Icon name={row.icon} size={17} /></span
+                >
                 <span class="index-copy">
                   <span class="index-name">{row.name}</span>
                   <span class="index-detail">{row.detail}</span>
@@ -1634,9 +1745,9 @@
           <summary>Connection details</summary>
           <h3>When you connect</h3>
           <p>
-            Your username and password pass through this app's server to
-            sign in to your district. Schoolity holds the resulting access token
-            in memory locally or in a shared store on Vercel until the district
+            Your username and password pass through this app's server to sign in
+            to your district. Schoolity holds the resulting access token in
+            memory locally or in a shared store on Vercel until the district
             session expires (up to 30 days). Your browser receives an HTTP-only
             session cookie. If you choose “Keep me signed in”, the server stores
             your username and password encrypted for up to 30 days so an expired
@@ -1650,18 +1761,19 @@
             Your last gradebook is saved in this browser for up to seven days
             and shown after sign-in while fresh grades load. Signing out clears
             it. Other school records remain in page memory. API responses are
-            marked no-store. Your color theme is also saved locally. Hosting and session-store operators can
-            access data passing through its server, including decrypting saved
-            sign-ins if they control the encryption key.
+            marked no-store. Your color theme is also saved locally. Hosting and
+            session-store operators can access data passing through its server,
+            including decrypting saved sign-ins if they control the encryption
+            key.
           </p>
           <h3>About this version</h3>
           <p>
             Login is required to access your school information. The district
             feature coverage is still being verified across district responses.
             Grade estimates may differ from district rules. This first version
-            includes gradebook, calculator, schedule, student info, course history,
-            attendance, inbox, and document-list
-            adapters, and document downloads.
+            includes gradebook, calculator, schedule, student info, course
+            history, attendance, inbox, and document-list adapters, and document
+            downloads.
           </p>
         </details>
         <button class="primary" onclick={() => (privacyOpen = false)}
@@ -1691,12 +1803,21 @@
         >
         <h2 id="account-title">Account</h2>
         <dl class="account-fields">
-          <div><dt>Name</dt><dd>{person.name}</dd></div>
-          <div><dt>School</dt><dd>{person.school}</dd></div>
-          {#if person.grade}<div><dt>Grade</dt><dd>{person.grade}</dd></div>{/if}
+          <div>
+            <dt>Name</dt>
+            <dd>{person.name}</dd>
+          </div>
+          <div>
+            <dt>School</dt>
+            <dd>{person.school}</dd>
+          </div>
+          {#if person.grade}<div>
+              <dt>Grade</dt>
+              <dd>{person.grade}</dd>
+            </div>{/if}
           <div>
             <dt>Student ID</dt>
-            <dd>{person.studentId ?? 'Not provided'}</dd>
+            <dd>{person.studentId ?? "Not provided"}</dd>
           </div>
         </dl>
         <p class="account-note">
