@@ -6,6 +6,17 @@ import { cookieHeader, districtRequest, read, readHistorySubject, signIn, findSe
 import { DISTRICT_URL } from '../src/lib/config.ts';
 import { randomUUID } from 'node:crypto';
 
+test('saved sign-ins reconnect additional student information when the browser cookie expires or is missing', async () => {
+  const session = { base: DISTRICT_URL, token: 'fixture', expires: Date.now() + 10000,
+    rememberKey: 'remember:' + 'a'.repeat(64) };
+  const send = async () => ({ data: { studentInfo: { formattedName: 'Student' } } });
+  const expired = async () => { throw new PortalError('Browser session expired', 401); };
+  for (const webCookie of [undefined, 'expired']) {
+    await assert.rejects(read({ ...session, webCookie }, 'student', undefined, send, expired),
+      (error: unknown) => error instanceof PortalError && error.status === 401);
+  }
+});
+
 const history = [{ Grade: '09', Terms: [{ SchoolName: 'Sample School', Year: '2025', TermName: 'T1', Courses: [
   { CourseID: 'math', CourseTitle: 'Math &amp; Science', Mark: 'P', CreditsAttempted: '0.5', CreditsCompleted: '0' },
   { CourseID: 'math', CourseTitle: 'Math continued', Mark: 'A', CreditsCompleted: '0.5' },
