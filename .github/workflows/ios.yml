@@ -157,6 +157,12 @@ jobs:
               echo '```'
             done
           } >> "$GITHUB_STEP_SUMMARY"
+          FAILED=$(grep -hE "Test Case .* failed" build/ui-light.log build/ui-dark.log 2>/dev/null |
+            sed -E "s/.*Test Case '-\[([^]]+)\]' failed.*/\1/" |
+            sort -u | paste -sd ', ' - || true)
+          if [ -n "$FAILED" ]; then
+            echo "::error title=Failing iOS tests::$FAILED"
+          fi
       - name: Export course and settings previews
         if: success()
         run: |
