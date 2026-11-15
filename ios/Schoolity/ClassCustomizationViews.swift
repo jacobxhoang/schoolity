@@ -46,7 +46,7 @@ struct ClassAliasesView: View {
         }
         .schoolityList()
         .navigationTitle("Class Names and Icons")
-        .navigationBarTitleDisplayMode(.inline)
+        .schoolityNavigationChrome()
         .sheet(item: $editing) { alias in ClassAliasEditor(alias: alias) }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -96,7 +96,7 @@ struct ClassLinkPicker: View {
         }
         .schoolityList()
         .navigationTitle("Class Appearance")
-        .navigationBarTitleDisplayMode(.inline)
+        .schoolityNavigationChrome()
         .sheet(item: $adding) { alias in ClassAliasEditor(alias: alias, linkTo: title) }
     }
 }
@@ -160,7 +160,7 @@ private struct ClassAliasEditor: View {
                 }
             }
             .navigationTitle("Name and Icon")
-            .navigationBarTitleDisplayMode(.inline)
+            .schoolityNavigationChrome()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {

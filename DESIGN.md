@@ -4,9 +4,9 @@ Software: a student gradebook and school-records application for Anoka-Hennepin.
 
 ## Direction
 
-Use a monochrome web palette in light and dark mode. Sidebar, summary, course icons, and custom dropdowns share neutral surfaces and black-and-white selection states. Native iOS accent settings remain independent. Inter and Inter Tight remain the web faces; iOS uses Dynamic Type system faces. The product's live grades, assignments, schedules, and records carry each screen. Preserve all routes, calculations, authentication, and data fields. No marketing hero, photographs, decorative effects, timed content, or invented figures belong in the signed-in application.
+Use a monochrome web palette in light and dark mode. Sidebar, summary, course icons, and custom dropdowns share neutral surfaces and black-and-white selection states. The signed-in iOS app carries the same palette, flat card surfaces, and type hierarchy in Dynamic Type system faces. Its sign-in screens use the same dark canvas and ink accent in every appearance; only the workspace follows the Light, Dark, or System preference. Native iOS accent settings remain independent. Inter and Inter Tight remain the web faces. The product's live grades, assignments, schedules, and records carry each screen. Preserve all routes, calculations, authentication, and data fields. No marketing hero, photographs, decorative effects, timed content, or invented figures belong in the signed-in application.
 
-The main action is opening a course. Put the course title and secondary teacher/location details on the left and a readable grade on the right. At accessibility text sizes, stack these elements in reading order. The iOS login and saved-sign-in screens retain their existing design.
+The main action is opening a course. Put the course title and secondary teacher/location details on the left and a readable grade on the right. At accessibility text sizes, stack these elements in reading order. The iOS login and saved-sign-in screens use the website's dark panel and ink accent, with the district and StudentVUE context kept above the credential card.
 
 ## Shared system
 
@@ -15,12 +15,12 @@ The main action is opening a course. Put the course title and secondary teacher/
 - Equal page gutters. Mobile layouts stack before text or controls become compressed.
 - Course grades use tabular numerals, clear weight, and restrained color; the graph line keeps its fixed Schoolity color.
 - Supporting text remains legible. Web body text is 15–16 pixels, metadata at least 13 pixels; iOS uses semantic fonts and Dynamic Type.
-- Native grouped lists organize records and settings. Avoid repeated nested panels, prominent shadows, and duplicated headers.
+- Native grouped lists organize preferences; records reuse the workspace cards. Avoid repeated nested panels, prominent shadows, and duplicated headers.
 - Interactive web course rows lift subtly on hover. Preserve reduced-motion support and immediate keyboard feedback.
 
 ## Screens
 
-Gradebook: compact summary, reporting-period selection, courses, and the existing web recent-assignment sidebar. Both surfaces now carry the same summary and recent assignments; iOS presents them as list sections where the web places a sidebar, and its summary is a tinted card pairing a grade ring with the exact figure, drawn as Liquid Glass on iOS 26 and as a translucent card on earlier versions. The signed-in iOS canvas uses plain black in Dark Mode and the system grouped background in light mode.
+Gradebook: compact summary, reporting-period selection, courses, and the existing web recent-assignment sidebar. Both surfaces carry the same summary and recent assignments; iOS presents them as card rows where the web places a sidebar. Its summary is the website's flat panel: a grade ring beside the exact average and the course count. The signed-in iOS canvas uses the website's tinted canvas (#F7F7F8), near-black (#111113) in Dark Mode, with white or #1A1A1D panels.
 
 Course: clear grade heading, assignments/breakdown control, grade history, and hypothetical editing only in Assignments. Every workspace screen keeps the website's refresh control, count badges, loading placeholders, dismissible failures, and the privacy connection-details disclosure.
 

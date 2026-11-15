@@ -3,24 +3,79 @@ import SwiftUI
 struct CustomizationView: View {
     var body: some View {
         List {
-            Section("Customization") {
-                NavigationLink { GradeColorsView() } label: { Label("Grade Colors", systemImage: "paintpalette.fill") }
-                NavigationLink { ClassAliasesView() } label: { Label("Class Names and Icons", systemImage: "studentdesk") }
-                NavigationLink { AccentColorsView() } label: { Label("Accent Color", systemImage: "paintbrush.fill") }
+            SchoolityPageHeader(title: "Settings")
+                .schoolityPageRow(top: 8, bottom: 18)
+
+            SectionHeading(title: "Customization")
+                .schoolityPageRow(bottom: 10)
+            VStack(spacing: 0) {
+                SettingsLinkRow(title: "Grade Colors", symbol: "paintpalette.fill") { GradeColorsView() }
+                HairlineDivider()
+                SettingsLinkRow(title: "Class Names and Icons", symbol: "studentdesk") { ClassAliasesView() }
+                HairlineDivider()
+                SettingsLinkRow(title: "Accent Color", symbol: "paintbrush.fill") { AccentColorsView() }
             }
-            Section("App") {
-                NavigationLink { AppearanceView() } label: { Label("Appearance", systemImage: "circle.lefthalf.filled") }
-                NavigationLink { PrivacyView() } label: { Label("Privacy & Connection", systemImage: "hand.raised.fill") }
+            .schoolityCard(padding: 4)
+            .schoolityPageRow(bottom: 20)
+
+            SectionHeading(title: "App")
+                .schoolityPageRow(bottom: 10)
+            VStack(spacing: 0) {
+                SettingsLinkRow(title: "Appearance", symbol: "circle.lefthalf.filled") { AppearanceView() }
+                HairlineDivider()
+                SettingsLinkRow(title: "Privacy & Connection", symbol: "hand.raised.fill") { PrivacyView() }
             }
-            Section {
-                GradeNotificationSettings()
-            } header: { Text("Notifications") } footer: {
-                Text("Get alerts for newly graded assignments. Checks run while Schoolity is open and when iOS allows background refresh. Reopen and unlock Schoolity after a restart to resume checks.")
-            }
+            .schoolityCard(padding: 4)
+            .schoolityPageRow(bottom: 20)
+
+            SectionHeading(title: "Notifications")
+                .schoolityPageRow(bottom: 10)
+            GradeNotificationSettings()
+                .schoolityCardRow(bottom: 6, padding: 18)
+            Text("Get alerts for newly graded assignments. Checks run while Schoolity is open and when iOS allows background refresh. Reopen and unlock Schoolity after a restart to resume checks.")
+                .font(SchoolityText.meta)
+                .foregroundStyle(SchoolityPalette.muted)
+                .fixedSize(horizontal: false, vertical: true)
+                .schoolityPageRow(bottom: 24)
         }
-        .schoolityList()
+        .schoolityPageList()
         .navigationTitle("Settings")
-        .navigationBarTitleDisplayMode(.inline)
+        .schoolityNavigationChrome()
+    }
+}
+
+private struct SettingsLinkRow<Destination: View>: View {
+    let title: String
+    let symbol: String
+    let destination: () -> Destination
+
+    init(title: String, symbol: String, @ViewBuilder destination: @escaping () -> Destination) {
+        self.title = title
+        self.symbol = symbol
+        self.destination = destination
+    }
+
+    var body: some View {
+        NavigationLink {
+            destination()
+        } label: {
+            HStack(spacing: 12) {
+                IconTile(symbol: symbol, size: 36, background: .field)
+                Text(title)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(SchoolityPalette.ink)
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(SchoolityPalette.faint)
+                    .accessibilityHidden(true)
+            }
+            .frame(minHeight: 56)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 4)
     }
 }
 
@@ -31,7 +86,7 @@ private struct GradeNotificationSettings: View {
     @State private var requesting = false
 
     var body: some View {
-        Group {
+        VStack(alignment: .leading, spacing: 10) {
             Toggle("Graded assignments", isOn: Binding(
                 get: { notifications.enabled },
                 set: { value in
@@ -39,16 +94,30 @@ private struct GradeNotificationSettings: View {
                     Task { await notifications.setEnabled(value); requesting = false }
                 }
             ))
+            .tint(SchoolityPalette.ink)
             .disabled(requesting)
             .accessibilityIdentifier("settings.gradeNotifications")
-            if requesting { ProgressView("Requesting permission…") }
+
+            if requesting {
+                ProgressView("Requesting permission…")
+                    .font(SchoolityText.meta)
+            }
             if notifications.permissionDenied {
-                Text("Notifications are blocked in iOS Settings.").font(.footnote).foregroundStyle(.secondary)
+                Text("Notifications are blocked in iOS Settings.")
+                    .font(SchoolityText.meta)
+                    .foregroundStyle(SchoolityPalette.muted)
                 Button("Open notification settings") {
                     if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
                 }
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(SchoolityPalette.ink)
+                .frame(minHeight: 44)
             }
-            if let error = notifications.error { Text(error).font(.footnote).foregroundStyle(.secondary) }
+            if let error = notifications.error {
+                Text(error)
+                    .font(SchoolityText.meta)
+                    .foregroundStyle(SchoolityPalette.muted)
+            }
         }
         .task(id: scenePhase) { await notifications.refreshPermission() }
     }
@@ -76,12 +145,13 @@ private struct AppearanceView: View {
         }
         .schoolityList()
         .navigationTitle("Appearance")
-        .navigationBarTitleDisplayMode(.inline)
+        .schoolityNavigationChrome()
     }
 }
 
 private struct AccentColorsView: View {
     @EnvironmentObject private var customization: CustomizationStore
+
     var body: some View {
         List {
             Section {
@@ -90,6 +160,8 @@ private struct AccentColorsView: View {
                     set: { color in customization.update { $0.accent = StoredColor(color) } }
                 ), supportsOpacity: false)
                 Button("Use Schoolity default") { customization.update { $0.accent = nil } }
+            } footer: {
+                Text("The default follows the website: black in Light Mode and near-white in Dark Mode. A chosen accent replaces it in the signed-in workspace.")
             }
             Section("Colors") {
                 ForEach(NamedColor.accents) { choice in
@@ -98,9 +170,11 @@ private struct AccentColorsView: View {
                     } label: {
                         HStack(spacing: 12) {
                             Circle().fill(choice.stored.color).frame(width: 24, height: 24)
-                            Text(choice.name).foregroundStyle(.primary)
+                            Text(choice.name).foregroundStyle(SchoolityPalette.ink)
                             Spacer()
-                            if customization.settings.accent == choice.stored { Image(systemName: "checkmark") }
+                            if customization.settings.accent == choice.stored {
+                                Image(systemName: "checkmark").foregroundStyle(SchoolityPalette.ink)
+                            }
                         }
                     }
                 }
@@ -108,7 +182,7 @@ private struct AccentColorsView: View {
         }
         .schoolityList()
         .navigationTitle("Accent Color")
-        .navigationBarTitleDisplayMode(.inline)
+        .schoolityNavigationChrome()
     }
 }
 
@@ -149,7 +223,7 @@ private struct GradeColorsView: View {
         }
         .schoolityList()
         .navigationTitle("Grade Colors")
-        .navigationBarTitleDisplayMode(.inline)
+        .schoolityNavigationChrome()
         .onAppear {
             if !loaded { draft = customization.settings; loaded = true }
         }

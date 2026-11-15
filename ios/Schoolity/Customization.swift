@@ -102,7 +102,8 @@ final class CustomizationStore: ObservableObject {
             .flatMap { try? JSONDecoder().decode(CustomizationSettings.self, from: $0) } ?? CustomizationSettings()
     }
 
-    var accentColor: Color { settings.accent?.color ?? Color("ActionAccent") }
+    /// The signed-in default is the website's ink, not the teal sign-in accent.
+    var accentColor: Color { settings.accent?.color ?? SchoolityPalette.ink }
     /// `nil` follows the iPhone's Light or Dark Mode, as before.
     var colorScheme: ColorScheme? {
         switch settings.appearance ?? .system {

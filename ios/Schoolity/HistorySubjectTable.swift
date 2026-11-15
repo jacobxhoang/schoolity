@@ -22,18 +22,20 @@ struct HistorySubjectTable: View {
                         ForEach(headers.indices, id: \.self) { index in
                             Text(headers[index])
                                 .font(.caption.weight(.semibold))
+                                .foregroundStyle(SchoolityPalette.muted)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .padding(.horizontal, 4).padding(.vertical, 10)
                                 .accessibilityAddTraits(.isHeader)
                         }
                     }
-                    .background(Color(uiColor: .secondarySystemBackground))
-                    Divider()
+                    .background(SchoolityPalette.field)
+                    HairlineDivider()
                     ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
                         HistoryColumnsLayout(weights: headers.map(weight)) {
                             ForEach(headers.indices, id: \.self) { index in
                                 Text(value(row, at: index))
                                     .font(.caption)
+                                    .foregroundStyle(SchoolityPalette.ink)
                                     .monospacedDigit()
                                     .fixedSize(horizontal: false, vertical: true)
                                     .padding(.horizontal, 4).padding(.vertical, 10)
@@ -41,8 +43,8 @@ struct HistorySubjectTable: View {
                                     .accessibilityLabel("\(headers[index]): \(value(row, at: index))")
                             }
                         }
-                        .background(Color(uiColor: .tertiarySystemBackground))
-                        Divider()
+                        .background(SchoolityPalette.panel)
+                        HairlineDivider()
                     }
                 }
                 .accessibilityElement(children: .contain)
@@ -64,9 +66,10 @@ struct HistorySubjectTable: View {
                 VStack(alignment: .leading, spacing: 14) {
                     if let titleIndex {
                         VStack(alignment: .leading, spacing: 5) {
-                            Text(headers[titleIndex]).font(.caption).foregroundStyle(.secondary)
+                            Text(headers[titleIndex]).font(.caption).foregroundStyle(SchoolityPalette.muted)
                             Text(value(row, at: titleIndex))
                                 .font(.body.weight(.semibold))
+                                .foregroundStyle(SchoolityPalette.ink)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .textSelection(.enabled)
                         }
@@ -74,9 +77,9 @@ struct HistorySubjectTable: View {
                     LazyVGrid(columns: [GridItem(.flexible(), alignment: .leading), GridItem(.flexible(), alignment: .leading)], alignment: .leading, spacing: 14) {
                         ForEach(headers.indices.filter { $0 != titleIndex }, id: \.self) { index in
                             VStack(alignment: .leading, spacing: 5) {
-                                Text(headers[index]).font(.caption).foregroundStyle(.secondary)
+                                Text(headers[index]).font(.caption).foregroundStyle(SchoolityPalette.muted)
                                     .fixedSize(horizontal: false, vertical: true)
-                                Text(value(row, at: index)).font(.subheadline.weight(.medium)).monospacedDigit()
+                                Text(value(row, at: index)).font(.subheadline.weight(.medium)).foregroundStyle(SchoolityPalette.ink).monospacedDigit()
                                     .textSelection(.enabled)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -96,14 +99,14 @@ struct HistorySubjectTable: View {
                 VStack(alignment: .leading, spacing: 10) {
                     ForEach(headers.indices, id: \.self) { index in
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(headers[index]).font(.caption).foregroundStyle(.secondary)
-                            Text(value(row, at: index)).font(.body).textSelection(.enabled)
+                            Text(headers[index]).font(.caption).foregroundStyle(SchoolityPalette.muted)
+                            Text(value(row, at: index)).font(.body).foregroundStyle(SchoolityPalette.ink).textSelection(.enabled)
                         }
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(12)
-                .background(Color(uiColor: .tertiarySystemBackground))
+                .background(SchoolityPalette.field, in: RoundedRectangle(cornerRadius: SchoolityRadius.chip, style: .continuous))
             }
         }
     }
