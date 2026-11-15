@@ -133,6 +133,30 @@ jobs:
             | tee build/ui-dark.log
           grep -Eq 'Executed [1-9][0-9]* tests?' build/ui-dark.log
           xcrun simctl ui "$SIMULATOR_ID" content_size large
+      - name: Summarize test failures
+        if: failure()
+        run: |
+          set -uo pipefail
+          {
+            echo "## Failed iOS tests"
+            for result in TestResults/*.xcresult; do
+              [ -d "$result" ] || continue
+              echo "### $(basename "$result")"
+              xcrun xcresulttool get test-results summary --path "$result" --format json 2>/dev/null |
+                python3 -c 'import json, sys
+          data = json.load(sys.stdin)
+          print("Result:", data.get("result", "unknown"))
+          for failure in data.get("testFailures", []):
+              print("- " + str(failure.get("testName", "unknown")) + ": " + str(failure.get("failureText", "")))' || true
+            done
+            for log in build/ui-light.log build/ui-dark.log; do
+              [ -f "$log" ] || continue
+              echo "### $(basename "$log") failures"
+              echo '```'
+              grep -E "Test Case .* failed|error:|Failing tests:" "$log" | tail -60 || true
+              echo '```'
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Export course and settings previews
         if: success()
         run: |
