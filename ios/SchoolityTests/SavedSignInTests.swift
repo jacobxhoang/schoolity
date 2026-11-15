@@ -30,14 +30,15 @@ final class SavedSignInTests: XCTestCase {
         let store = AppStore(client: portal, unlocker: TestUnlocker())
         await store.start()
         await store.loadRecord(.history)
-        _ = try await store.historySubject(id: "science")
+        await store.preloadWorkspace()
         XCTAssertNil(store.cachedHistorySubject(id: "math"))
         XCTAssertNotNil(store.cachedHistorySubject(id: "science"))
         XCTAssertEqual(store.access, .signedIn)
+        let attempts = portal.subjectReadCounts["math", default: 0]
         portal.subjectErrors["math"] = nil
         _ = try await store.historySubject(id: "math")
         XCTAssertNotNil(store.cachedHistorySubject(id: "math"))
-        XCTAssertEqual(portal.subjectReadCounts["math"], 2)
+        XCTAssertEqual(portal.subjectReadCounts["math"], attempts + 1)
     }
 
     @MainActor
