@@ -5,25 +5,19 @@ struct CustomizationView: View {
         List {
             SectionHeading(title: "Customization")
                 .schoolityPageRow(top: 8, bottom: 10)
-            VStack(spacing: 0) {
-                SettingsLinkRow(title: "Grade Colors", symbol: "paintpalette.fill") { GradeColorsView() }
-                HairlineDivider()
-                SettingsLinkRow(title: "Class Names and Icons", symbol: "studentdesk") { ClassAliasesView() }
-                HairlineDivider()
-                SettingsLinkRow(title: "Accent Color", symbol: "paintbrush.fill") { AccentColorsView() }
-            }
-            .schoolityCard(padding: 4)
-            .schoolityPageRow(bottom: 20)
+            SettingsLinkRow(title: "Grade Colors", symbol: "paintpalette.fill") { GradeColorsView() }
+                .schoolityPageRow(bottom: 8)
+            SettingsLinkRow(title: "Class Names and Icons", symbol: "studentdesk") { ClassAliasesView() }
+                .schoolityPageRow(bottom: 8)
+            SettingsLinkRow(title: "Accent Color", symbol: "paintbrush.fill") { AccentColorsView() }
+                .schoolityPageRow(bottom: 20)
 
             SectionHeading(title: "App")
                 .schoolityPageRow(bottom: 10)
-            VStack(spacing: 0) {
-                SettingsLinkRow(title: "Appearance", symbol: "circle.lefthalf.filled") { AppearanceView() }
-                HairlineDivider()
-                SettingsLinkRow(title: "Privacy & Connection", symbol: "hand.raised.fill") { PrivacyView() }
-            }
-            .schoolityCard(padding: 4)
-            .schoolityPageRow(bottom: 20)
+            SettingsLinkRow(title: "Appearance", symbol: "circle.lefthalf.filled") { AppearanceView() }
+                .schoolityPageRow(bottom: 8)
+            SettingsLinkRow(title: "Privacy & Connection", symbol: "hand.raised.fill") { PrivacyView() }
+                .schoolityPageRow(bottom: 20)
 
             SectionHeading(title: "Notifications")
                 .schoolityPageRow(bottom: 10)
@@ -68,10 +62,11 @@ private struct SettingsLinkRow<Destination: View>: View {
                     .accessibilityHidden(true)
             }
             .frame(minHeight: 56)
+            .padding(.horizontal, 8)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, 12)
+        .schoolityCard(padding: 4)
         .padding(.vertical, 4)
     }
 }

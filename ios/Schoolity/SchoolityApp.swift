@@ -155,9 +155,10 @@ struct AccountDetailsView: View {
                 }
                 .frame(minHeight: 60)
                 .contentShape(Rectangle())
+                .schoolityCard(padding: 16)
             }
             .buttonStyle(.plain)
-            .schoolityCardRow(bottom: 20, padding: 16)
+            .schoolityPageRow(bottom: 20)
 
             Button(role: .destructive) {
                 Task { await store.signOut() }

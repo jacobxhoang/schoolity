@@ -6,36 +6,40 @@ struct RecordsView: View {
             SchoolityPageHeader(title: "Records")
                 .schoolityPageRow(top: 8, bottom: 18)
 
-            VStack(spacing: 0) {
-                NavigationLink {
-                    StudentInfoView()
-                } label: {
-                    RecordDestinationRow(title: "Student Info", detail: "School, contacts, and transportation", symbol: "person.text.rectangle")
-                }
-                .buttonStyle(.plain)
-                HairlineDivider()
-                NavigationLink {
-                    AttendanceView()
-                } label: {
-                    RecordDestinationRow(title: "Attendance", detail: "Absences and period details", symbol: "checkmark.circle")
-                }
-                .buttonStyle(.plain)
-                HairlineDivider()
-                NavigationLink {
-                    CourseHistoryView()
-                } label: {
-                    RecordDestinationRow(title: "Course History", detail: "Credits and graduation progress", symbol: "clock.arrow.circlepath")
-                }
-                .buttonStyle(.plain)
-                HairlineDivider()
-                NavigationLink {
-                    ResourceView(resource: .documents)
-                } label: {
-                    RecordDestinationRow(title: "Documents", detail: "Reports and school files", symbol: "doc")
-                }
-                .buttonStyle(.plain)
+            NavigationLink {
+                StudentInfoView()
+            } label: {
+                RecordDestinationRow(title: "Student Info", detail: "School, contacts, and transportation", symbol: "person.text.rectangle")
+                    .schoolityCard(padding: 4)
             }
-            .schoolityCard(padding: 4)
+            .buttonStyle(.plain)
+            .schoolityPageRow(bottom: 8)
+
+            NavigationLink {
+                AttendanceView()
+            } label: {
+                RecordDestinationRow(title: "Attendance", detail: "Absences and period details", symbol: "checkmark.circle")
+                    .schoolityCard(padding: 4)
+            }
+            .buttonStyle(.plain)
+            .schoolityPageRow(bottom: 8)
+
+            NavigationLink {
+                CourseHistoryView()
+            } label: {
+                RecordDestinationRow(title: "Course History", detail: "Credits and graduation progress", symbol: "clock.arrow.circlepath")
+                    .schoolityCard(padding: 4)
+            }
+            .buttonStyle(.plain)
+            .schoolityPageRow(bottom: 8)
+
+            NavigationLink {
+                ResourceView(resource: .documents)
+            } label: {
+                RecordDestinationRow(title: "Documents", detail: "Reports and school files", symbol: "doc")
+                    .schoolityCard(padding: 4)
+            }
+            .buttonStyle(.plain)
             .schoolityPageRow(bottom: 14)
 
             Text("District-reported records. Schoolity does not change them.")
