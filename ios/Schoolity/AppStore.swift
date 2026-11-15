@@ -429,8 +429,18 @@ final class AppStore: ObservableObject {
             requestID = running.id
         }
         else {
-            request = Task { @MainActor [client] in try await client.readHistorySubject(id) }
             requestID = UUID()
+            let identifier = requestID
+            request = Task { @MainActor [client, weak self] in
+                // Remove completed work before waking any waiters. A retry must
+                // never join an already-failed preload still awaiting cleanup.
+                defer {
+                    if self?.historySubjectRequests[id]?.id == identifier {
+                        self?.historySubjectRequests[id] = nil
+                    }
+                }
+                return try await client.readHistorySubject(id)
+            }
             historySubjectRequests[id] = (id: requestID, task: request)
         }
         defer {
