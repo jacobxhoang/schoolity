@@ -68,7 +68,9 @@ private struct GradebookContent: View, Equatable {
                     }
                 }
 
-                RecentAssignmentsCard(items: book.recentAssignments, term: book.currentTerm)
+                RecentAssignmentsCard(items: book.recentAssignments) { course in
+                    selectedCourse = course
+                }
                     .schoolityPageRow(bottom: 16)
             } else if isLoading {
                 VStack(alignment: .leading, spacing: 12) {
@@ -659,7 +661,7 @@ struct ScoreEditor: View {
 
 private struct RecentAssignmentsCard: View {
     let items: [RecentAssignment]
-    let term: Int
+    let openCourse: (Course) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -681,8 +683,8 @@ private struct RecentAssignmentsCard: View {
                 VStack(spacing: 0) {
                     ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                         if index > 0 { HairlineDivider() }
-                        NavigationLink {
-                            CourseDetailView(course: item.course).id("\(term)-\(item.course.id)")
+                        Button {
+                            openCourse(item.course)
                         } label: {
                             RecentAssignmentRow(item: item)
                         }
