@@ -37,6 +37,7 @@ final class AppStore: ObservableObject {
     private var checkingForGradeNotifications = false
     private var savedSessionNeedsUnlock = false
     private var historyGeneration = UUID()
+    private var historyPreloadTask: Task<Void, Never>?
     private var historySubjects: [String: SubjectDetails] = [:]
     private var historySubjectRequests: [String: (id: UUID, task: Task<SubjectDetails, Error>)] = [:]
     #if DEBUG
@@ -301,7 +302,8 @@ final class AppStore: ObservableObject {
         async let attendance: Void = loadRecord(.attendance)
         _ = await (profile, schedule, inbox, documents, student, history, attendance)
         guard ticket == generation, !Task.isCancelled else { return }
-        await preloadHistorySubjects()
+        startHistoryPreload()
+        await historyPreloadTask?.value
     }
 
     func loadProfile(refresh: Bool = false) async {
@@ -352,7 +354,6 @@ final class AppStore: ObservableObject {
         }
         let ticket = generation
         loadingRecords.insert(feature)
-        if feature == .history && refresh { clearHistorySubjects() }
         recordErrors[feature] = nil
         defer { if ticket == generation { loadingRecords.remove(feature) } }
         do {
@@ -364,8 +365,9 @@ final class AppStore: ObservableObject {
             case .history:
                 let next: CourseHistoryPage = try await client.read("history", term: nil)
                 guard ticket == generation else { return }
+                if refresh { clearHistorySubjects() }
                 courseHistory = next
-                await preloadHistorySubjects()
+                startHistoryPreload()
             case .attendance:
                 let next: AttendancePage = try await client.read("attendance", term: nil)
                 guard ticket == generation else { return }
@@ -380,6 +382,16 @@ final class AppStore: ObservableObject {
     }
 
     func cachedHistorySubject(id: String) -> SubjectDetails? { historySubjects[id] }
+
+    private func startHistoryPreload() {
+        guard historyPreloadTask == nil else { return }
+        let historyTicket = historyGeneration
+        historyPreloadTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.preloadHistorySubjects()
+            if historyTicket == self.historyGeneration { self.historyPreloadTask = nil }
+        }
+    }
 
     private func preloadHistorySubjects() async {
         let ticket = generation
@@ -529,6 +541,8 @@ final class AppStore: ObservableObject {
 
     private func clearHistorySubjects() {
         historyGeneration = UUID()
+        historyPreloadTask?.cancel()
+        historyPreloadTask = nil
         for request in historySubjectRequests.values { request.task.cancel() }
         historySubjectRequests = [:]
         historySubjects = [:]

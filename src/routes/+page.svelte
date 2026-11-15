@@ -5,6 +5,7 @@
   import { readGradeCache, saveGradeCache, clearGradeCache } from '$lib/grade-cache';
   import GradeSummary from '$lib/GradeSummary.svelte';
   import SelectMenu from '$lib/SelectMenu.svelte';
+  import { HistorySubjectCache } from '$lib/history-subject-cache';
   import StudentRecords from '$lib/StudentRecords.svelte';
   import { readRecords, type RecordPage, type SubjectDetails } from '$lib/records';
   import {
@@ -126,7 +127,7 @@
   let generation = 0;
   const resourceLoads = new Map<string, Promise<void>>();
   const resourceFailures = new Map<string, string>();
-  const subjectCache = new Map<string, SubjectDetails>();
+  const subjectCache = new HistorySubjectCache();
   let subjectPreload: Promise<void> | null = null;
   let recordPages = $state<Record<string, RecordPage>>({});
   const recordResources = ['student', 'history', 'attendance'];
@@ -327,17 +328,16 @@
     id: string,
     background = false,
   ): Promise<SubjectDetails> {
-    const cached = subjectCache.get(id);
-    if (cached) return cached;
     const version = generation;
+    return subjectCache.load(id, async () => {
     const response = await api(
       { action: 'read', resource: 'history-subject', subject: id },
       background,
     );
     if (version !== generation || !authenticated) throw new Error('Your workspace changed. Open the subject again.');
     const details = response.data as SubjectDetails;
-    subjectCache.set(id, details);
     return details;
+    });
   }
   function preloadHistorySubjects() {
     const version = generation;
@@ -346,13 +346,13 @@
     subjectPreload = (async () => {
       try {
         for (const requirement of page.requirements) {
-          if (!requirement.id || !authenticated || version !== generation)
+          if (!requirement.id || !authenticated || version !== generation || page !== recordPages.history)
             return;
           if (!subjectCache.has(requirement.id))
             await loadHistorySubject(requirement.id, true).catch(() => {});
         }
       } finally {
-        if (version === generation) subjectPreload = null;
+        if (version === generation && page === recordPages.history) subjectPreload = null;
       }
     })();
   }
@@ -409,6 +409,7 @@
       refreshTimes = { ...refreshTimes, [id]: Date.now() };
       if (id === 'history') {
         subjectCache.clear();
+        subjectPreload = null;
         preloadHistorySubjects();
       }
     } catch (e) {
