@@ -495,22 +495,20 @@ struct CourseDetailView: View {
             )
             .schoolityPageRow(bottom: 12)
         } else {
-            VStack(spacing: 0) {
-                ForEach(Array(course.assignments.enumerated()), id: \.element.id) { index, assignment in
-                    if index > 0 { HairlineDivider() }
-                    AssignmentDetailRow(
-                        assignment: assignment,
-                        isExpanded: Binding(
-                            get: { expandedAssignmentID == assignment.id },
-                            set: { expandedAssignmentID = $0 ? assignment.id : nil }
-                        ),
-                        edit: { presentedSheet = assignment },
-                        remove: removable(assignment) ? { course.assignments.removeAll { $0.id == assignment.id } } : nil
-                    )
-                }
+            // Separate List rows let SwiftUI defer off-screen assignment layout.
+            ForEach(course.assignments) { assignment in
+                AssignmentDetailRow(
+                    assignment: assignment,
+                    isExpanded: Binding(
+                        get: { expandedAssignmentID == assignment.id },
+                        set: { expandedAssignmentID = $0 ? assignment.id : nil }
+                    ),
+                    edit: { presentedSheet = assignment },
+                    remove: removable(assignment) ? { course.assignments.removeAll { $0.id == assignment.id } } : nil
+                )
+                .schoolityCard(padding: 16)
+                .schoolityPageRow(bottom: 8)
             }
-            .schoolityCard(padding: 16)
-            .schoolityPageRow(bottom: 12)
         }
     }
 

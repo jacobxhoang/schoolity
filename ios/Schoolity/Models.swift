@@ -105,10 +105,16 @@ enum GradeMath {
     }
 
     static func trend(_ course: Course) -> [Point] {
+        // Keep formatters local to this calculation, but reuse them across rows.
+        // Creating Foundation formatters per assignment stalls course navigation.
+        let iso = ISO8601DateFormatter()
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
         var ordered: [(assignment: Assignment, index: Int, date: Date)] = []
         for (index, assignment) in course.assignments.enumerated() {
             guard assignment.excluded != true, assignment.earned?.isFinite == true else { continue }
-            let due = date(assignment.due) ?? Date.distantFuture
+            let due = date(assignment.due, iso: iso, formatter: formatter) ?? Date.distantFuture
             ordered.append((assignment: assignment, index: index, date: due))
         }
         ordered.sort { left, right in
@@ -143,10 +149,14 @@ enum GradeMath {
     }
 
     static func date(_ value: String) -> Date? {
-        if let date = ISO8601DateFormatter().date(from: value) { return date }
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        return date(value, iso: ISO8601DateFormatter(), formatter: formatter)
+    }
+
+    private static func date(_ value: String, iso: ISO8601DateFormatter, formatter: DateFormatter) -> Date? {
+        if let date = iso.date(from: value) { return date }
         for pattern in ["M/d/yyyy", "M/d/yyyy h:mm:ss a", "yyyy-MM-dd", "yyyy-MM-dd'T'HH:mm:ss", "MMM d, yyyy"] {
             formatter.dateFormat = pattern
             if let date = formatter.date(from: value) { return date }
