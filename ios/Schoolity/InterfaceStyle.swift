@@ -22,21 +22,13 @@ enum SchoolityMotion {
     }
 }
 
-/// The signed-in canvas: a soft accent wash behind every screen, so glass cards,
-/// glass buttons and the system's own translucent bars have depth to refract.
+/// A plain canvas with true black in Dark Mode.
 struct SchoolityBackdrop: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        let intensity: Double = colorScheme == .dark ? 0.30 : 0.16
-        ZStack {
-            Color(uiColor: .systemGroupedBackground)
-            RadialGradient(colors: [SchoolityStyle.accent.opacity(intensity), .clear],
-                           center: .topLeading, startRadius: 0, endRadius: 520)
-            RadialGradient(colors: [SchoolityStyle.accent.opacity(intensity * 0.55), .clear],
-                           center: .bottomTrailing, startRadius: 0, endRadius: 480)
-        }
-        .ignoresSafeArea()
+        (colorScheme == .dark ? Color.black : Color(uiColor: .systemGroupedBackground))
+            .ignoresSafeArea()
     }
 }
 
