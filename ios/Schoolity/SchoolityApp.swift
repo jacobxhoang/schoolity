@@ -89,6 +89,7 @@ struct WorkspaceView: View {
 
 struct AccountDetailsView: View {
     @EnvironmentObject private var store: AppStore
+    @State private var showSettings = false
 
     var body: some View {
         List {
@@ -139,8 +140,8 @@ struct AccountDetailsView: View {
             StudentIDSection()
                 .schoolityPageRow(bottom: 20)
 
-            NavigationLink {
-                CustomizationView()
+            Button {
+                showSettings = true
             } label: {
                 HStack(spacing: 12) {
                     IconTile(symbol: "gearshape.fill", size: 40, background: .field)
@@ -148,6 +149,10 @@ struct AccountDetailsView: View {
                         .font(.headline)
                         .foregroundStyle(SchoolityPalette.ink)
                     Spacer(minLength: 8)
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(SchoolityPalette.faint)
+                        .accessibilityHidden(true)
                 }
                 .frame(minHeight: 60)
                 .contentShape(Rectangle())
@@ -172,5 +177,6 @@ struct AccountDetailsView: View {
         .privacySensitive()
         .navigationTitle("Account")
         .schoolityNavigationChrome()
+        .navigationDestination(isPresented: $showSettings) { CustomizationView() }
     }
 }

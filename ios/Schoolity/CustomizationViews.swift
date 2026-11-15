@@ -1,22 +1,28 @@
 import SwiftUI
 
+private enum SettingsRoute: Hashable {
+    case gradeColors, classAliases, accentColors, appearance, privacy
+}
+
 struct CustomizationView: View {
+    @State private var route: SettingsRoute?
+
     var body: some View {
         List {
             SectionHeading(title: "Customization")
                 .schoolityPageRow(top: 8, bottom: 10)
-            SettingsLinkRow(title: "Grade Colors", symbol: "paintpalette.fill") { GradeColorsView() }
+            SettingsLinkRow(title: "Grade Colors", symbol: "paintpalette.fill") { route = .gradeColors }
                 .schoolityPageRow(bottom: 8)
-            SettingsLinkRow(title: "Class Names and Icons", symbol: "studentdesk") { ClassAliasesView() }
+            SettingsLinkRow(title: "Class Names and Icons", symbol: "studentdesk") { route = .classAliases }
                 .schoolityPageRow(bottom: 8)
-            SettingsLinkRow(title: "Accent Color", symbol: "paintbrush.fill") { AccentColorsView() }
+            SettingsLinkRow(title: "Accent Color", symbol: "paintbrush.fill") { route = .accentColors }
                 .schoolityPageRow(bottom: 20)
 
             SectionHeading(title: "App")
                 .schoolityPageRow(bottom: 10)
-            SettingsLinkRow(title: "Appearance", symbol: "circle.lefthalf.filled") { AppearanceView() }
+            SettingsLinkRow(title: "Appearance", symbol: "circle.lefthalf.filled") { route = .appearance }
                 .schoolityPageRow(bottom: 8)
-            SettingsLinkRow(title: "Privacy & Connection", symbol: "hand.raised.fill") { PrivacyView() }
+            SettingsLinkRow(title: "Privacy & Connection", symbol: "hand.raised.fill") { route = .privacy }
                 .schoolityPageRow(bottom: 20)
 
             SectionHeading(title: "Notifications")
@@ -32,37 +38,42 @@ struct CustomizationView: View {
         .schoolityPageList()
         .navigationTitle("Settings")
         .schoolityNavigationChrome()
+        .navigationDestination(item: $route) { route in
+            switch route {
+            case .gradeColors: GradeColorsView()
+            case .classAliases: ClassAliasesView()
+            case .accentColors: AccentColorsView()
+            case .appearance: AppearanceView()
+            case .privacy: PrivacyView()
+            }
+        }
     }
 }
 
-private struct SettingsLinkRow<Destination: View>: View {
+private struct SettingsLinkRow: View {
     let title: String
     let symbol: String
-    let destination: () -> Destination
-
-    init(title: String, symbol: String, @ViewBuilder destination: @escaping () -> Destination) {
-        self.title = title
-        self.symbol = symbol
-        self.destination = destination
-    }
+    let action: () -> Void
 
     var body: some View {
-        NavigationLink {
-            destination()
-        } label: {
+        Button(action: action) {
             HStack(spacing: 12) {
                 IconTile(symbol: symbol, size: 36, background: .field)
                 Text(title)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(SchoolityPalette.ink)
                 Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(SchoolityPalette.faint)
+                    .accessibilityHidden(true)
             }
             .frame(minHeight: 56)
             .padding(.horizontal, 8)
             .contentShape(Rectangle())
+            .schoolityCard(padding: 4)
         }
         .buttonStyle(.plain)
-        .schoolityCard(padding: 4)
         .padding(.vertical, 4)
     }
 }
