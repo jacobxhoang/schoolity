@@ -54,6 +54,7 @@ struct RecordsView: View {
 }
 
 private struct RecordDestinationRow: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     let title: String
     let detail: String
     let symbol: String
@@ -65,10 +66,12 @@ private struct RecordDestinationRow: View {
                 Text(title)
                     .font(.headline)
                     .foregroundStyle(SchoolityPalette.ink)
-                Text(detail)
-                    .font(SchoolityText.meta)
-                    .foregroundStyle(SchoolityPalette.muted)
-                    .multilineTextAlignment(.leading)
+                if !typeSize.isAccessibilitySize {
+                    Text(detail)
+                        .font(SchoolityText.meta)
+                        .foregroundStyle(SchoolityPalette.muted)
+                        .multilineTextAlignment(.leading)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             Image(systemName: "chevron.right")
@@ -80,6 +83,7 @@ private struct RecordDestinationRow: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .contentShape(Rectangle())
+        .accessibilityHint(detail)
     }
 }
 
