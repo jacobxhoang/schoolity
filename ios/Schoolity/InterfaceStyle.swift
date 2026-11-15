@@ -134,6 +134,7 @@ struct SchoolityCardSurface: ViewModifier {
             .overlay {
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
                     .strokeBorder(SchoolityPalette.line, lineWidth: 1)
+                    .allowsHitTesting(false)
             }
             .shadow(color: Color.black.opacity(0.03), radius: 2, y: 1)
     }

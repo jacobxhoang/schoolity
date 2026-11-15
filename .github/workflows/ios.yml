@@ -164,7 +164,9 @@ jobs:
           FAILED=$(grep -hE "Test Case .* failed" build/ui-light.log build/ui-dark.log 2>/dev/null |
             sed -E "s/.*Test Case '-\[([^]]+)\]' failed.*/\1/" |
             sort -u | paste -sd ', ' - || true)
-          DETAILS=$(tr '\n' ' ' < /tmp/failure-details.txt 2>/dev/null | head -c 1200 || true)
+          LOG_DETAILS=$(grep -hE "error: -\[" build/ui-light.log build/ui-dark.log 2>/dev/null |
+            sed -E 's#^.*/([^/]+\.swift):#\1:#' | sort -u | paste -sd ' ' - | head -c 700 || true)
+          DETAILS=${LOG_DETAILS:-$(tr '\n' ' ' < /tmp/failure-details.txt 2>/dev/null | head -c 700 || true)}
           if [ -n "$FAILED$DETAILS" ]; then
             echo "::error title=Failing iOS tests::$FAILED $DETAILS"
           fi
