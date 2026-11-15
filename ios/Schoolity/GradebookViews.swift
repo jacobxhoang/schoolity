@@ -27,13 +27,6 @@ private struct GradebookContent: View, Equatable {
 
     var body: some View {
         List {
-            SchoolityPageHeader(
-                title: "Gradebook",
-                isRefreshing: isLoading && book != nil,
-                refresh: { Task { await refresh(nil) } }
-            )
-            .schoolityPageRow(top: 8, bottom: 18)
-
             if let book {
                 GradebookStatsCard(average: book.calculatedAverage, courses: book.courses.count)
                     .schoolityPageRow(bottom: 22)
@@ -385,9 +378,6 @@ struct CourseDetailView: View {
 
     var body: some View {
         List {
-            SchoolityPageHeader(title: customization.name(for: course.name), subtitle: courseDetails)
-                .schoolityPageRow(top: 8, bottom: 16)
-
             VStack(alignment: .leading, spacing: 18) {
                 gradeComparison
                 GradeHistoryView(course: course).equatable()

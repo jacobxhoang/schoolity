@@ -6,14 +6,6 @@ struct ScheduleView: View {
 
     var body: some View {
         List {
-            SchoolityPageHeader(
-                title: "Schedule",
-                updated: store.lastUpdated["schedule"],
-                isRefreshing: store.isLoadingSchedule,
-                refresh: { Task { await store.loadSchedule(refresh: true) } }
-            )
-            .schoolityPageRow(top: 8, bottom: 18)
-
             if let schedule = store.schedule {
                 if schedule.terms.isEmpty {
                     SchoolityEmptyState(
