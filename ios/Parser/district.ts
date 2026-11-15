@@ -25,7 +25,7 @@ export function invoke(operation: string, input: string): string {
         if (!('data' in response)) throw new Error('The district returned an unexpected response.');
         const raw = object(response.data);
         const keys: Record<string, string[]> = {
-          grades: ['traditionalGradebook'], profile: [], student: [], attendance: ['attendance'],
+          grades: ['traditionalGradebook'], profile: [], student: [], attendance: [],
           'schedule-terms': ['studentClassScheduleForAllTerms', 'studentClassSchedule'],
           documents: ['studentDocuments'], mail: ['synergyMailDataXML'],
         };
