@@ -4,7 +4,7 @@ Software: a student gradebook and school-records application for Anoka-Hennepin.
 
 ## Direction
 
-Use a paper-white web canvas with deep teal navigation, a forest-green grade summary, and pale lime selection. Course icons cycle through mint, amber, and blue as decorative markers; their colors never encode achievement. Native iOS accent settings remain independent. Inter and Inter Tight remain the web faces; iOS uses Dynamic Type system faces. The product's live grades, assignments, schedules, and records carry each screen. Preserve all routes, calculations, authentication, and data fields. No marketing hero, photographs, decorative effects, timed content, or invented figures belong in the signed-in application.
+Use a monochrome web palette in light and dark mode. Sidebar, summary, course icons, and custom dropdowns share neutral surfaces and black-and-white selection states. Native iOS accent settings remain independent. Inter and Inter Tight remain the web faces; iOS uses Dynamic Type system faces. The product's live grades, assignments, schedules, and records carry each screen. Preserve all routes, calculations, authentication, and data fields. No marketing hero, photographs, decorative effects, timed content, or invented figures belong in the signed-in application.
 
 The main action is opening a course. Put the course title and secondary teacher/location details on the left and a readable grade on the right. At accessibility text sizes, stack these elements in reading order. The iOS login and saved-sign-in screens retain their existing design.
 
