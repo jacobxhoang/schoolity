@@ -86,7 +86,7 @@ struct AssignmentDetailRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
+                withAnimation(.easeInOut(duration: 0.14)) {
                     isExpanded.toggle()
                 }
             } label: {
@@ -155,7 +155,7 @@ struct AssignmentDetailRow: View {
                     .padding(.top, 2)
                 }
                 .padding(.vertical, 8)
-                .transition(.opacity.combined(with: .move(edge: .top)))
+                .transition(.opacity)
             }
         }
     }
