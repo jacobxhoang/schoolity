@@ -290,7 +290,6 @@ private struct StudentInfoFieldRow: View {
                 .textSelection(.enabled)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
     }
 }
 

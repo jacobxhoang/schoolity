@@ -139,6 +139,7 @@ jobs:
           set -uo pipefail
           {
             echo "## Failed iOS tests"
+            : > /tmp/failure-details.txt
             for result in TestResults/*.xcresult; do
               [ -d "$result" ] || continue
               echo "### $(basename "$result")"
@@ -147,7 +148,8 @@ jobs:
           data = json.load(sys.stdin)
           print("Result:", data.get("result", "unknown"))
           for failure in data.get("testFailures", []):
-              print("- " + str(failure.get("testName", "unknown")) + ": " + str(failure.get("failureText", "")))' || true
+              print("- " + str(failure.get("testName", "unknown")) + ": " + str(failure.get("failureText", "")))' |
+                tee -a /tmp/failure-details.txt || true
             done
             for log in build/ui-light.log build/ui-dark.log; do
               [ -f "$log" ] || continue
@@ -160,8 +162,9 @@ jobs:
           FAILED=$(grep -hE "Test Case .* failed" build/ui-light.log build/ui-dark.log 2>/dev/null |
             sed -E "s/.*Test Case '-\[([^]]+)\]' failed.*/\1/" |
             sort -u | paste -sd ', ' - || true)
-          if [ -n "$FAILED" ]; then
-            echo "::error title=Failing iOS tests::$FAILED"
+          DETAILS=$(tr '\n' ' ' < /tmp/failure-details.txt 2>/dev/null | head -c 1200 || true)
+          if [ -n "$FAILED$DETAILS" ]; then
+            echo "::error title=Failing iOS tests::$FAILED $DETAILS"
           fi
       - name: Export course and settings previews
         if: success()
