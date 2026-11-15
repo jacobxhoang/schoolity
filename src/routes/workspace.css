@@ -10,7 +10,7 @@
 /* Sidebar */
 
 #school-navigation {
-  --focus-ring: 2px solid #eff9f2;
+  --focus-ring: 2px solid var(--nav-ink);
   position: fixed;
   inset: 0 auto 0 0;
   z-index: 30;
@@ -381,7 +381,7 @@ select option {
   border-radius: var(--r-lg);
   background: var(--summary);
   color: var(--summary-ink);
-  box-shadow: 0 12px 30px -24px #143f3a;
+  box-shadow: var(--shadow);
 }
 .stat-card {
   flex: 1;
@@ -1736,11 +1736,6 @@ td small {
   }
 }
 
-/* Subject markers add variety without assigning meaning to grade colors. */
-.course-card:nth-child(3n + 2) .subject-icon { background:#f5e9d0; color:#78541d; }
-.course-card:nth-child(3n) .subject-icon { background:#e1eaf9; color:#305a8d; }
-.dark .course-card:nth-child(3n + 2) .subject-icon { background:#3b3324; color:#eed09b; }
-.dark .course-card:nth-child(3n) .subject-icon { background:#263546; color:#b5d0f5; }
 .course-card:hover { border-color:var(--accent); }
 @media (prefers-reduced-motion: no-preference) {
  .main-shell > main { animation:workspace-arrive 320ms ease-out both; }
