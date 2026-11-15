@@ -74,7 +74,7 @@ private struct CategoryGradeRow: View {
 
 struct AssignmentDetailRow: View {
     let assignment: Assignment
-    let isExpanded: Binding<Bool>
+    @Binding var isExpanded: Bool
     let edit: () -> Void
     var remove: (() -> Void)? = nil
 
@@ -84,65 +84,80 @@ struct AssignmentDetailRow: View {
     }
 
     var body: some View {
-        DisclosureGroup(isExpanded: isExpanded) {
-            VStack(alignment: .leading, spacing: 10) {
-                detail("Category", assignment.category)
-                if !assignment.due.isEmpty { detail("Due", GradeMath.shortDate(assignment.due)) }
-                if let score { detail("Score", GradeMath.percent(score)) }
-                else if assignment.earned != nil && assignment.possible <= 0 { detail("Score", "Extra credit") }
-                if assignment.excluded == true {
-                    Text("Not for grading")
-                        .font(SchoolityText.meta)
-                        .foregroundStyle(SchoolityPalette.muted)
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isExpanded.toggle()
                 }
-                if assignment.hypothetical == true {
-                    SchoolityTag(text: "Hypothetical", emphasis: true)
-                }
-                HStack(spacing: 18) {
-                    Button("Edit hypothetical score", systemImage: "pencil", action: edit)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(SchoolityPalette.ink)
-                        .frame(minHeight: 44)
-                    if let remove {
-                        Button(role: .destructive, action: remove) {
-                            Label("Remove", systemImage: "trash")
-                                .font(.subheadline.weight(.medium))
-                                .frame(minHeight: 44)
+            } label: {
+                HStack(spacing: 12) {
+                    AssignmentScoreIndicator(score: score)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(assignment.title)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(SchoolityPalette.ink)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                        HStack(spacing: 6) {
+                            Text(points)
+                                .font(.caption)
+                                .foregroundStyle(SchoolityPalette.muted)
+                                .monospacedDigit()
+                            if !assignment.category.isEmpty {
+                                SchoolityTag(text: assignment.category)
+                            }
+                            if assignment.hypothetical == true {
+                                SchoolityTag(text: "Hypothetical", emphasis: true)
+                            }
                         }
                     }
                     Spacer(minLength: 0)
+                    Image(systemName: "chevron.down")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(SchoolityPalette.muted)
+                        .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                        .accessibilityHidden(true)
                 }
-                .padding(.top, 2)
+                .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
+                .contentShape(Rectangle())
             }
-            .padding(.vertical, 8)
-        } label: {
-            HStack(spacing: 12) {
-                AssignmentScoreIndicator(score: score)
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(assignment.title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(SchoolityPalette.ink)
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                    HStack(spacing: 6) {
-                        Text(points)
-                            .font(.caption)
+            .buttonStyle(.plain)
+            .accessibilityValue(isExpanded ? "Expanded" : "Collapsed")
+
+            if isExpanded {
+                VStack(alignment: .leading, spacing: 10) {
+                    detail("Category", assignment.category)
+                    if !assignment.due.isEmpty { detail("Due", GradeMath.shortDate(assignment.due)) }
+                    if let score { detail("Score", GradeMath.percent(score)) }
+                    else if assignment.earned != nil && assignment.possible <= 0 { detail("Score", "Extra credit") }
+                    if assignment.excluded == true {
+                        Text("Not for grading")
+                            .font(SchoolityText.meta)
                             .foregroundStyle(SchoolityPalette.muted)
-                            .monospacedDigit()
-                        if !assignment.category.isEmpty {
-                            SchoolityTag(text: assignment.category)
-                        }
-                        if assignment.hypothetical == true {
-                            SchoolityTag(text: "Hypothetical", emphasis: true)
-                        }
                     }
+                    if assignment.hypothetical == true {
+                        SchoolityTag(text: "Hypothetical", emphasis: true)
+                    }
+                    HStack(spacing: 18) {
+                        Button("Edit hypothetical score", systemImage: "pencil", action: edit)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(SchoolityPalette.ink)
+                            .frame(minHeight: 44)
+                        if let remove {
+                            Button(role: .destructive, action: remove) {
+                                Label("Remove", systemImage: "trash")
+                                    .font(.subheadline.weight(.medium))
+                                    .frame(minHeight: 44)
+                            }
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.top, 2)
                 }
-                Spacer(minLength: 0)
+                .padding(.vertical, 8)
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
-            .frame(minHeight: 52)
-            .contentShape(Rectangle())
         }
-        .tint(SchoolityPalette.muted)
     }
 
     private func detail(_ label: String, _ value: String) -> some View {
