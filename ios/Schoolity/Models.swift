@@ -155,7 +155,7 @@ enum GradeMath {
         return date(value, iso: ISO8601DateFormatter(), formatter: formatter)
     }
 
-    private static func date(_ value: String, iso: ISO8601DateFormatter, formatter: DateFormatter) -> Date? {
+    fileprivate static func date(_ value: String, iso: ISO8601DateFormatter, formatter: DateFormatter) -> Date? {
         if let date = iso.date(from: value) { return date }
         for pattern in ["M/d/yyyy", "M/d/yyyy h:mm:ss a", "yyyy-MM-dd", "yyyy-MM-dd'T'HH:mm:ss", "MMM d, yyyy"] {
             formatter.dateFormat = pattern
@@ -213,18 +213,27 @@ extension Gradebook {
     /// Latest due dates across every course in the selected reporting period.
     /// Ties keep the district's course and assignment order.
     var recentAssignments: [RecentAssignment] {
-        var entries: [(index: Int, item: RecentAssignment)] = []
+        let iso = ISO8601DateFormatter()
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        var dates: [String: TimeInterval] = [:]
+        var entries: [(index: Int, due: TimeInterval, item: RecentAssignment)] = []
         for course in courses {
             for assignment in course.assignments {
-                entries.append((entries.count, RecentAssignment(
+                let due: TimeInterval
+                if let cached = dates[assignment.due] { due = cached }
+                else {
+                    due = GradeMath.date(assignment.due, iso: iso, formatter: formatter)?.timeIntervalSince1970 ?? 0
+                    dates[assignment.due] = due
+                }
+                entries.append((entries.count, due, RecentAssignment(
                     id: "\(course.id)|\(assignment.id)", course: course, assignment: assignment)))
             }
         }
         entries.sort { left, right in
-            let leftDue = GradeMath.date(left.item.assignment.due)?.timeIntervalSince1970 ?? 0
-            let rightDue = GradeMath.date(right.item.assignment.due)?.timeIntervalSince1970 ?? 0
-            if leftDue == rightDue { return left.index < right.index }
-            return leftDue > rightDue
+            if left.due == right.due { return left.index < right.index }
+            return left.due > right.due
         }
         return entries.prefix(8).map { $0.item }
     }

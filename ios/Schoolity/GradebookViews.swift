@@ -14,6 +14,7 @@ struct GradebookView: View {
 
 private struct GradebookContent: View, Equatable {
     @State private var selectedCourse: Course?
+    @State private var recentAssignments: [RecentAssignment] = []
     let book: Gradebook?
     let isLoading: Bool
     let error: String?
@@ -68,7 +69,7 @@ private struct GradebookContent: View, Equatable {
                     }
                 }
 
-                RecentAssignmentsCard(items: book.recentAssignments) { course in
+                RecentAssignmentsCard(items: recentAssignments) { course in
                     selectedCourse = course
                 }
                     .schoolityPageRow(bottom: 16)
@@ -91,6 +92,9 @@ private struct GradebookContent: View, Equatable {
             }
         }
         .schoolityPageList()
+        .onChange(of: book, initial: true) { _, next in
+            recentAssignments = next?.recentAssignments ?? []
+        }
         .animation(nil, value: book)
         .navigationTitle("Gradebook")
         .schoolityNavigationChrome()
