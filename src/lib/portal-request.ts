@@ -23,6 +23,21 @@ export async function requestPortal(
   body: Record<string, unknown>,
   transport: typeof fetch = fetch,
 ): Promise<Record<string, unknown>> {
+  // Only repeat reads: sign-in, sign-out and session renewal must run once.
+  for (let attempt = 0; ; attempt++) {
+    try { return await requestOnce(body, transport); }
+    catch (error) {
+      if (body.action !== 'read' || attempt >= 2 || !(error instanceof RequestFailure) ||
+        ![0, 502, 503, 504].includes(error.status)) throw error;
+      await new Promise(resolve => setTimeout(resolve, attempt === 0 ? 400 : 1000));
+    }
+  }
+}
+
+async function requestOnce(
+  body: Record<string, unknown>,
+  transport: typeof fetch,
+): Promise<Record<string, unknown>> {
   let response: Response;
   try {
     response = await transport('/api/portal', {
@@ -48,11 +63,6 @@ export async function requestPortal(
       'Too many sign-in attempts. Wait ten minutes before trying again.',
       429,
     );
-  if (response.status >= 500)
-    throw new RequestFailure(
-      'Your school’s connection is temporarily unavailable. Try again in a moment; your current workspace has been kept.',
-      response.status,
-    );
   let answer: Record<string, unknown>;
   try {
     const raw: unknown = await response.json();
@@ -62,15 +72,18 @@ export async function requestPortal(
         : {};
   } catch {
     throw new RequestFailure(
-      'The connection returned an unreadable response. Try again in a moment.',
+      response.status >= 500
+        ? 'Your school’s connection is temporarily unavailable. Try again in a moment; your current workspace has been kept.'
+        : 'The connection returned an unreadable response. Try again in a moment.',
       response.status,
     );
   }
   if (!response.ok) {
     const provided = typeof answer.error === 'string' ? answer.error : '';
     throw new RequestFailure(
-      provided ||
-        'This request could not be completed. Check the information and try again.',
+      provided || (response.status >= 500
+        ? 'Your school’s connection is temporarily unavailable. Try again in a moment; your current workspace has been kept.'
+        : 'This request could not be completed. Check the information and try again.'),
       response.status,
     );
   }
