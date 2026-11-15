@@ -4,13 +4,13 @@ Software: a student gradebook and school-records application for Anoka-Hennepin.
 
 ## Direction
 
-Use the existing monochrome web palette and native iOS accent settings. Inter and Inter Tight remain the web faces; iOS uses Dynamic Type system faces. The product's live grades, assignments, schedules, and records carry each screen. Preserve all routes, calculations, authentication, and data fields. No marketing hero, photographs, decorative effects, timed content, or invented figures belong in the signed-in application.
+Use a paper-white web canvas with deep teal navigation, a forest-green grade summary, and pale lime selection. Course icons cycle through mint, amber, and blue as decorative markers; their colors never encode achievement. Native iOS accent settings remain independent. Inter and Inter Tight remain the web faces; iOS uses Dynamic Type system faces. The product's live grades, assignments, schedules, and records carry each screen. Preserve all routes, calculations, authentication, and data fields. No marketing hero, photographs, decorative effects, timed content, or invented figures belong in the signed-in application.
 
 The main action is opening a course. Put the course title and secondary teacher/location details on the left and a readable grade on the right. At accessibility text sizes, stack these elements in reading order. The iOS login and saved-sign-in screens retain their existing design.
 
 ## Shared system
 
-- Neutral canvas, one surface level, fine separators, consistent 16–20 point/pixel surface corners.
+- Lightly tinted canvas, one surface level, fine separators, consistent 16–20 point/pixel surface corners. Keep dark mode equally restrained, with brighter text and pastel icon marks.
 - A 44 point/pixel minimum control target and a visible keyboard focus ring on the web.
 - Equal page gutters. Mobile layouts stack before text or controls become compressed.
 - Course grades use tabular numerals, clear weight, and restrained color; the graph line keeps its fixed Schoolity color.

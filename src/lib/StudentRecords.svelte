@@ -1,6 +1,7 @@
 <script lang="ts">
   import { studentText, type RecordPage, type GraduationRequirement, type SubjectDetails } from './records';
   import Icon from './Icon.svelte';
+  import SelectMenu from './SelectMenu.svelte';
   let { page, loadSubject }: { page: RecordPage; loadSubject: (id: string) => Promise<SubjectDetails> } = $props();
   let year = $state(''), school = $state('');
   let openSubject = $state<string | null>(null);
@@ -111,8 +112,8 @@
   <p class="records-intro">District-reported marks and credits from previous courses.</p>
   {#if courses.length}
     <div class="record-filters">
-      <label>Year<select bind:value={year}><option value="">All years</option>{#each years as value}<option>{value}</option>{/each}</select></label>
-      <label>School<select bind:value={school}><option value="">All schools</option>{#each schools as value}<option>{value}</option>{/each}</select></label>
+      <div class="record-filter"><label for="history-year">Year</label><SelectMenu id="history-year" label="Year" bind:value={year} options={[{value: '', label: 'All years'}, ...years.map(value => ({value, label: value}))]} /></div>
+      <div class="record-filter"><label for="history-school">School</label><SelectMenu id="history-school" label="School" bind:value={school} options={[{value: '', label: 'All schools'}, ...schools.map(value => ({value, label: value}))]} /></div>
       <span role="status">{shown.length} {shown.length === 1 ? 'course' : 'courses'}</span>
     </div>
     {#if shown.length}
@@ -135,7 +136,6 @@
   {:else}<p class="records-empty">No course history was returned by your district.</p>{/if}
   </details>
 {:else if page.kind === 'attendance'}
-  <p class="records-intro">District-reported absences and tardies. Period totals can include several entries on one day.</p>
   {#if page.totals.length}<dl class="attendance-totals">{#each page.totals as total}<div><dt>{total.label}</dt><dd>{total.value}</dd></div>{/each}</dl>{/if}
   {#each page.days as day}
     <section class="student-record-section attendance-day" aria-label={date(day.date)}>

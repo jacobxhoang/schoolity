@@ -1,11 +1,6 @@
 /* Signed-in workspace. One layer, tokens only, no overrides. */
 
 .app-shell.workspace {
-  --nav-bg: var(--panel);
-  --nav-ink: var(--ink);
-  --nav-muted: var(--muted);
-  --nav-line: var(--line);
-  --nav-hover: var(--field);
   display: flex;
   min-height: 100vh;
   background: var(--canvas);
@@ -15,6 +10,7 @@
 /* Sidebar */
 
 #school-navigation {
+  --focus-ring: 2px solid #eff9f2;
   position: fixed;
   inset: 0 auto 0 0;
   z-index: 30;
@@ -86,8 +82,8 @@ nav button:hover {
   color: var(--nav-ink);
 }
 nav button.active {
-  background: var(--nav-ink);
-  color: var(--nav-bg);
+  background: var(--nav-selected);
+  color: var(--nav-selected-ink);
   font-weight: 600;
 }
 nav button svg {
@@ -271,7 +267,7 @@ nav button svg {
 
 h1 {
   font-family: var(--font-display);
-  font-size: var(--t-h1);
+  font-size: clamp(32px, 3vw, 42px);
   font-weight: 600;
   letter-spacing: -0.04em;
   line-height: 1.05;
@@ -380,25 +376,24 @@ select option {
   flex-wrap: wrap;
   gap: 24px;
   margin-bottom: 32px;
-  padding: 24px;
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  background: var(--panel);
+  padding: 28px;
+  border: 1px solid var(--summary);
+  border-radius: var(--r-lg);
+  background: var(--summary);
+  color: var(--summary-ink);
+  box-shadow: 0 12px 30px -24px #143f3a;
 }
 .stat-card {
   flex: 1;
   min-width: 120px;
   padding: 0;
 }
-.stat-card + .stat-card {
-  padding-left: 24px;
-  border-left: 1px solid var(--line);
-}
+.stat-card + .stat-card { padding-left:24px; border-left:1px solid var(--summary-line); }
 .stat-card > span {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: var(--muted);
+  color: var(--summary-muted);
   font-size: var(--t-meta);
   font-weight: 500;
 }
@@ -406,14 +401,14 @@ select option {
   display: block;
   margin: 8px 0 2px;
   font-family: var(--font-display);
-  font-size: 28px;
+  font-size: 44px;
   font-weight: 600;
   letter-spacing: -0.045em;
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
 }
 .stat-card small {
-  color: var(--faint);
+  color: var(--summary-muted);
   font-size: var(--t-mini);
 }
 
@@ -574,8 +569,7 @@ select option {
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: var(--field);
-  color: var(--ink);
+  background: var(--accent-soft); color: var(--accent-ink);
 }
 .course-card-top > .subject-icon {
   grid-column: 1;
@@ -1122,6 +1116,14 @@ td small {
   gap: 8px;
   color: var(--muted);
   font-size: var(--t-mini);
+}
+.record-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
 }
 .record-filters select {
   padding: 0 10px;
@@ -1732,4 +1734,17 @@ td small {
   .stat-card > strong {
     font-size: 24px;
   }
+}
+
+/* Subject markers add variety without assigning meaning to grade colors. */
+.course-card:nth-child(3n + 2) .subject-icon { background:#f5e9d0; color:#78541d; }
+.course-card:nth-child(3n) .subject-icon { background:#e1eaf9; color:#305a8d; }
+.dark .course-card:nth-child(3n + 2) .subject-icon { background:#3b3324; color:#eed09b; }
+.dark .course-card:nth-child(3n) .subject-icon { background:#263546; color:#b5d0f5; }
+.course-card:hover { border-color:var(--accent); }
+@media (prefers-reduced-motion: no-preference) {
+ .main-shell > main { animation:workspace-arrive 320ms ease-out both; }
+ .refresh-button:hover { transform:translateY(-1px); }
+ .course-card:active { transform:translateY(0) scale(.995); }
+ @keyframes workspace-arrive { from { opacity:.5; transform:translateY(6px); } to { opacity:1; transform:none; } }
 }

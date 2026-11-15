@@ -4,6 +4,7 @@
   let reducedMotion = $state(false);
   import { readGradeCache, saveGradeCache, clearGradeCache } from '$lib/grade-cache';
   import GradeSummary from '$lib/GradeSummary.svelte';
+  import SelectMenu from '$lib/SelectMenu.svelte';
   import StudentRecords from '$lib/StudentRecords.svelte';
   import { readRecords, type RecordPage, type SubjectDetails } from '$lib/records';
   import {
@@ -1038,20 +1039,7 @@
                           >Excluded from calculation</small
                         >{/if}</td
                     ><td data-label="Category"
-                      >{#if hypothetical}<select
-                          class="category-select"
-                          aria-label={`Category for ${a.title}`}
-                          value={a.category}
-                          onchange={(e) =>
-                            editAssignment(
-                              a.id,
-                              'category',
-                              e.currentTarget.value,
-                            )}
-                          >{#each categoryOptions as category}<option
-                              value={category}>{category}</option
-                            >{/each}</select
-                        >{:else}<span class="subtle-tag">{a.category}</span
+                      >{#if hypothetical}<SelectMenu label={`Category for ${a.title}`} value={a.category} options={categoryOptions.map(category => ({ value: category, label: category }))} onchange={(value) => editAssignment(a.id, 'category', value)} />{:else}<span class="subtle-tag">{a.category}</span
                         >{/if}</td
                     ><td data-label="Due">{dateLabel(a.due)}</td><td
                       data-label="Score"
@@ -1136,15 +1124,7 @@
                 </div>
               </div>
               <div class="term-line">
-                <label for="reporting-period">Term</label><select
-                  id="reporting-period"
-                  aria-label="Reporting period"
-                  value={data.currentTerm}
-                  onchange={(e) => changeTerm(e.currentTarget.value)}
-                  >{#each data.terms as term}<option value={term.id}
-                      >{term.name}</option
-                    >{/each}</select
-                ><span>{refreshLabel}</span>
+                <label for="reporting-period">Term</label><SelectMenu id="reporting-period" label="Reporting period" value={String(data.currentTerm)} options={data.terms.map(term => ({ value: String(term.id), label: term.name }))} onchange={changeTerm} /><span>{refreshLabel}</span>
               </div>
               <div class="course-grid">
                 {#each data.courses as course}<button
@@ -1263,14 +1243,7 @@
           </div>
           {#if tab === 'schedule' && schedule.terms.length}
             <div class="term-line">
-              <span class="green-dot"></span><select
-                aria-label="Schedule term"
-                value={schedule.currentTerm}
-                onchange={(e) => changeScheduleTerm(e.currentTarget.value)}
-                >{#each schedule.terms as term}<option value={term.id}
-                    >{term.name}</option
-                  >{/each}</select
-              ><span
+              <span class="green-dot"></span><SelectMenu label="Schedule term" value={String(schedule.currentTerm)} options={schedule.terms.map(term => ({ value: String(term.id), label: term.name }))} onchange={changeScheduleTerm} /><span
                 >{selectedScheduleTerm?.classes.length ?? 0} classes</span
               >
             </div>
