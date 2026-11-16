@@ -653,19 +653,8 @@ struct ScoreEditor: View {
                 }
             }
             .onAppear {
-                let knownPossible = GradeMath.input(assignment.possible)
-                possible = knownPossible
-                // A district assignment that is still ungraded but already
-                // states what it is out of starts at full credit, so the
-                // hypothetical score does not have to be typed twice.
-                if assignment.earned == nil,
-                   assignment.hypothetical != true,
-                   assignment.possible.isFinite,
-                   assignment.possible > 0 {
-                    earned = knownPossible
-                } else {
-                    earned = assignment.earned.map(GradeMath.input) ?? ""
-                }
+                earned = assignment.earned.map(GradeMath.input) ?? ""
+                possible = GradeMath.input(assignment.possible)
             }
         }
     }
@@ -743,7 +732,11 @@ private struct RecentAssignmentRow: View {
     private var scoreLabel: String {
         let assignment = item.assignment
         if assignment.excluded == true { return "Not for grading" }
-        guard let earned = assignment.earned else { return "Not graded" }
+        guard let earned = assignment.earned else {
+            let possible = assignment.possible
+            guard possible.isFinite, possible > 0 else { return "Not graded" }
+            return "\(GradeMath.points(possible)) \(possible == 1 ? "point" : "points") possible"
+        }
         if assignment.possible <= 0 { return "Extra credit" }
         return "\(GradeMath.points(earned)) / \(GradeMath.points(assignment.possible))"
     }

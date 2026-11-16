@@ -171,7 +171,11 @@ struct AssignmentDetailRow: View {
     }
 
     private var points: String {
-        guard let earned = assignment.earned else { return "Not graded" }
+        guard let earned = assignment.earned else {
+            let possible = assignment.possible
+            guard possible.isFinite, possible > 0 else { return "Not graded" }
+            return "\(GradeMath.points(possible)) \(possible == 1 ? "point" : "points") possible"
+        }
         if assignment.possible <= 0 { return "Extra credit · \(GradeMath.points(earned)) points" }
         return "\(GradeMath.points(earned)) / \(GradeMath.points(assignment.possible))"
     }
