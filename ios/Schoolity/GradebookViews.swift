@@ -231,9 +231,6 @@ struct GradebookStatsCard: View {
                     .lineLimit(1)
                     .contentTransition(.numericText(value: average ?? 0))
                     .animation(SchoolityMotion.calm(SchoolityMotion.value, reduceMotion: reduceMotion), value: average)
-                Text("Unweighted")
-                    .font(.caption)
-                    .foregroundStyle(SchoolityPalette.faint)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -673,10 +670,6 @@ private struct RecentAssignmentsCard: View {
                 .font(SchoolityText.sectionTitle)
                 .tracking(-0.4)
                 .foregroundStyle(SchoolityPalette.ink)
-            Text("Latest due dates in this reporting period")
-                .font(SchoolityText.meta)
-                .foregroundStyle(SchoolityPalette.faint)
-                .padding(.top, 3)
 
             if items.isEmpty {
                 Text("No assignments in this reporting period.")
