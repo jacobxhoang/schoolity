@@ -114,7 +114,6 @@ private struct GradebookContent: View, Equatable {
 
 /// The website's term line: a bordered row holding the reporting period and freshness.
 private struct TermLine: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let book: Gradebook
     let isLoading: Bool
     let updated: Date?
@@ -125,12 +124,19 @@ private struct TermLine: View {
     }
 
     var body: some View {
-        SchoolityMenu(
-            title: "Reporting period",
-            options: book.terms.map { SchoolityMenuOption(value: $0.id, label: $0.name) },
-            value: Binding(get: { book.currentTerm }, set: { select($0) }),
-            isEnabled: !isLoading
-        ) { isOpen in
+        Menu {
+            ForEach(book.terms) { term in
+                Button {
+                    select(term.id)
+                } label: {
+                    if term.id == book.currentTerm {
+                        Label(term.name, systemImage: "checkmark")
+                    } else {
+                        Text(term.name)
+                    }
+                }
+            }
+        } label: {
             HStack(spacing: 10) {
                 Circle()
                     .fill(SchoolityPalette.ink)
@@ -141,8 +147,10 @@ private struct TermLine: View {
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(SchoolityPalette.ink)
                         .contentTransition(.opacity)
-                        .animation(SchoolityMotion.calm(.easeOut(duration: 0.2), reduceMotion: reduceMotion), value: currentName)
-                    SchoolityMenuChevron(isOpen: isOpen)
+                        .animation(.easeInOut(duration: 0.2), value: currentName)
+                    Image(systemName: "chevron.down")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(SchoolityPalette.muted)
                 }
                 Spacer(minLength: 8)
                 if isLoading {
@@ -165,6 +173,8 @@ private struct TermLine: View {
                     .allowsHitTesting(false)
             }
         }
+        .disabled(isLoading)
+        .accessibilityLabel("Reporting period, \(currentName)")
     }
 }
 

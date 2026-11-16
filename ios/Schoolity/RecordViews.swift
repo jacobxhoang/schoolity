@@ -603,10 +603,7 @@ struct CourseHistoryView: View {
                     HairlineDivider().padding(.top, 12)
                     VStack(alignment: .leading, spacing: 0) {
                         Button {
-                            let expanded = expansion(key, requirement)
-                            withAnimation(reduceMotion ? nil : SchoolityMotion.disclosure) {
-                                expanded.wrappedValue.toggle()
-                            }
+                            expansion(key, requirement).wrappedValue.toggle()
                         } label: {
                             HStack(spacing: 12) {
                                 GraduationRequirementSummary(requirement: requirement)
@@ -614,6 +611,7 @@ struct CourseHistoryView: View {
                                 Image(systemName: "chevron.down")
                                     .font(.caption.weight(.semibold))
                                     .rotationEffect(.degrees(openRequirement == key ? 180 : 0))
+                                    .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: openRequirement == key)
                                     .accessibilityHidden(true)
                             }
                             .frame(minHeight: 44)
@@ -621,16 +619,16 @@ struct CourseHistoryView: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityValue(openRequirement == key ? "Expanded" : "Collapsed")
-                        if openRequirement == key {
-                        GraduationRequirementDetail(
-                            key: key,
-                            requirement: requirement,
-                            details: details,
-                            loading: detailLoading,
-                            errors: detailErrors,
-                            retry: { Task { await loadSubject(key, requirement) } }
-                        )
-                        .transition(.opacity)
+
+                        SchoolityReveal(isExpanded: openRequirement == key) {
+                            GraduationRequirementDetail(
+                                key: key,
+                                requirement: requirement,
+                                details: details,
+                                loading: detailLoading,
+                                errors: detailErrors,
+                                retry: { Task { await loadSubject(key, requirement) } }
+                            )
                         }
                     }
                     .clipped()

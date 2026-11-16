@@ -447,6 +447,50 @@ struct SchoolitySelectField: View {
     }
 }
 
+// MARK: - Disclosure
+
+/// Reveals variable-height content by animating an explicit height instead of
+/// inserting it into the row. A `List` doesn't interpolate a row's height on its
+/// own, so adding content with an `if` makes the card clip and the row jump. An
+/// animated height keeps the row, the card, and the reveal in step every frame.
+struct SchoolityReveal<Content: View>: View {
+    let isExpanded: Bool
+    let content: Content
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var contentHeight: CGFloat = 0
+
+    init(isExpanded: Bool, @ViewBuilder content: () -> Content) {
+        self.isExpanded = isExpanded
+        self.content = content()
+    }
+
+    var body: some View {
+        content
+            .fixedSize(horizontal: false, vertical: true)
+            .background {
+                GeometryReader { proxy in
+                    Color.clear.preference(key: SchoolityRevealHeightKey.self, value: proxy.size.height)
+                }
+            }
+            .onPreferenceChange(SchoolityRevealHeightKey.self) { measured in
+                contentHeight = measured
+            }
+            .frame(height: isExpanded ? contentHeight : 0, alignment: .top)
+            .clipped()
+            .allowsHitTesting(isExpanded)
+            .accessibilityHidden(!isExpanded)
+            .animation(reduceMotion ? nil : SchoolityMotion.disclosure, value: isExpanded)
+    }
+}
+
+private struct SchoolityRevealHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
 /// A section heading with the website's small count badge.
 struct SectionHeading: View {
     let title: String

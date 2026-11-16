@@ -70,33 +70,44 @@ struct ScheduleView: View {
     }
 
     private func termLine(_ schedule: ScheduleData) -> some View {
-        SchoolityMenu(
-            title: "Term",
-            options: schedule.terms.map { SchoolityMenuOption(value: $0.id, label: $0.name) },
-            value: Binding(get: { termID(schedule) }, set: { selectedTerm = $0 })
-        ) { isOpen in
-            HStack(spacing: 10) {
-                Circle()
-                    .fill(SchoolityPalette.ink)
-                    .frame(width: 6, height: 6)
-                    .accessibilityHidden(true)
+        HStack(spacing: 10) {
+            Circle()
+                .fill(SchoolityPalette.ink)
+                .frame(width: 6, height: 6)
+                .accessibilityHidden(true)
+            Menu {
+                ForEach(schedule.terms) { term in
+                    Button {
+                        selectedTerm = term.id
+                    } label: {
+                        if term.id == termID(schedule) {
+                            Label(term.name, systemImage: "checkmark")
+                        } else {
+                            Text(term.name)
+                        }
+                    }
+                }
+            } label: {
                 HStack(spacing: 6) {
                     Text(visibleTerm(in: schedule)?.name ?? "Term")
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(SchoolityPalette.ink)
-                    SchoolityMenuChevron(isOpen: isOpen)
+                    Image(systemName: "chevron.down")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(SchoolityPalette.muted)
                 }
-                Spacer(minLength: 0)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
             }
-            .padding(.horizontal, 14)
-            .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
-            .contentShape(Rectangle())
-            .background(SchoolityPalette.panel, in: RoundedRectangle(cornerRadius: SchoolityRadius.panel, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: SchoolityRadius.panel, style: .continuous)
-                    .strokeBorder(SchoolityPalette.line, lineWidth: 1)
-                    .allowsHitTesting(false)
-            }
+            .accessibilityLabel("Term, \(visibleTerm(in: schedule)?.name ?? "Term")")
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 14)
+        .frame(minHeight: 52)
+        .background(SchoolityPalette.panel, in: RoundedRectangle(cornerRadius: SchoolityRadius.panel, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: SchoolityRadius.panel, style: .continuous)
+                .strokeBorder(SchoolityPalette.line, lineWidth: 1)
         }
     }
 

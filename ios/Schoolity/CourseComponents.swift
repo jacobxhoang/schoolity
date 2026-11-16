@@ -87,9 +87,7 @@ struct AssignmentDetailRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Button {
-                withAnimation(reduceMotion ? nil : SchoolityMotion.disclosure) {
-                    isExpanded.toggle()
-                }
+                isExpanded.toggle()
             } label: {
                 HStack(spacing: 12) {
                     AssignmentScoreIndicator(score: score)
@@ -117,6 +115,7 @@ struct AssignmentDetailRow: View {
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(SchoolityPalette.muted)
                         .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                        .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: isExpanded)
                         .accessibilityHidden(true)
                 }
                 .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
@@ -125,7 +124,7 @@ struct AssignmentDetailRow: View {
             .buttonStyle(.plain)
             .accessibilityValue(isExpanded ? "Expanded" : "Collapsed")
 
-            if isExpanded {
+            SchoolityReveal(isExpanded: isExpanded) {
                 VStack(alignment: .leading, spacing: 10) {
                     detail("Category", assignment.category)
                     if !assignment.due.isEmpty { detail("Due", GradeMath.shortDate(assignment.due)) }
@@ -156,10 +155,8 @@ struct AssignmentDetailRow: View {
                     .padding(.top, 2)
                 }
                 .padding(.vertical, 8)
-                .transition(reduceMotion ? .identity : .opacity.combined(with: .move(edge: .top)))
             }
         }
-        // Keep entering and exiting details inside their own row during resizing.
         .clipped()
     }
 
