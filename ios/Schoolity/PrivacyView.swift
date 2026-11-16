@@ -3,6 +3,8 @@ import SwiftUI
 /// Mirrors the website's privacy panel for the standalone app, which talks to
 /// the district directly and never to a Schoolity server.
 struct PrivacyView: View {
+    @State private var connectionExpanded = false
+
     var body: some View {
         List {
             section(
@@ -37,7 +39,27 @@ struct PrivacyView: View {
             )
 
             VStack(alignment: .leading, spacing: 0) {
-                DisclosureGroup {
+                Button {
+                    connectionExpanded.toggle()
+                } label: {
+                    HStack(spacing: 12) {
+                        Text("Connection details")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(SchoolityPalette.ink)
+                        Spacer(minLength: 8)
+                        Image(systemName: "chevron.down")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(SchoolityPalette.muted)
+                            .rotationEffect(.degrees(connectionExpanded ? 180 : 0))
+                            .accessibilityHidden(true)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityValue(connectionExpanded ? "Expanded" : "Collapsed")
+
+                SchoolityReveal(isExpanded: connectionExpanded) {
                     VStack(alignment: .leading, spacing: 12) {
                         HairlineDivider().padding(.vertical, 8)
                         detail("When you connect", "Schoolity signs in to the district from this iPhone. The district's session cookies stay in memory for the current session only.")
@@ -45,14 +67,7 @@ struct PrivacyView: View {
                         detail("About this version", "This build reads the same district records the StudentVUE website shows, including course history through your signed-in district session.")
                     }
                     .padding(.bottom, 4)
-                } label: {
-                    Text("Connection details")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(SchoolityPalette.ink)
-                        .frame(minHeight: 44, alignment: .leading)
-                        .contentShape(Rectangle())
                 }
-                .tint(SchoolityPalette.muted)
             }
             .schoolityCardRow(bottom: 16)
 
