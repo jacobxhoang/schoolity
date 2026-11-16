@@ -251,6 +251,18 @@
       throw e;
     }
   }
+  function schoolFromRecord(page: RecordPage | undefined): string {
+    if (!page || page.kind !== "student") return "";
+    for (const section of page.sections) {
+      for (const field of section.fields) {
+        if (field.label.toLowerCase().includes("school") && field.value) {
+          return field.value;
+        }
+      }
+    }
+    return "";
+  }
+
   async function load(term?: number) {
     const version = ++generation;
     resourceLoads.clear();
@@ -270,6 +282,28 @@
       data = grades(g.data);
       if (typeof g.cacheIdentity === "string") cacheIdentity = g.cacheIdentity;
       if (p) person = profile(p.data);
+      if (person.school === "Your school") {
+        const cached = schoolFromRecord(recordPages.student);
+        if (cached) person = { ...person, school: cached };
+        else {
+          // The profile payload can omit the school. The Student Info page has
+          // it in its School section, so load that once and reuse it.
+          try {
+            const record = await api({ action: "read", resource: "student" });
+            if (version !== generation || !authenticated) return;
+            const page = readRecords("student", record.data);
+            if (page.kind === "student") {
+              const school = schoolFromRecord(page);
+              if (school) person = { ...person, school };
+              if (!recordPages.student) {
+                recordPages = { ...recordPages, student: page };
+              }
+            }
+          } catch {
+            /* Keep the district placeholder if Student Info cannot load. */
+          }
+        }
+      }
       lastRefresh = Date.now();
       try {
         saveGradeCache(localStorage, cacheIdentity, data, lastRefresh);
