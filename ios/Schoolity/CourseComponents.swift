@@ -157,7 +157,6 @@ struct AssignmentDetailRow: View {
                 .padding(.vertical, 8)
             }
         }
-        .clipped()
     }
 
     private func detail(_ label: String, _ value: String) -> some View {

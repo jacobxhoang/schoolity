@@ -631,7 +631,6 @@ struct CourseHistoryView: View {
                             )
                         }
                     }
-                    .clipped()
                     .tint(SchoolityPalette.muted)
                 }
             }

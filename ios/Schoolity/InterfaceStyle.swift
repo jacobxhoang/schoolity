@@ -449,15 +449,17 @@ struct SchoolitySelectField: View {
 
 // MARK: - Disclosure
 
-/// Reveals variable-height content by animating an explicit height instead of
-/// inserting it into the row. A `List` doesn't interpolate a row's height on its
-/// own, so adding content with an `if` makes the card clip and the row jump. An
-/// animated height keeps the row, the card, and the reveal in step every frame.
+/// Shows or hides variable-height content without resizing the row over time.
+/// A `List` doesn't interpolate a row's height: with an animated height the row
+/// lays the content out in an intermediate frame, so it centres the taller
+/// content and clips both its top and bottom while it settles. The content here
+/// appears at its final size and fades in instead, and hidden content leaves the
+/// accessibility tree.
 struct SchoolityReveal<Content: View>: View {
     let isExpanded: Bool
     let content: Content
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var contentHeight: CGFloat = 0
+    @State private var visible = false
 
     init(isExpanded: Bool, @ViewBuilder content: () -> Content) {
         self.isExpanded = isExpanded
@@ -465,29 +467,13 @@ struct SchoolityReveal<Content: View>: View {
     }
 
     var body: some View {
-        content
-            .fixedSize(horizontal: false, vertical: true)
-            .background {
-                GeometryReader { proxy in
-                    Color.clear.preference(key: SchoolityRevealHeightKey.self, value: proxy.size.height)
-                }
-            }
-            .onPreferenceChange(SchoolityRevealHeightKey.self) { measured in
-                contentHeight = measured
-            }
-            .frame(height: isExpanded ? contentHeight : 0, alignment: .top)
-            .clipped()
-            .allowsHitTesting(isExpanded)
-            .accessibilityHidden(!isExpanded)
-            .animation(reduceMotion ? nil : SchoolityMotion.disclosure, value: isExpanded)
-    }
-}
-
-private struct SchoolityRevealHeightKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = max(value, nextValue())
+        if isExpanded {
+            content
+                .opacity(visible ? 1 : 0)
+                .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: visible)
+                .onAppear { visible = true }
+                .onDisappear { visible = false }
+        }
     }
 }
 
