@@ -653,8 +653,19 @@ struct ScoreEditor: View {
                 }
             }
             .onAppear {
-                earned = assignment.earned.map(GradeMath.input) ?? ""
-                possible = GradeMath.input(assignment.possible)
+                let knownPossible = GradeMath.input(assignment.possible)
+                possible = knownPossible
+                // A district assignment that is still ungraded but already
+                // states what it is out of starts at full credit, so the
+                // hypothetical score does not have to be typed twice.
+                if assignment.earned == nil,
+                   assignment.hypothetical != true,
+                   assignment.possible.isFinite,
+                   assignment.possible > 0 {
+                    earned = knownPossible
+                } else {
+                    earned = assignment.earned.map(GradeMath.input) ?? ""
+                }
             }
         }
     }
