@@ -73,6 +73,7 @@ private struct CategoryGradeRow: View {
 }
 
 struct AssignmentDetailRow: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let assignment: Assignment
     @Binding var isExpanded: Bool
     let edit: () -> Void
@@ -86,7 +87,7 @@ struct AssignmentDetailRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Button {
-                withAnimation(.easeInOut(duration: 0.14)) {
+                withAnimation(reduceMotion ? nil : SchoolityMotion.disclosure) {
                     isExpanded.toggle()
                 }
             } label: {
@@ -155,9 +156,11 @@ struct AssignmentDetailRow: View {
                     .padding(.top, 2)
                 }
                 .padding(.vertical, 8)
-                .transition(.opacity)
+                .transition(reduceMotion ? .identity : .opacity.combined(with: .move(edge: .top)))
             }
         }
+        // Keep entering and exiting details inside their own row during resizing.
+        .clipped()
     }
 
     private func detail(_ label: String, _ value: String) -> some View {

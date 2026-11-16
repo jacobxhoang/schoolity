@@ -98,6 +98,8 @@ enum SchoolityStyle {
 /// Shared motion tokens. Every spring tier is named for the moment it covers, and
 /// Reduce Motion swaps each one for a short fade instead of removing the change.
 enum SchoolityMotion {
+    /// Frequent inline disclosures settle quickly without overshooting row height.
+    static let disclosure = Animation.snappy(duration: 0.2, extraBounce: 0)
     /// Something arriving or opening.
     static let reveal = Animation.spring(duration: 0.4, bounce: 0.14)
     /// A number people read moving to its new value. Never overshoots, so it never
