@@ -105,7 +105,9 @@ jobs:
           BUILD_ATTEMPT: ${{ github.run_attempt }}
         run: |
           set -euo pipefail
-          tag="ios-build-${BUILD_NUMBER}.${BUILD_ATTEMPT}"
+          # Old workflow run numbers already own tags like ios-build-14.1, so
+          # include the commit to keep each release tag unique.
+          tag="ios-build-${BUILD_NUMBER}.${BUILD_ATTEMPT}-${COMMIT_SHA:0:7}"
           cat > "$RUNNER_TEMP/release-notes.md" <<'NOTES'
           Native Schoolity iPhone app, packaged automatically. Simulator tests run in the separate iOS workflow; check that workflow for test results.
 
@@ -115,18 +117,24 @@ jobs:
 
           SideStore, Feather, and AltStore users can add the source: https://raw.githubusercontent.com/verityhoangjacob67/schoolity/main/app.json
           NOTES
-          gh release create "$tag" release/Schoolity.ipa \
-            --target "$COMMIT_SHA" --title "Schoolity iOS - Build ${BUILD_NUMBER}.${BUILD_ATTEMPT}" \
-            --notes-file "$RUNNER_TEMP/release-notes.md" --latest
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists; replacing its IPA."
+            gh release upload "$tag" release/Schoolity.ipa --clobber
+          else
+            gh release create "$tag" release/Schoolity.ipa \
+              --target "$COMMIT_SHA" --title "Schoolity iOS - Build ${BUILD_NUMBER}.${BUILD_ATTEMPT}" \
+              --notes-file "$RUNNER_TEMP/release-notes.md" --latest
+          fi
           url=$(gh release view "$tag" --json url --jq .url)
           echo "### [Download Schoolity.ipa]($url)" >> "$GITHUB_STEP_SUMMARY"
       - name: Update the SideStore source
         env:
+          COMMIT_SHA: ${{ github.sha }}
           BUILD_NUMBER: ${{ github.run_number }}
           BUILD_ATTEMPT: ${{ github.run_attempt }}
         run: |
           set -euo pipefail
-          tag="ios-build-${BUILD_NUMBER}.${BUILD_ATTEMPT}"
+          tag="ios-build-${BUILD_NUMBER}.${BUILD_ATTEMPT}-${COMMIT_SHA:0:7}"
           python3 .github/scripts/update_app_json.py \
             --app-json app.json \
             --ipa release/Schoolity.ipa \
