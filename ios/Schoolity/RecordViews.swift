@@ -222,34 +222,20 @@ private struct SectionContent: View {
             }
 
             ForEach(Array((section.groups ?? []).enumerated()), id: \.offset) { _, group in
-                DisclosureGroup {
+                StudentInfoDisclosure(group.title) {
                     fields(group.fields)
-                        .padding(.top, 10)
-                } label: {
-                    Text(group.title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(SchoolityPalette.ink)
-                        .frame(minHeight: 44, alignment: .leading)
                 }
-                .tint(SchoolityPalette.muted)
             }
 
             if let table = section.table {
-                DisclosureGroup {
+                StudentInfoDisclosure("\(table.rows.count) \(table.rows.count == 1 ? "row" : "rows")") {
                     VStack(alignment: .leading, spacing: 0) {
                         ForEach(Array(table.rows.enumerated()), id: \.offset) { index, row in
                             if index > 0 { HairlineDivider() }
                             StudentInfoTableRow(table: table, row: row)
                         }
                     }
-                    .padding(.top, 8)
-                } label: {
-                    Text("\(table.rows.count) \(table.rows.count == 1 ? "row" : "rows")")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(SchoolityPalette.ink)
-                        .frame(minHeight: 44, alignment: .leading)
                 }
-                .tint(SchoolityPalette.muted)
             }
 
             if let note = section.note, !note.isEmpty {
@@ -266,6 +252,54 @@ private struct SectionContent: View {
         VStack(alignment: .leading, spacing: 10) {
             ForEach(Array(fields.enumerated()), id: \.offset) { _, field in
                 StudentInfoFieldRow(field: field)
+            }
+        }
+    }
+}
+
+/// A disclosure row that the whole header opens, not just its label. The stock
+/// `DisclosureGroup` only responds inside the label's frame, which is easy to
+/// miss on a card.
+private struct StudentInfoDisclosure<Content: View>: View {
+    let title: String
+    @State private var isExpanded: Bool
+    private let content: Content
+
+    init(
+        _ title: String,
+        initiallyExpanded: Bool = false,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.title = title
+        _isExpanded = State(initialValue: initiallyExpanded)
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                isExpanded.toggle()
+            } label: {
+                HStack(spacing: 8) {
+                    Text(title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(SchoolityPalette.ink)
+                    Spacer(minLength: 8)
+                    Image(systemName: "chevron.down")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(SchoolityPalette.muted)
+                        .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                        .accessibilityHidden(true)
+                }
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityValue(isExpanded ? "Expanded" : "Collapsed")
+
+            SchoolityReveal(isExpanded: isExpanded) {
+                content
+                    .padding(.top, 10)
             }
         }
     }
