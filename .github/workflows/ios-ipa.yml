@@ -1,7 +1,13 @@
 name: iOS IPA
 
-# Manual only: this workflow never runs on a push or pull request.
+# Builds the unsigned iPhone app on iOS pushes and is the only workflow that
+# publishes it as a release. Manual runs build and upload the artifact only.
 on:
+  push:
+    branches: [main]
+    paths:
+      - "ios/**"
+      - ".github/workflows/ios-ipa.yml"
   workflow_dispatch:
 
 permissions:
@@ -67,3 +73,39 @@ jobs:
           set -euo pipefail
           echo "### Schoolity.ipa" >> "$GITHUB_STEP_SUMMARY"
           echo "Unsigned iPhone archive, $(du -h build/Schoolity.ipa | cut -f1). Download the artifact and unzip it; sign the IPA before installing." >> "$GITHUB_STEP_SUMMARY"
+
+  publish-release:
+    name: Publish IPA release
+    needs: package
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download packaged IPA
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: Schoolity-IPA
+          path: release
+      - name: Publish Schoolity.ipa
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          COMMIT_SHA: ${{ github.sha }}
+          BUILD_NUMBER: ${{ github.run_number }}
+          BUILD_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          tag="ios-build-${BUILD_NUMBER}.${BUILD_ATTEMPT}"
+          cat > "$RUNNER_TEMP/release-notes.md" <<'NOTES'
+          Native Schoolity iPhone app, packaged automatically. Simulator tests run in the separate iOS workflow; check that workflow for test results.
+
+          Connects directly to Anoka-Hennepin StudentVUE. No Schoolity/Vercel server is required. Internet access to the district is required. Older saved server sessions may require one new school sign-in.
+
+          Download **Schoolity.ipa** below. This build is unsigned and requires Apple signing before installation.
+          NOTES
+          gh release create "$tag" release/Schoolity.ipa \
+            --target "$COMMIT_SHA" --title "Schoolity iOS - Build ${BUILD_NUMBER}.${BUILD_ATTEMPT}" \
+            --notes-file "$RUNNER_TEMP/release-notes.md" --latest
+          url=$(gh release view "$tag" --json url --jq .url)
+          echo "### [Download Schoolity.ipa]($url)" >> "$GITHUB_STEP_SUMMARY"
