@@ -19,6 +19,11 @@ test("student ID preserves leading zeros and is never inferred from account iden
     profile({ studentID: Number.MAX_SAFE_INTEGER + 1 }).studentId,
     undefined,
   );
+  assert.equal(profile({ school: "Sample School" }).school, "Sample School");
+  assert.equal(
+    profile({ SchoolName: "Sample School" }).school,
+    "Sample School",
+  );
 });
 
 test("profile merges summary and detail data without losing the ID to an empty detail field", () => {

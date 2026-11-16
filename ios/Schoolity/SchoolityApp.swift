@@ -102,7 +102,7 @@ struct AccountDetailsView: View {
                             .font(.system(.title3, weight: .semibold))
                             .foregroundStyle(SchoolityPalette.ink)
                             .fixedSize(horizontal: false, vertical: true)
-                        Text(profile.school)
+                        Text(schoolName)
                             .font(SchoolityText.meta)
                             .foregroundStyle(SchoolityPalette.muted)
                         if !profile.grade.isEmpty {
@@ -185,5 +185,24 @@ struct AccountDetailsView: View {
         let version = info?["CFBundleShortVersionString"] as? String ?? "1.0.0"
         let build = info?["CFBundleVersion"] as? String ?? "1"
         return "Version \(version) (\(build))"
+    }
+
+    private var schoolName: String {
+        if let school = store.profile?.school,
+           !school.isEmpty,
+           school != "Your school" {
+            return school
+        }
+        for section in store.studentInfo?.sections ?? [] {
+            if let school = section.fields.first(where: {
+                $0.label.localizedCaseInsensitiveContains("school") && !$0.value.isEmpty
+            })?.value {
+                return school
+            }
+        }
+        if let school = store.courseHistory?.courses.first(where: { !$0.school.isEmpty })?.school {
+            return school
+        }
+        return store.profile?.school ?? "Your school"
     }
 }

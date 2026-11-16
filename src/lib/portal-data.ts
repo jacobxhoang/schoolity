@@ -135,7 +135,10 @@ export function profile(payload: unknown): Profile {
     .find((value) => value.length > 0);
   return {
     name: displayText(p.formattedName) || "Student",
-    school: displayText(p.schoolName) || "Your school",
+    school:
+      displayText(
+        p.schoolName ?? p.school ?? p.SchoolName ?? p.currentSchool,
+      ) || "Your school",
     grade: string(p.grade),
     ...(studentId ? { studentId } : {}),
   };
