@@ -73,7 +73,6 @@ private struct CategoryGradeRow: View {
 }
 
 struct AssignmentDetailRow: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let assignment: Assignment
     @Binding var isExpanded: Bool
     let edit: () -> Void
@@ -115,7 +114,6 @@ struct AssignmentDetailRow: View {
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(SchoolityPalette.muted)
                         .rotationEffect(.degrees(isExpanded ? 180 : 0))
-                        .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: isExpanded)
                         .accessibilityHidden(true)
                 }
                 .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)

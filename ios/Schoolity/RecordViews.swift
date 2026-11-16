@@ -509,7 +509,6 @@ private struct AttendancePeriodRow: View {
 
 struct CourseHistoryView: View {
     @EnvironmentObject private var store: AppStore
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var detailRevision = UUID()
     @State private var year = ""
     @State private var school = ""
@@ -611,7 +610,6 @@ struct CourseHistoryView: View {
                                 Image(systemName: "chevron.down")
                                     .font(.caption.weight(.semibold))
                                     .rotationEffect(.degrees(openRequirement == key ? 180 : 0))
-                                    .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: openRequirement == key)
                                     .accessibilityHidden(true)
                             }
                             .frame(minHeight: 44)
