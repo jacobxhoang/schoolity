@@ -44,11 +44,6 @@ struct RecordsView: View {
             }
             .buttonStyle(.plain)
             .schoolityPageRow(bottom: 14)
-
-            Text("District-reported records. Schoolity does not change them.")
-                .font(SchoolityText.meta)
-                .foregroundStyle(SchoolityPalette.muted)
-                .schoolityPageRow(bottom: 20)
         }
         .schoolityPageList()
         .navigationTitle("Records")

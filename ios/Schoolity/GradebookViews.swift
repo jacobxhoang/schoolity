@@ -487,11 +487,6 @@ struct CourseDetailView: View {
         .schoolityPageRow(bottom: 6)
         .accessibilityHint("Try a new assignment without changing school records")
 
-        Text("Local changes only.")
-            .font(SchoolityText.meta)
-            .foregroundStyle(SchoolityPalette.muted)
-            .schoolityPageRow(bottom: 14)
-
         if course.assignments.isEmpty {
             SchoolityEmptyState(
                 title: "No assignments yet",

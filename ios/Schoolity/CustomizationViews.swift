@@ -217,7 +217,7 @@ private struct GradeColorsView: View {
                     draft.defaultGradeColor = StoredColor(hex: 0x737373)
                 }
             } header: { Text("Score thresholds") } footer: {
-                Text("The highest threshold at or below a score determines its color. Swipe a threshold to delete it. Colors do not change grade calculations.")
+                Text("The highest threshold at or below a score determines its color. Swipe a threshold to delete it.")
             }
         }
         .schoolityList()
