@@ -285,7 +285,7 @@
       if (person.school === "Your school") {
         const cached = schoolFromRecord(recordPages.student);
         if (cached) person = { ...person, school: cached };
-        else {
+        else if (!recordPages.student) {
           // The profile payload can omit the school. The Student Info page has
           // it in its School section, so load that once and reuse it.
           try {
