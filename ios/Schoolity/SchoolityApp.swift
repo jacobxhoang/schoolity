@@ -1,5 +1,6 @@
 import SwiftUI
 import BackgroundTasks
+import Foundation
 
 @main
 struct SchoolityApp: App {
@@ -163,6 +164,12 @@ struct AccountDetailsView: View {
             }
             .buttonStyle(SchoolitySecondaryButtonStyle())
             .schoolityPageRow(bottom: 24)
+
+            Text(appVersion)
+                .font(.caption2)
+                .foregroundStyle(SchoolityPalette.faint)
+                .frame(maxWidth: .infinity)
+                .schoolityPageRow(bottom: 8)
         }
         .schoolityPageList()
         .task { await store.loadProfile(refresh: store.profile?.studentId == nil) }
@@ -171,5 +178,12 @@ struct AccountDetailsView: View {
         .navigationTitle("Account")
         .schoolityNavigationChrome()
         .navigationDestination(isPresented: $showSettings) { CustomizationView() }
+    }
+
+    private var appVersion: String {
+        let info = Bundle.main.infoDictionary
+        let version = info?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+        let build = info?["CFBundleVersion"] as? String ?? "1"
+        return "Version \(version) (\(build))"
     }
 }
