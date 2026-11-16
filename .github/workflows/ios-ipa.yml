@@ -1,0 +1,69 @@
+name: iOS IPA
+
+# Manual only: this workflow never runs on a push or pull request.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Build unsigned iPhone IPA
+    runs-on: macos-15
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: ios
+        shell: bash
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Select installed stable Xcode
+        run: |
+          set -euo pipefail
+          XCODE_PATH=$(python3 - <<'PY'
+          import glob, re
+          paths = []
+          for path in glob.glob('/Applications/Xcode_*.app'):
+              match = re.fullmatch(r'/Applications/Xcode_([0-9.]+)\.app', path)
+              if match:
+                  paths.append((tuple(map(int, match[1].split('.'))), path))
+          if not paths:
+              raise SystemExit('No stable Xcode installed')
+          print(max(paths)[1])
+          PY
+          )
+          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
+          xcodebuild -version
+          xcrun swift --version
+      - name: Generate Xcode project
+        run: |
+          set -euo pipefail
+          command -v xcodegen >/dev/null || brew install xcodegen
+          xcodegen generate --spec project.yml
+      - name: Compile unsigned iPhone archive
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          xcodebuild archive -project Schoolity.xcodeproj -scheme Schoolity \
+            -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath build/Schoolity.xcarchive \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" \
+            | tee build/archive.log
+          mkdir -p build/ipa/Payload
+          ditto build/Schoolity.xcarchive/Products/Applications/Schoolity.app build/ipa/Payload/Schoolity.app
+          ditto -c -k --keepParent build/ipa/Payload build/Schoolity.ipa
+      - name: Upload Schoolity.ipa
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: Schoolity-IPA
+          path: ios/build/Schoolity.ipa
+          if-no-files-found: error
+          retention-days: 7
+      - name: Summarize the IPA
+        run: |
+          set -euo pipefail
+          echo "### Schoolity.ipa" >> "$GITHUB_STEP_SUMMARY"
+          echo "Unsigned iPhone archive, $(du -h build/Schoolity.ipa | cut -f1). Download the artifact and unzip it; sign the IPA before installing." >> "$GITHUB_STEP_SUMMARY"
