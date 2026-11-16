@@ -2,7 +2,7 @@
 
 An independently implemented student dashboard for Anoka-Hennepin. A valid StudentVUE login is required to access the workspace. There is no demo entry point.
 
-The native SwiftUI iPhone app is in [`ios/`](ios/README.md). The **iOS** GitHub Actions workflow compiles the app on macOS, runs simulator tests, and publishes a single unsigned IPA to GitHub Releases after successful builds on `main`. See the [iPhone build instructions](ios/README.md) for Xcode, signing, and installation requirements.
+The native SwiftUI iPhone app is in [`ios/`](ios/README.md). The **iOS** GitHub Actions workflow compiles the app on macOS and uploads/publishes a single unsigned IPA before running simulator tests. Check the workflow result for test status. Releases are published from `main`. See the [iPhone build instructions](ios/README.md) for Xcode, signing, and installation requirements.
 
 ## Run locally
 

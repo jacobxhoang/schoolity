@@ -25,8 +25,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  compile-and-test:
-    name: Compile Swift app and run iPhone tests
+  package:
+    name: Package and upload iPhone app
     runs-on: macos-15
     timeout-minutes: 45
     defaults:
@@ -72,6 +72,53 @@ jobs:
           mkdir -p build/ipa/Payload
           ditto build/Schoolity.xcarchive/Products/Applications/Schoolity.app build/ipa/Payload/Schoolity.app
           ditto -c -k --keepParent build/ipa/Payload build/Schoolity.ipa
+      - name: Transfer IPA to release job
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: Schoolity-IPA
+          path: ios/build/Schoolity.ipa
+          if-no-files-found: error
+          retention-days: 1
+
+  test:
+    name: Run iPhone tests after IPA upload
+    needs: [package, publish-release]
+    if: always() && needs.package.result == 'success'
+    runs-on: macos-15
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: ios
+        shell: bash
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Select installed stable Xcode
+        run: |
+          set -euo pipefail
+          XCODE_PATH=$(python3 - <<'PY'
+          import glob, re
+          paths = []
+          for path in glob.glob('/Applications/Xcode_*.app'):
+              match = re.fullmatch(r'/Applications/Xcode_([0-9.]+)\.app', path)
+              if match:
+                  paths.append((tuple(map(int, match[1].split('.'))), path))
+          if not paths:
+              raise SystemExit('No stable Xcode installed')
+          print(max(paths)[1])
+          PY
+          )
+          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
+          xcodebuild -version
+          xcrun swift --version
+      - name: Generate Xcode project
+        run: |
+          set -euo pipefail
+          command -v xcodegen >/dev/null || brew install xcodegen
+          xcodegen generate --spec project.yml
+      - name: Prepare test output
+        run: mkdir -p build
       - name: Select and boot an available iPhone
         run: |
           set -euo pipefail
@@ -192,13 +239,6 @@ jobs:
             name=$(basename "$result" .xcresult)
             xcrun xcresulttool export attachments --path "$result" --output-path "build/screenshots/$name" || true
           done
-      - name: Transfer IPA to release job
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
-        with:
-          name: Schoolity-IPA
-          path: ios/build/Schoolity.ipa
-          if-no-files-found: error
-          retention-days: 1
       - name: Upload test evidence and build logs
         if: failure() || inputs.keep_test_evidence == true
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
@@ -213,13 +253,13 @@ jobs:
 
   publish-release:
     name: Publish IPA release
-    needs: compile-and-test
+    needs: package
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Download tested IPA
+      - name: Download packaged IPA
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
         with:
           name: Schoolity-IPA
@@ -235,7 +275,7 @@ jobs:
           set -euo pipefail
           tag="ios-build-${BUILD_NUMBER}.${BUILD_ATTEMPT}"
           cat > "$RUNNER_TEMP/release-notes.md" <<'NOTES'
-          Native Schoolity iPhone app, built and tested automatically.
+          Native Schoolity iPhone app, packaged automatically. Simulator tests run after this release is published. Check the associated workflow for test results.
 
           Connects directly to Anoka-Hennepin StudentVUE. No Schoolity/Vercel server is required. Internet access to the district is required. Older saved server sessions may require one new school sign-in.
 
