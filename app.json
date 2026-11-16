@@ -26,6 +26,15 @@
       "versions": [
         {
           "version": "1.0.0",
+          "buildVersion": "15",
+          "date": "2026-11-16",
+          "downloadURL": "https://github.com/verityhoangjacob67/schoolity/releases/download/ios-build-15.1-6b4ca00/Schoolity.ipa",
+          "size": 788392,
+          "minOSVersion": "17.0",
+          "sha256": "80a00133d9e3a936a50ed4b521105ebfd93dc0f8662e39d7339d60396e2a3137"
+        },
+        {
+          "version": "1.0.0",
           "buildVersion": "13",
           "date": "2026-11-16",
           "downloadURL": "https://github.com/verityhoangjacob67/schoolity/releases/download/ios-build-13.1/Schoolity.ipa",
