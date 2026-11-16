@@ -512,51 +512,60 @@ struct CourseHistoryView: View {
     @State private var detailRevision = UUID()
     @State private var year = ""
     @State private var school = ""
-    @State private var openRequirement: String?
+    @State private var openRequirements: Set<String> = []
     @State private var details: [String: SubjectDetails] = [:]
     @State private var detailLoading: Set<String> = []
     @State private var detailErrors: [String: String] = [:]
     @State private var courseRecordsExpanded: Bool?
 
     var body: some View {
-        List {
-            if let page = store.courseHistory {
-                if page.requirements.isEmpty && page.courses.isEmpty {
+        // A `ScrollView` keeps every tapped category where it is: expanding or
+        // collapsing a card only adds or removes content below it, and no list
+        // row is re-measured, so nothing above the tap can move.
+        ScrollView {
+            VStack(spacing: 0) {
+                if let page = store.courseHistory {
+                    if page.requirements.isEmpty && page.courses.isEmpty {
+                        SchoolityEmptyState(
+                            title: "No course history",
+                            description: "Your district did not return graduation progress or course records.",
+                            symbol: "clock.arrow.circlepath"
+                        )
+                        .padding(.bottom, 12)
+                    }
+
+                    graduationCard(page)
+                        .padding(.top, 8)
+                        .padding(.bottom, 14)
+
+                    courseRecordsCard(page)
+                        .padding(.bottom, 14)
+                } else if store.loadingRecords.contains(.history) {
+                    ForEach(0..<2, id: \.self) { _ in
+                        StudentInfoSkeleton()
+                            .padding(.bottom, 10)
+                    }
+                } else if store.recordErrors[.history] == nil {
                     SchoolityEmptyState(
                         title: "No course history",
-                        description: "Your district did not return graduation progress or course records.",
+                        description: "Refresh to load graduation progress and course records.",
                         symbol: "clock.arrow.circlepath"
                     )
-                    .schoolityPageRow(bottom: 12)
+                    .padding(.bottom, 12)
                 }
 
-                graduationCard(page)
-                    .schoolityPageRow(top: 8, bottom: 14)
-
-                courseRecordsCard(page)
-                    .schoolityPageRow(bottom: 14)
-            } else if store.loadingRecords.contains(.history) {
-                ForEach(0..<2, id: \.self) { _ in
-                    StudentInfoSkeleton()
-                        .schoolityPageRow(bottom: 10)
+                if let error = store.recordErrors[.history] {
+                    FailureCard(message: error, dismiss: { store.recordErrors[.history] = nil }) {
+                        Task { await store.loadRecord(.history, refresh: true) }
+                    }
+                    .padding(.top, 4)
+                    .padding(.bottom, 16)
                 }
-            } else if store.recordErrors[.history] == nil {
-                SchoolityEmptyState(
-                    title: "No course history",
-                    description: "Refresh to load graduation progress and course records.",
-                    symbol: "clock.arrow.circlepath"
-                )
-                .schoolityPageRow(bottom: 12)
             }
-
-            if let error = store.recordErrors[.history] {
-                FailureCard(message: error, dismiss: { store.recordErrors[.history] = nil }) {
-                    Task { await store.loadRecord(.history, refresh: true) }
-                }
-                .schoolityPageRow(top: 4, bottom: 16)
-            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 20)
         }
-        .schoolityPageList()
+        .background { SchoolityBackdrop() }
         .navigationTitle("Course History")
         .schoolityNavigationChrome()
         .task { await store.loadRecord(.history) }
@@ -565,7 +574,7 @@ struct CourseHistoryView: View {
         }
         .onChange(of: store.lastUpdated["history"]) { _, _ in
             detailRevision = UUID()
-            openRequirement = nil
+            openRequirements.removeAll()
             details = [:]
             detailLoading = []
             detailErrors = [:]
@@ -602,23 +611,23 @@ struct CourseHistoryView: View {
                     HairlineDivider().padding(.top, 12)
                     VStack(alignment: .leading, spacing: 0) {
                         Button {
-                            expansion(key, requirement).wrappedValue.toggle()
+                            toggleRequirement(key, requirement)
                         } label: {
                             HStack(spacing: 12) {
                                 GraduationRequirementSummary(requirement: requirement)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                 Image(systemName: "chevron.down")
                                     .font(.caption.weight(.semibold))
-                                    .rotationEffect(.degrees(openRequirement == key ? 180 : 0))
+                                    .rotationEffect(.degrees(openRequirements.contains(key) ? 180 : 0))
                                     .accessibilityHidden(true)
                             }
-                            .frame(minHeight: 44)
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .accessibilityValue(openRequirement == key ? "Expanded" : "Collapsed")
+                        .accessibilityValue(openRequirements.contains(key) ? "Expanded" : "Collapsed")
 
-                        SchoolityReveal(isExpanded: openRequirement == key) {
+                        SchoolityReveal(isExpanded: openRequirements.contains(key)) {
                             GraduationRequirementDetail(
                                 key: key,
                                 requirement: requirement,
@@ -637,8 +646,31 @@ struct CourseHistoryView: View {
     }
 
     private func courseRecordsCard(_ page: CourseHistoryPage) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            DisclosureGroup(isExpanded: courseRecordsExpansion(page)) {
+        let expanded = courseRecordsExpanded ?? page.requirements.isEmpty
+        return VStack(alignment: .leading, spacing: 0) {
+            Button {
+                courseRecordsExpanded = !expanded
+            } label: {
+                HStack(spacing: 12) {
+                    Text("Course records")
+                        .font(SchoolityText.sectionTitle)
+                        .tracking(-0.4)
+                        .foregroundStyle(SchoolityPalette.ink)
+                        .accessibilityIdentifier("history-course-records")
+                    Spacer(minLength: 8)
+                    Image(systemName: "chevron.down")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(SchoolityPalette.muted)
+                        .rotationEffect(.degrees(expanded ? 180 : 0))
+                        .accessibilityHidden(true)
+                }
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityValue(expanded ? "Expanded" : "Collapsed")
+
+            SchoolityReveal(isExpanded: expanded) {
                 VStack(alignment: .leading, spacing: 12) {
                     HairlineDivider().padding(.top, 12)
                     if page.courses.isEmpty {
@@ -689,16 +721,7 @@ struct CourseHistoryView: View {
                     }
                 }
                 .padding(.bottom, 4)
-            } label: {
-                Text("Course records")
-                    .font(SchoolityText.sectionTitle)
-                    .tracking(-0.4)
-                    .foregroundStyle(SchoolityPalette.ink)
-                    .frame(minHeight: 44, alignment: .leading)
-                    .contentShape(Rectangle())
             }
-            .tint(SchoolityPalette.muted)
-            .accessibilityIdentifier("history-course-records")
         }
         .schoolityCard(padding: 18)
     }
@@ -707,31 +730,19 @@ struct CourseHistoryView: View {
         "\(index)-\(requirement.id)"
     }
 
-    private func courseRecordsExpansion(_ page: CourseHistoryPage) -> Binding<Bool> {
-        Binding(
-            get: { courseRecordsExpanded ?? page.requirements.isEmpty },
-            set: { courseRecordsExpanded = $0 }
-        )
-    }
-
-    private func expansion(_ key: String, _ requirement: GraduationRequirement) -> Binding<Bool> {
-        Binding(
-            get: { openRequirement == key },
-            set: { expanded in
-                if expanded {
-                    openRequirement = key
-                    if details[key] == nil && !detailLoading.contains(key) {
-                        if let cached = store.cachedHistorySubject(id: requirement.id) {
-                            details[key] = cached
-                        } else {
-                            Task { await loadSubject(key, requirement) }
-                        }
-                    }
-                } else if openRequirement == key {
-                    openRequirement = nil
-                }
+    private func toggleRequirement(_ key: String, _ requirement: GraduationRequirement) {
+        if openRequirements.contains(key) {
+            openRequirements.remove(key)
+            return
+        }
+        openRequirements.insert(key)
+        if details[key] == nil && !detailLoading.contains(key) {
+            if let cached = store.cachedHistorySubject(id: requirement.id) {
+                details[key] = cached
+            } else {
+                Task { await loadSubject(key, requirement) }
             }
-        )
+        }
     }
 
     @MainActor

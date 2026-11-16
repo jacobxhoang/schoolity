@@ -4,7 +4,9 @@ import Vision
 final class SchoolityUITests: XCTestCase {
     private func reveal(_ element: XCUIElement, in app: XCUIApplication, towardTop: Bool = false,
                         file: StaticString = #filePath, line: UInt = #line) {
-        let list = app.collectionViews.firstMatch
+        // Most pages are lists (collection views); Course History scrolls in a
+        // plain scroll view so a category never moves the content above it.
+        let list = app.collectionViews.firstMatch.exists ? app.collectionViews.firstMatch : app.scrollViews.firstMatch
         // Short drags keep a small row from being skipped by a full-screen fling.
         for _ in 0..<16 where !element.exists || !element.isHittable {
             let start = list.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: towardTop ? 0.4 : 0.65))

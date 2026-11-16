@@ -374,7 +374,7 @@ struct CourseDetailView: View {
     @State private var presentedSheet: Assignment?
     @State private var showReset = false
     @State private var detailSection: DetailSection = .assignments
-    @State private var expandedAssignmentID: String?
+    @State private var expandedAssignmentIDs: Set<String> = []
 
     private enum DetailSection: String, CaseIterable {
         case assignments = "Assignments"
@@ -505,8 +505,14 @@ struct CourseDetailView: View {
                 AssignmentDetailRow(
                     assignment: assignment,
                     isExpanded: Binding(
-                        get: { expandedAssignmentID == assignment.id },
-                        set: { expandedAssignmentID = $0 ? assignment.id : nil }
+                        get: { expandedAssignmentIDs.contains(assignment.id) },
+                        set: { isExpanded in
+                            if isExpanded {
+                                expandedAssignmentIDs.insert(assignment.id)
+                            } else {
+                                expandedAssignmentIDs.remove(assignment.id)
+                            }
+                        }
                     ),
                     edit: { presentedSheet = assignment },
                     remove: removable(assignment) ? { course.assignments.removeAll { $0.id == assignment.id } } : nil
