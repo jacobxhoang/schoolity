@@ -509,6 +509,8 @@ private struct AttendancePeriodRow: View {
 
 struct CourseHistoryView: View {
     @EnvironmentObject private var store: AppStore
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var detailRevision = UUID()
     @State private var year = ""
     @State private var school = ""
     @State private var openRequirement: String?
@@ -560,10 +562,14 @@ struct CourseHistoryView: View {
         .schoolityNavigationChrome()
         .task { await store.loadRecord(.history) }
         .refreshable {
+            await store.loadRecord(.history, refresh: true)
+        }
+        .onChange(of: store.lastUpdated["history"]) { _, _ in
+            detailRevision = UUID()
             openRequirement = nil
             details = [:]
+            detailLoading = []
             detailErrors = [:]
-            await store.loadRecord(.history, refresh: true)
         }
     }
 
@@ -595,7 +601,27 @@ struct CourseHistoryView: View {
                 ForEach(Array(page.requirements.enumerated()), id: \.offset) { index, requirement in
                     let key = requirementKey(index, requirement)
                     HairlineDivider().padding(.top, 12)
-                    DisclosureGroup(isExpanded: expansion(key, requirement)) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Button {
+                            let expanded = expansion(key, requirement)
+                            withAnimation(reduceMotion ? nil : SchoolityMotion.disclosure) {
+                                expanded.wrappedValue.toggle()
+                            }
+                        } label: {
+                            HStack(spacing: 12) {
+                                GraduationRequirementSummary(requirement: requirement)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                Image(systemName: "chevron.down")
+                                    .font(.caption.weight(.semibold))
+                                    .rotationEffect(.degrees(openRequirement == key ? 180 : 0))
+                                    .accessibilityHidden(true)
+                            }
+                            .frame(minHeight: 44)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityValue(openRequirement == key ? "Expanded" : "Collapsed")
+                        if openRequirement == key {
                         GraduationRequirementDetail(
                             key: key,
                             requirement: requirement,
@@ -604,11 +630,10 @@ struct CourseHistoryView: View {
                             errors: detailErrors,
                             retry: { Task { await loadSubject(key, requirement) } }
                         )
-                    } label: {
-                        GraduationRequirementSummary(requirement: requirement)
-                            .frame(minHeight: 44, alignment: .leading)
-                            .contentShape(Rectangle())
+                        .transition(.opacity)
+                        }
                     }
+                    .clipped()
                     .tint(SchoolityPalette.muted)
                 }
             }
@@ -726,11 +751,15 @@ struct CourseHistoryView: View {
             return
         }
         detailLoading.insert(key)
+        let revision = detailRevision
         detailErrors[key] = nil
-        defer { detailLoading.remove(key) }
+        defer { if revision == detailRevision { detailLoading.remove(key) } }
         do {
-            details[key] = try await store.historySubject(id: requirement.id)
+            let result = try await store.historySubject(id: requirement.id)
+            guard revision == detailRevision else { return }
+            details[key] = result
         } catch {
+            guard revision == detailRevision else { return }
             guard !PortalFailure.isCancellation(error) else { return }
             detailErrors[key] = error.localizedDescription
         }
