@@ -4,8 +4,8 @@ import UIKit
 /// The website's one palette, carried into the app. Every surface reads these
 /// values instead of naming colors locally.
 enum SchoolityPalette {
-    static let canvas = adaptive(light: 0xF7F7F8, dark: 0x111113)
-    static let panel = adaptive(light: 0xFFFFFF, dark: 0x1A1A1D)
+    static let canvas = Color(uiColor: .systemGroupedBackground)
+    static let panel = Color(uiColor: .secondarySystemGroupedBackground)
     static let ink = adaptive(light: 0x0F0F0F, dark: 0xF2F2F2)
     static let muted = adaptive(light: 0x5C5C5C, dark: 0xA8A8A8)
     static let faint = adaptive(light: 0x6E6E6E, dark: 0x909090)
@@ -114,7 +114,7 @@ enum SchoolityMotion {
     }
 }
 
-/// The signed-in canvas: the website's lightly tinted surface, near-black in Dark Mode.
+/// Apple's adaptive grouped canvas, including the system's dark and elevated appearances.
 struct SchoolityBackdrop: View {
     var body: some View {
         SchoolityPalette.canvas.ignoresSafeArea()
