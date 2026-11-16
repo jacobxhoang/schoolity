@@ -79,9 +79,18 @@ jobs:
     needs: package
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    # Serialize releases so each app.json update builds on the previous commit.
+    concurrency:
+      group: ios-ipa-app-json
+      cancel-in-progress: false
     permissions:
       contents: write
     steps:
+      - name: Check out main
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: main
+          fetch-depth: 0
       - name: Download packaged IPA
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
         with:
@@ -103,9 +112,44 @@ jobs:
           Connects directly to Anoka-Hennepin StudentVUE. No Schoolity/Vercel server is required. Internet access to the district is required. Older saved server sessions may require one new school sign-in.
 
           Download **Schoolity.ipa** below. This build is unsigned and requires Apple signing before installation.
+
+          SideStore, Feather, and AltStore users can add the source: https://raw.githubusercontent.com/verityhoangjacob67/schoolity/main/app.json
           NOTES
           gh release create "$tag" release/Schoolity.ipa \
             --target "$COMMIT_SHA" --title "Schoolity iOS - Build ${BUILD_NUMBER}.${BUILD_ATTEMPT}" \
             --notes-file "$RUNNER_TEMP/release-notes.md" --latest
           url=$(gh release view "$tag" --json url --jq .url)
           echo "### [Download Schoolity.ipa]($url)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Update the SideStore source
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+          BUILD_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          tag="ios-build-${BUILD_NUMBER}.${BUILD_ATTEMPT}"
+          python3 .github/scripts/update_app_json.py \
+            --app-json app.json \
+            --ipa release/Schoolity.ipa \
+            --download-url "https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/Schoolity.ipa" \
+            --date "$(date -u +%F)"
+          if git diff --quiet -- app.json; then
+            echo "app.json already lists this build."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.json
+          git commit -m "Update app.json for ${tag}"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Push attempt ${attempt} failed; rebasing onto main." >&2
+            git fetch origin main
+            git rebase origin/main || {
+              git rebase --abort
+              exit 1
+            }
+          done
+          echo "Could not push app.json after 3 attempts." >&2
+          exit 1

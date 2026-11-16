@@ -1,0 +1,30 @@
+{
+  "name": "Schoolity",
+  "identifier": "com.schoolity.source",
+  "sourceURL": "https://raw.githubusercontent.com/verityhoangjacob67/schoolity/main/app.json",
+  "subtitle": "StudentVUE grades, schedule, and records for Anoka-Hennepin",
+  "description": "The Schoolity source for SideStore, Feather, and AltStore. Every iOS push publishes an unsigned build of the native Schoolity iPhone app, and each build is listed here so updates arrive through the source.",
+  "website": "https://github.com/verityhoangjacob67/schoolity",
+  "featuredApps": [
+    "com.schoolity.app"
+  ],
+  "apps": [
+    {
+      "name": "Schoolity",
+      "bundleIdentifier": "com.schoolity.app",
+      "developerName": "Schoolity",
+      "subtitle": "Your StudentVUE dashboard",
+      "localizedDescription": "An independently implemented student dashboard for Anoka-Hennepin. Sign in with your own StudentVUE account to read grades, assignments, schedule, messages, documents, attendance, student information, and course history directly from the district. No Schoolity server receives your school information.",
+      "iconURL": "https://raw.githubusercontent.com/verityhoangjacob67/schoolity/main/ios/Schoolity/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
+      "tintColor": "0F0F0F",
+      "category": "education",
+      "appPermissions": {
+        "privacy": {
+          "NSFaceIDUsageDescription": "Unlock your saved Schoolity sign-in with Face ID."
+        }
+      },
+      "versions": []
+    }
+  ],
+  "news": []
+}

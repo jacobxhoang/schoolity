@@ -1,5 +1,7 @@
 node_modules/
 .git/
+# Written by the iOS IPA workflow after each release.
+/app.json
 .svelte-kit/
 .vercel/
 .taste-skill/

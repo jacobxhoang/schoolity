@@ -46,6 +46,16 @@ Pull requests run only the **iOS** checks, and manual builds of other branches u
 
 The release IPA does not expire with Actions artifacts. The workflow's IPA artifact is kept for seven days; it is the same file published from `main` pushes. Test evidence is retained for one day only on failure, or when **Keep simulator screenshots and test results for one day** is checked for a manual run. No simulator ZIP or archive ZIP is published.
 
+### SideStore, Feather, and AltStore
+
+Every `main` push that publishes a release adds that build to [`app.json`](../app.json). Add this URL as a source in SideStore, Feather, or AltStore:
+
+```
+https://raw.githubusercontent.com/verityhoangjacob67/schoolity/main/app.json
+```
+
+The newest build is first in the list, and each entry points at its release IPA with its version, build number, size, and SHA-256. The IPA stays unsigned, so the sideloading app signs it with your own certificate during install.
+
 The IPA is **unsigned** and requires Apple signing before installation; downloading it alone will not install it on an iPhone. The workflow uses GitHub-hosted macOS runner minutes; availability follows your account's Actions allowance.
 
 ## Student ID
