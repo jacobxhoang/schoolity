@@ -27,15 +27,12 @@ export function string(value: unknown): string {
 export function displayText(value: unknown): string {
   return decodeHTMLStrict(string(value)).replace(/\u00a0/g, " ");
 }
-function assignmentFields(a: JsonObject): string {
-  return Object.entries(a)
-    .filter(([, value]) => value !== null && value !== undefined && value !== "")
-    .map(([key, value]) => {
-      const text =
-        typeof value === "object" ? JSON.stringify(value) : String(value);
-      return `${key}=${text.length > 160 ? `${text.slice(0, 160)}…` : text}`;
-    })
-    .join("; ");
+function positive(value: number | null): number | null {
+  return value !== null && value > 0 ? value : null;
+}
+function leadingNumber(value: unknown): number | null {
+  const match = /-?\d+(?:\.\d+)?/.exec(string(value));
+  return match ? number(match[0]) : null;
 }
 export function number(value: unknown): number | null {
   if (value === null || value === undefined || value === "") return null;
@@ -71,14 +68,19 @@ export function grades(payload: unknown): GradeData {
         const earned = number(a.point ?? a.scoreCalValue ?? a.score);
         const pointPossible = number(a.pointPossible);
         const scoreMaxValue = number(a.scoreMaxValue);
-        // The district can leave pointPossible at zero on work that is not
-        // graded yet while scoreMaxValue still carries the real maximum. Use
-        // that maximum only for ungraded work, so extra-credit rows keep their
-        // zero denominator for grade math.
-        const possible =
-          earned === null && pointPossible !== null && pointPossible <= 0
-            ? (scoreMaxValue ?? 0)
-            : (pointPossible ?? scoreMaxValue ?? 0);
+        // Ungraded rows can leave pointPossible and scoreMaxValue empty while
+        // the district's display string still says "50 Points Possible". Use
+        // any known maximum for ungraded work only, so extra-credit rows keep
+        // their zero denominator for grade math.
+        const pointsLabel = leadingNumber(a.points);
+        let possible = pointPossible ?? scoreMaxValue ?? 0;
+        if (earned === null) {
+          possible =
+            positive(pointPossible) ??
+            positive(scoreMaxValue) ??
+            positive(pointsLabel) ??
+            0;
+        }
         return {
           id: string(a.gradebookID ?? a.gradebookId) || `task-${j}`,
           title: displayText(a.measure),
@@ -87,7 +89,6 @@ export function grades(payload: unknown): GradeData {
           possible,
           due: string(a.dueDate),
           excluded: string(a.notes).startsWith("(Not For Grading)"),
-          ...(earned === null ? { raw: assignmentFields(a) } : {}),
         };
       }),
     };
