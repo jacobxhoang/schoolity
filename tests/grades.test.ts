@@ -118,6 +118,8 @@ test("mobile JSON mapping preserves term zero and missing scores", () => {
   assert.equal(result.courses[0].assignments[1].earned, null);
   assert.equal(result.courses[0].assignments[2].possible, 50);
   assert.equal(result.courses[0].assignments[3].possible, 0);
+  assert.match(result.courses[0].assignments[2].raw ?? "", /scoreMaxValue=50/);
+  assert.equal(result.courses[0].assignments[0].raw, undefined);
 });
 test("missing reporting period cannot masquerade as a valid gradebook", () =>
   assert.throws(() => grades({}), /reporting period/));

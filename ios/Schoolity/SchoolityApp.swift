@@ -1,6 +1,7 @@
 import SwiftUI
 import BackgroundTasks
 import Foundation
+import UIKit
 
 @main
 struct SchoolityApp: App {
@@ -91,6 +92,7 @@ struct WorkspaceView: View {
 struct AccountDetailsView: View {
     @EnvironmentObject private var store: AppStore
     @State private var showSettings = false
+    @State private var showDiagnosticsCopied = false
 
     var body: some View {
         List {
@@ -170,6 +172,21 @@ struct AccountDetailsView: View {
                 .foregroundStyle(SchoolityPalette.faint)
                 .frame(maxWidth: .infinity)
                 .schoolityPageRow(bottom: 8)
+
+            Button {
+                UIPasteboard.general.string = gradebookDiagnostics
+                showDiagnosticsCopied = true
+            } label: {
+                Text("Copy gradebook diagnostics")
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(SchoolityPalette.muted)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.plain)
+            .schoolityPageRow(bottom: 8)
+            .alert("Gradebook fields copied", isPresented: $showDiagnosticsCopied) {
+                Button("OK", role: .cancel) {}
+            }
         }
         .schoolityPageList()
         .task { await store.loadProfile(refresh: store.profile?.studentId == nil) }
@@ -185,5 +202,21 @@ struct AccountDetailsView: View {
         let version = info?["CFBundleShortVersionString"] as? String ?? "1.0.0"
         let build = info?["CFBundleVersion"] as? String ?? "1"
         return "Version \(version) (\(build))"
+    }
+
+    private var gradebookDiagnostics: String {
+        guard let book = store.gradebook else {
+            return "No gradebook loaded. Open Grades once, then try again."
+        }
+        var lines = ["Schoolity \(appVersion)"]
+        for course in book.courses {
+            for assignment in course.assignments where assignment.earned == nil {
+                lines.append("")
+                lines.append("\(course.name) | \(assignment.title)")
+                lines.append("due=\(assignment.due); parsedPossible=\(GradeMath.points(assignment.possible))")
+                if let raw = assignment.raw, !raw.isEmpty { lines.append(raw) }
+            }
+        }
+        return lines.joined(separator: "\n")
     }
 }

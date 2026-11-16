@@ -27,6 +27,16 @@ export function string(value: unknown): string {
 export function displayText(value: unknown): string {
   return decodeHTMLStrict(string(value)).replace(/\u00a0/g, " ");
 }
+function assignmentFields(a: JsonObject): string {
+  return Object.entries(a)
+    .filter(([, value]) => value !== null && value !== undefined && value !== "")
+    .map(([key, value]) => {
+      const text =
+        typeof value === "object" ? JSON.stringify(value) : String(value);
+      return `${key}=${text.length > 160 ? `${text.slice(0, 160)}…` : text}`;
+    })
+    .join("; ");
+}
 export function number(value: unknown): number | null {
   if (value === null || value === undefined || value === "") return null;
   const n = Number(value);
@@ -77,6 +87,7 @@ export function grades(payload: unknown): GradeData {
           possible,
           due: string(a.dueDate),
           excluded: string(a.notes).startsWith("(Not For Grading)"),
+          ...(earned === null ? { raw: assignmentFields(a) } : {}),
         };
       }),
     };

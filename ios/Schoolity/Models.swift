@@ -9,6 +9,7 @@ struct Assignment: Codable, Identifiable, Equatable {
     var due: String
     var excluded: Bool?
     var hypothetical: Bool?
+    var raw: String?
 }
 
 struct GradeCategory: Codable, Equatable {

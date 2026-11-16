@@ -8,6 +8,7 @@ export interface Task {
   excluded?: boolean;
   hypothetical?: boolean;
   emptyPossible?: boolean;
+  raw?: string;
 }
 export interface Category {
   name: string;
