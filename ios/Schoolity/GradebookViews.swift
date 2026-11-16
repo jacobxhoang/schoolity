@@ -114,6 +114,7 @@ private struct GradebookContent: View, Equatable {
 
 /// The website's term line: a bordered row holding the reporting period and freshness.
 private struct TermLine: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let book: Gradebook
     let isLoading: Bool
     let updated: Date?
@@ -124,19 +125,12 @@ private struct TermLine: View {
     }
 
     var body: some View {
-        Menu {
-            ForEach(book.terms) { term in
-                Button {
-                    select(term.id)
-                } label: {
-                    if term.id == book.currentTerm {
-                        Label(term.name, systemImage: "checkmark")
-                    } else {
-                        Text(term.name)
-                    }
-                }
-            }
-        } label: {
+        SchoolityMenu(
+            title: "Reporting period",
+            options: book.terms.map { SchoolityMenuOption(value: $0.id, label: $0.name) },
+            value: Binding(get: { book.currentTerm }, set: { select($0) }),
+            isEnabled: !isLoading
+        ) { isOpen in
             HStack(spacing: 10) {
                 Circle()
                     .fill(SchoolityPalette.ink)
@@ -147,10 +141,8 @@ private struct TermLine: View {
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(SchoolityPalette.ink)
                         .contentTransition(.opacity)
-                        .animation(.easeInOut(duration: 0.2), value: currentName)
-                    Image(systemName: "chevron.down")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(SchoolityPalette.muted)
+                        .animation(SchoolityMotion.calm(.easeOut(duration: 0.2), reduceMotion: reduceMotion), value: currentName)
+                    SchoolityMenuChevron(isOpen: isOpen)
                 }
                 Spacer(minLength: 8)
                 if isLoading {
@@ -173,8 +165,6 @@ private struct TermLine: View {
                     .allowsHitTesting(false)
             }
         }
-        .disabled(isLoading)
-        .accessibilityLabel("Reporting period, \(currentName)")
     }
 }
 
@@ -253,6 +243,7 @@ struct GradebookStatsCard: View {
                 .lineLimit(1)
                 .contentTransition(.numericText(value: Double(courses)))
         }
+        .animation(SchoolityMotion.calm(SchoolityMotion.value, reduceMotion: reduceMotion), value: courses)
         .frame(maxWidth: .infinity, alignment: typeSize.isAccessibilitySize ? .leading : .trailing)
     }
 }
@@ -272,7 +263,6 @@ private struct GradeAverageRing: View {
                     .trim(from: 0, to: max(0.03, min(1, score / 100)))
                     .stroke(tint, style: StrokeStyle(lineWidth: 6, lineCap: .round))
                     .rotationEffect(.degrees(-90))
-                    .animation(SchoolityMotion.calm(SchoolityMotion.shape, reduceMotion: reduceMotion), value: score)
                 Text(GradeMath.letter(score))
                     .font(.system(.headline, weight: .bold))
                     .foregroundStyle(tint)
@@ -284,6 +274,7 @@ private struct GradeAverageRing: View {
             }
         }
         .frame(width: 56, height: 56)
+        .animation(SchoolityMotion.calm(SchoolityMotion.shape, reduceMotion: reduceMotion), value: score)
         .accessibilityHidden(true)
     }
 }

@@ -651,24 +651,20 @@ struct CourseHistoryView: View {
                             .font(SchoolityText.meta)
                             .foregroundStyle(SchoolityPalette.muted)
                     } else {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Picker("Year", selection: $year) {
-                                Text("All years").tag("")
-                                ForEach(years(page), id: \.self) { value in
-                                    Text(value).tag(value)
-                                }
-                            }
-                            .pickerStyle(.menu)
-
-                            Picker("School", selection: $school) {
-                                Text("All schools").tag("")
-                                ForEach(schools(page), id: \.self) { value in
-                                    Text(value).tag(value)
-                                }
-                            }
-                            .pickerStyle(.menu)
+                        VStack(spacing: 8) {
+                            SchoolitySelectField(
+                                title: "Year",
+                                options: [SchoolityMenuOption<String>(value: "", label: "All years")] +
+                                    years(page).map { SchoolityMenuOption(value: $0, label: $0) },
+                                value: $year
+                            )
+                            SchoolitySelectField(
+                                title: "School",
+                                options: [SchoolityMenuOption<String>(value: "", label: "All schools")] +
+                                    schools(page).map { SchoolityMenuOption(value: $0, label: $0) },
+                                value: $school
+                            )
                         }
-                        .font(.subheadline)
 
                         Text("\(shownCourses(page).count) \(shownCourses(page).count == 1 ? "course" : "courses")")
                             .font(.caption)
