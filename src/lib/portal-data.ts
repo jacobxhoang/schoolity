@@ -57,15 +57,28 @@ export function grades(payload: unknown): GradeData {
           name: displayText(x.type),
           weight: Number.parseFloat(string(x.weight)) || 0,
         })),
-      assignments: rows(mark.assignments).map((a, j) => ({
-        id: string(a.gradebookID ?? a.gradebookId) || `task-${j}`,
-        title: displayText(a.measure),
-        category: displayText(a.type),
-        earned: number(a.point ?? a.scoreCalValue ?? a.score),
-        possible: number(a.pointPossible ?? a.scoreMaxValue) ?? 0,
-        due: string(a.dueDate),
-        excluded: string(a.notes).startsWith("(Not For Grading)"),
-      })),
+      assignments: rows(mark.assignments).map((a, j) => {
+        const earned = number(a.point ?? a.scoreCalValue ?? a.score);
+        const pointPossible = number(a.pointPossible);
+        const scoreMaxValue = number(a.scoreMaxValue);
+        // The district can leave pointPossible at zero on work that is not
+        // graded yet while scoreMaxValue still carries the real maximum. Use
+        // that maximum only for ungraded work, so extra-credit rows keep their
+        // zero denominator for grade math.
+        const possible =
+          earned === null && pointPossible !== null && pointPossible <= 0
+            ? (scoreMaxValue ?? 0)
+            : (pointPossible ?? scoreMaxValue ?? 0);
+        return {
+          id: string(a.gradebookID ?? a.gradebookId) || `task-${j}`,
+          title: displayText(a.measure),
+          category: displayText(a.type),
+          earned,
+          possible,
+          due: string(a.dueDate),
+          excluded: string(a.notes).startsWith("(Not For Grading)"),
+        };
+      }),
     };
   });
   return {
