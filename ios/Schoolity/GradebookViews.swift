@@ -472,7 +472,7 @@ struct CourseDetailView: View {
                 title: "",
                 category: categoryNames.first ?? "Assignments",
                 earned: nil,
-                possible: 10,
+                possible: 0,
                 due: "",
                 hypothetical: true
             )
@@ -616,10 +616,14 @@ struct ScoreEditor: View {
 
     private var earnedValue: Double? { Double(earned.replacingOccurrences(of: ",", with: ".")) }
     private var possibleValue: Double? { Double(possible.replacingOccurrences(of: ",", with: ".")) }
+    private var possibleIsValid: Bool {
+        if possible.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return true }
+        return possibleValue?.isFinite == true && (possibleValue ?? -1) >= 0
+    }
     private var valid: Bool {
         !assignment.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         earnedValue?.isFinite == true && (earnedValue ?? -1) >= 0 &&
-        possibleValue?.isFinite == true && (possibleValue ?? -1) >= 0
+        possibleIsValid
     }
 
     var body: some View {
@@ -654,7 +658,7 @@ struct ScoreEditor: View {
             }
             .onAppear {
                 earned = assignment.earned.map(GradeMath.input) ?? ""
-                possible = GradeMath.input(assignment.possible)
+                possible = assignment.possible > 0 ? GradeMath.input(assignment.possible) : ""
             }
         }
     }

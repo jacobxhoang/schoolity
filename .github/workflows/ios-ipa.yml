@@ -1,13 +1,14 @@
 name: iOS IPA
 
-# Builds the unsigned iPhone app on iOS pushes and is the only workflow that
-# publishes it as a release. Manual runs build and upload the artifact only.
+# Builds and uploads the unsigned iPhone app, runs simulator tests, and only
+# then publishes the release. Manual runs stop after the test artifact is ready.
 on:
   push:
     branches: [main]
     paths:
       - "ios/**"
       - ".github/workflows/ios-ipa.yml"
+      - ".github/workflows/ios.yml"
   workflow_dispatch:
 
 permissions:
@@ -74,9 +75,16 @@ jobs:
           echo "### Schoolity.ipa" >> "$GITHUB_STEP_SUMMARY"
           echo "Unsigned iPhone archive, $(du -h build/Schoolity.ipa | cut -f1). Download the artifact and unzip it; sign the IPA before installing." >> "$GITHUB_STEP_SUMMARY"
 
+  test:
+    name: Run iPhone tests after IPA upload
+    needs: package
+    uses: ./.github/workflows/ios.yml
+    with:
+      keep_test_evidence: ${{ inputs.keep_test_evidence || false }}
+
   publish-release:
     name: Publish IPA release
-    needs: package
+    needs: [package, test]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     # Serialize releases so each app.json update builds on the previous commit.
@@ -109,7 +117,7 @@ jobs:
           # include the commit to keep each release tag unique.
           tag="ios-build-${BUILD_NUMBER}.${BUILD_ATTEMPT}-${COMMIT_SHA:0:7}"
           cat > "$RUNNER_TEMP/release-notes.md" <<'NOTES'
-          Native Schoolity iPhone app, packaged automatically. Simulator tests run in the separate iOS workflow; check that workflow for test results.
+          Native Schoolity iPhone app, packaged automatically. Simulator tests passed before this release was published.
 
           Connects directly to Anoka-Hennepin StudentVUE. No Schoolity/Vercel server is required. Internet access to the district is required. Older saved server sessions may require one new school sign-in.
 

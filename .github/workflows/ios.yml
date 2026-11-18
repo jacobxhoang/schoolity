@@ -1,12 +1,13 @@
 name: iOS
 
-# Checks only. The iOS IPA workflow builds and publishes the unsigned app.
 on:
-  push:
-    branches: [main]
-    paths:
-      - "ios/**"
-      - ".github/workflows/ios.yml"
+  workflow_call:
+    inputs:
+      keep_test_evidence:
+        description: Keep simulator screenshots and test results for one day
+        type: boolean
+        required: false
+        default: false
   pull_request:
     paths:
       - "ios/**"

@@ -309,6 +309,174 @@ struct SchoolityReveal<Content: View>: View {
     }
 }
 
+// MARK: - Menus
+
+/// One choice in a `SchoolityMenu`.
+struct SchoolityMenuOption<Value: Hashable>: Identifiable {
+    let value: Value
+    let label: String
+
+    var id: Value { value }
+}
+
+/// A dropdown that shows its options in a floating popover instead of a native
+/// `Menu` or `.menu` picker. Both of those render inside the scrolling row that
+/// owns them: the row resizes under the label while the menu opens, and a card
+/// that clips its rounded corners can cut the menu off as it leaves the row.
+/// A popover is presented in its own layer, so it cannot be clipped, and the
+/// trigger keeps the exact size it had before the tap.
+struct SchoolityMenu<Value: Hashable, Trigger: View>: View {
+    let title: String
+    let options: [SchoolityMenuOption<Value>]
+    @Binding var value: Value
+    var isEnabled: Bool
+    var trigger: (Bool) -> Trigger
+
+    @State private var isOpen = false
+
+    init(
+        title: String,
+        options: [SchoolityMenuOption<Value>],
+        value: Binding<Value>,
+        isEnabled: Bool = true,
+        @ViewBuilder trigger: @escaping (Bool) -> Trigger
+    ) {
+        self.title = title
+        self.options = options
+        self._value = value
+        self.isEnabled = isEnabled
+        self.trigger = trigger
+    }
+
+    private var selected: SchoolityMenuOption<Value>? {
+        options.first { $0.value == value }
+    }
+
+    var body: some View {
+        Button {
+            isOpen = true
+        } label: {
+            trigger(isOpen)
+        }
+        .buttonStyle(.plain)
+        .disabled(!isEnabled || options.isEmpty)
+        .accessibilityLabel(title)
+        .accessibilityValue(selected?.label ?? "None")
+        .popover(isPresented: $isOpen, arrowEdge: .top) {
+            SchoolityMenuList(options: options, selected: value) { next in
+                value = next
+                isOpen = false
+            }
+            .presentationCompactAdaptation(.popover)
+        }
+    }
+}
+
+/// The floating list itself. It keeps one fixed width, so a long reporting
+/// period or school name wraps inside the panel instead of changing the page
+/// layout behind it.
+private struct SchoolityMenuList<Value: Hashable>: View {
+    let options: [SchoolityMenuOption<Value>]
+    let selected: Value
+    let choose: (Value) -> Void
+
+    private var height: CGFloat {
+        min(CGFloat(options.count) * 44 + 12, 340)
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                ForEach(options) { option in
+                    Button {
+                        choose(option.value)
+                    } label: {
+                        HStack(spacing: 10) {
+                            Text(option.label)
+                                .font(.subheadline.weight(option.value == selected ? .semibold : .regular))
+                                .foregroundStyle(SchoolityPalette.ink)
+                                .multilineTextAlignment(.leading)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Spacer(minLength: 8)
+                            if option.value == selected {
+                                Image(systemName: "checkmark")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(SchoolityPalette.ink)
+                            }
+                        }
+                        .padding(.horizontal, 10)
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                        .background(
+                            option.value == selected ? SchoolityPalette.field : Color.clear,
+                            in: RoundedRectangle(cornerRadius: SchoolityRadius.chip, style: .continuous)
+                        )
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(option.value == selected ? [.isSelected] : [])
+                }
+            }
+            .padding(6)
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .frame(width: 250, height: max(56, height))
+    }
+}
+
+/// The menu's chevron turns to show the list is open. Under Reduce Motion it
+/// swaps instantly instead of rotating.
+struct SchoolityMenuChevron: View {
+    var isOpen = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        Image(systemName: "chevron.down")
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(SchoolityPalette.muted)
+            .rotationEffect(.degrees(isOpen ? 180 : 0))
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: isOpen)
+            .accessibilityHidden(true)
+    }
+}
+
+/// The website's outlined select used by the Course History filters. The label
+/// and value share one fixed-height row, so choosing a longer year can never
+/// change the row's height or push the cards around it.
+struct SchoolitySelectField: View {
+    let title: String
+    let options: [SchoolityMenuOption<String>]
+    @Binding var value: String
+
+    private var selectedLabel: String {
+        options.first { $0.value == value }?.label ?? title
+    }
+
+    var body: some View {
+        SchoolityMenu(title: title, options: options, value: $value) { isOpen in
+            HStack(spacing: 10) {
+                Text(title)
+                    .font(.subheadline)
+                    .foregroundStyle(SchoolityPalette.muted)
+                Spacer(minLength: 8)
+                Text(selectedLabel)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(SchoolityPalette.ink)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                SchoolityMenuChevron(isOpen: isOpen)
+            }
+            .padding(.horizontal, 12)
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            .background(SchoolityPalette.field, in: RoundedRectangle(cornerRadius: SchoolityRadius.chip, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: SchoolityRadius.chip, style: .continuous)
+                    .strokeBorder(SchoolityPalette.line, lineWidth: 1)
+            }
+            .contentShape(Rectangle())
+        }
+    }
+}
+
 /// A section heading with the website's small count badge.
 struct SectionHeading: View {
     let title: String
