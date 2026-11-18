@@ -38,7 +38,7 @@ The login and saved-sign-in screens use the website's dark sign-in surface (#111
 
 ## Build on GitHub (works from Windows)
 
-Open the repository's **Actions → iOS IPA → Run workflow** on `main` for a manual build, or **Actions → iOS → Run workflow** for simulator checks. On pushes to `main`, the IPA workflow packages and uploads the app, runs the simulator checks, then publishes the IPA only if they pass. Download **Schoolity.ipa** from the [latest release](https://github.com/verityhoangjacob67/schoolity/releases/latest). A manual **iOS IPA** run uploads the artifact and runs checks without publishing.
+Open the repository's **Actions → iOS IPA → Run workflow** on `main` for a manual build, or **Actions → iOS → Run workflow** for simulator checks. On pushes to `main`, the IPA workflow packages and uploads the app, runs the simulator checks, then publishes the IPA only if they pass. Download **Schoolity.ipa** from the [latest release](https://github.com/jacobxhoang/schoolity/releases/latest). A manual **iOS IPA** run uploads the artifact and runs checks without publishing.
 
 The **iOS IPA** workflow generates the Xcode project, compiles an unsigned Release archive for iPhone, uploads the IPA artifact, and then calls the **iOS** workflow for unit and native UI tests. Only after those tests pass does the release job publish **Schoolity.ipa** from a `main` push. If tests fail, the uploaded artifact remains available but no public release is created. Simulator test builds use local ad-hoc signing and simulator-only Keychain entitlements, so tests exercise real Keychain save/reopen/delete and old-entry migration rather than only mocked storage. This local simulator signature does not sign the release IPA for a physical iPhone. The release is tagged `ios-build-<run>.<attempt>` and marked Latest. The tag targets the packaged commit; reruns create a fresh release. The app's build number follows the workflow run number.
 
@@ -51,7 +51,7 @@ The release IPA does not expire with Actions artifacts. The workflow's IPA artif
 Every `main` push that publishes a release adds that build to [`app.json`](../app.json). Add this URL as a source in SideStore, Feather, or AltStore:
 
 ```
-https://raw.githubusercontent.com/verityhoangjacob67/schoolity/main/app.json
+https://raw.githubusercontent.com/jacobxhoang/schoolity/main/app.json
 ```
 
 The newest build is first in the list, and each entry points at its release IPA with its version, build number, size, and SHA-256. The IPA stays unsigned, so the sideloading app signs it with your own certificate during install.

@@ -1,10 +1,10 @@
 {
   "name": "Schoolity",
   "identifier": "com.schoolity.source",
-  "sourceURL": "https://raw.githubusercontent.com/verityhoangjacob67/schoolity/main/app.json",
+  "sourceURL": "https://raw.githubusercontent.com/jacobxhoang/schoolity/main/app.json",
   "subtitle": "StudentVUE grades, schedule, and records for Anoka-Hennepin",
   "description": "The Schoolity source for SideStore, Feather, and AltStore. Every iOS push publishes an unsigned build of the native Schoolity iPhone app, and each build is listed here so updates arrive through the source.",
-  "website": "https://github.com/verityhoangjacob67/schoolity",
+  "website": "https://github.com/jacobxhoang/schoolity",
   "featuredApps": [
     "com.schoolity.app"
   ],
@@ -15,7 +15,7 @@
       "developerName": "Schoolity",
       "subtitle": "Your StudentVUE dashboard",
       "localizedDescription": "An independently implemented student dashboard for Anoka-Hennepin. Sign in with your own StudentVUE account to read grades, assignments, schedule, messages, documents, attendance, student information, and course history directly from the district. No Schoolity server receives your school information.",
-      "iconURL": "https://raw.githubusercontent.com/verityhoangjacob67/schoolity/main/ios/Schoolity/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
+      "iconURL": "https://raw.githubusercontent.com/jacobxhoang/schoolity/main/ios/Schoolity/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
       "tintColor": "0F0F0F",
       "category": "education",
       "appPermissions": {
@@ -28,7 +28,7 @@
           "version": "1.0.0",
           "buildVersion": "17",
           "date": "2026-11-16",
-          "downloadURL": "https://github.com/verityhoangjacob67/schoolity/releases/download/ios-build-17.1-259b808/Schoolity.ipa",
+          "downloadURL": "https://github.com/jacobxhoang/schoolity/releases/download/ios-build-17.1-259b808/Schoolity.ipa",
           "size": 791921,
           "minOSVersion": "17.0",
           "sha256": "4cedcadd603d786741979af605dae321e2a32d6da1c58b66410de89cc3b2bdc0"
@@ -37,7 +37,7 @@
           "version": "1.0.0",
           "buildVersion": "16",
           "date": "2026-11-16",
-          "downloadURL": "https://github.com/verityhoangjacob67/schoolity/releases/download/ios-build-16.1-c33ff1a/Schoolity.ipa",
+          "downloadURL": "https://github.com/jacobxhoang/schoolity/releases/download/ios-build-16.1-c33ff1a/Schoolity.ipa",
           "size": 789225,
           "minOSVersion": "17.0",
           "sha256": "2d554357452b698edd52de9706e90bd93dfa276cce91560d7bf787ed1cb9b746"
@@ -46,7 +46,7 @@
           "version": "1.0.0",
           "buildVersion": "15",
           "date": "2026-11-16",
-          "downloadURL": "https://github.com/verityhoangjacob67/schoolity/releases/download/ios-build-15.1-6b4ca00/Schoolity.ipa",
+          "downloadURL": "https://github.com/jacobxhoang/schoolity/releases/download/ios-build-15.1-6b4ca00/Schoolity.ipa",
           "size": 788392,
           "minOSVersion": "17.0",
           "sha256": "80a00133d9e3a936a50ed4b521105ebfd93dc0f8662e39d7339d60396e2a3137"
@@ -55,7 +55,7 @@
           "version": "1.0.0",
           "buildVersion": "13",
           "date": "2026-11-16",
-          "downloadURL": "https://github.com/verityhoangjacob67/schoolity/releases/download/ios-build-13.1/Schoolity.ipa",
+          "downloadURL": "https://github.com/jacobxhoang/schoolity/releases/download/ios-build-13.1/Schoolity.ipa",
           "size": 791813,
           "minOSVersion": "17.0",
           "sha256": "e19249d273304dd2cff589d03268e36b2a1d0adefa3057a455b0e954bea9c7b4"
@@ -64,7 +64,7 @@
           "version": "1.0.0",
           "buildVersion": "12",
           "date": "2026-11-16",
-          "downloadURL": "https://github.com/verityhoangjacob67/schoolity/releases/download/ios-build-12.1/Schoolity.ipa",
+          "downloadURL": "https://github.com/jacobxhoang/schoolity/releases/download/ios-build-12.1/Schoolity.ipa",
           "size": 788326,
           "minOSVersion": "17.0",
           "sha256": "8b9c6e621e9c26b98355c0786b6a710ba782aeafb945e4e8f8aea4e497a21f02"
@@ -73,7 +73,7 @@
           "version": "1.0.0",
           "buildVersion": "11",
           "date": "2026-11-16",
-          "downloadURL": "https://github.com/verityhoangjacob67/schoolity/releases/download/ios-build-11.1/Schoolity.ipa",
+          "downloadURL": "https://github.com/jacobxhoang/schoolity/releases/download/ios-build-11.1/Schoolity.ipa",
           "size": 788292,
           "minOSVersion": "17.0",
           "sha256": "fb868894ba29a2566605198c18f466ce0871da9992b5b9f180fa1d9bdc02aef8"
@@ -82,7 +82,7 @@
           "version": "1.0.0",
           "buildVersion": "10",
           "date": "2026-11-16",
-          "downloadURL": "https://github.com/verityhoangjacob67/schoolity/releases/download/ios-build-10.1/Schoolity.ipa",
+          "downloadURL": "https://github.com/jacobxhoang/schoolity/releases/download/ios-build-10.1/Schoolity.ipa",
           "size": 787471,
           "minOSVersion": "17.0",
           "sha256": "ba1e735eb4e950fc7412c65afe725f28ec70363fc66ff34cc60b44ba77bb906d"
@@ -91,7 +91,7 @@
           "version": "1.0.0",
           "buildVersion": "9",
           "date": "2026-11-16",
-          "downloadURL": "https://github.com/verityhoangjacob67/schoolity/releases/download/ios-build-9.1/Schoolity.ipa",
+          "downloadURL": "https://github.com/jacobxhoang/schoolity/releases/download/ios-build-9.1/Schoolity.ipa",
           "size": 787420,
           "minOSVersion": "17.0",
           "sha256": "796ac83c98652ad373c9790d3dc6ae10566dd202da0f79a3cd2691a9a164a757"
@@ -100,7 +100,7 @@
           "version": "1.0.0",
           "buildVersion": "8",
           "date": "2026-11-16",
-          "downloadURL": "https://github.com/verityhoangjacob67/schoolity/releases/download/ios-build-8.1/Schoolity.ipa",
+          "downloadURL": "https://github.com/jacobxhoang/schoolity/releases/download/ios-build-8.1/Schoolity.ipa",
           "size": 787285,
           "minOSVersion": "17.0",
           "sha256": "71fb67c23603213596707a886044c022ef10f63557ff3f7a8a94b9861de5b343"
@@ -109,7 +109,7 @@
           "version": "1.0.0",
           "buildVersion": "7",
           "date": "2026-11-16",
-          "downloadURL": "https://github.com/verityhoangjacob67/schoolity/releases/download/ios-build-7.1/Schoolity.ipa",
+          "downloadURL": "https://github.com/jacobxhoang/schoolity/releases/download/ios-build-7.1/Schoolity.ipa",
           "size": 787791,
           "minOSVersion": "17.0",
           "sha256": "2a0bebcd76a3f19c6e9acc84593fdee47337359dec39c3a8ea276b07844b6a03"
@@ -118,7 +118,7 @@
           "version": "1.0.0",
           "buildVersion": "6",
           "date": "2026-11-16",
-          "downloadURL": "https://github.com/verityhoangjacob67/schoolity/releases/download/ios-build-6.1/Schoolity.ipa",
+          "downloadURL": "https://github.com/jacobxhoang/schoolity/releases/download/ios-build-6.1/Schoolity.ipa",
           "size": 788664,
           "minOSVersion": "17.0",
           "sha256": "0fa41e2e8767d6e16578f5b300a931136b38ec393be914813d88f1475e4fe43b"
@@ -127,7 +127,7 @@
           "version": "1.0.0",
           "buildVersion": "5",
           "date": "2026-11-16",
-          "downloadURL": "https://github.com/verityhoangjacob67/schoolity/releases/download/ios-build-5.1/Schoolity.ipa",
+          "downloadURL": "https://github.com/jacobxhoang/schoolity/releases/download/ios-build-5.1/Schoolity.ipa",
           "size": 804727,
           "minOSVersion": "17.0",
           "sha256": "6823b3c73c9d2c975a6aa551dc0485b6a7ea7880a0986d6edfdd50c8bb35113e"

@@ -1,6 +1,6 @@
 # Deploy Schoolity on Vercel
 
-1. Import `verityhoangjacob67/schoolity` into Vercel. Select **SvelteKit**, root directory `./`, and Node.js **22.x**. Leave output-directory settings at their defaults. The repository supplies the build command.
+1. Import `jacobxhoang/schoolity` into Vercel. Select **SvelteKit**, root directory `./`, and Node.js **22.x**. Leave output-directory settings at their defaults. The repository supplies the build command.
 2. Add an **Upstash Redis** database from Vercel Marketplace and connect it to this project. Enable the integration for the environments you plan to deploy. Review the provider's pricing before provisioning.
 3. Ensure these **server-only** environment variables exist:
    - `UPSTASH_REDIS_REST_URL`
