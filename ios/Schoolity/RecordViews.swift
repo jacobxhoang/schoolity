@@ -685,7 +685,6 @@ struct CourseHistoryView: View {
                         .font(SchoolityText.sectionTitle)
                         .tracking(-0.4)
                         .foregroundStyle(SchoolityPalette.ink)
-                        .accessibilityIdentifier("history-course-records")
                     Spacer(minLength: 8)
                     Image(systemName: "chevron.down")
                         .font(.caption.weight(.semibold))
@@ -697,6 +696,7 @@ struct CourseHistoryView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("history-course-records")
             .accessibilityValue(expanded ? "Expanded" : "Collapsed")
 
             SchoolityReveal(isExpanded: expanded) {
