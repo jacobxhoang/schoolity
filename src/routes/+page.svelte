@@ -1230,7 +1230,7 @@
               <div class="course-grid">
                 {#each data.courses as course}<button
                     class="course-card"
-                    onclick={() => openCourse(course)}
+                    onclick={() => openCourse(course)}>
                     <h3>{course.name}</h3>
                     <p>{course.teacher} <span>· Room {course.room}</span></p>
                     <div class="course-card-bottom">
@@ -1713,7 +1713,7 @@
         <button
           class="modal-close icon-button"
           aria-label="Close privacy"
-          onclick={() => (privacyOpen = false)}><Icon name="close" /></button
+          onclick={() => (privacyOpen = false)}><Icon name="close" /></button>
         <h2 id="privacy-title">Privacy</h2>
         <p class="privacy-summary">
           Saved sign-in keeps an encrypted copy of your school login on
