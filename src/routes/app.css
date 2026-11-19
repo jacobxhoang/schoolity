@@ -117,10 +117,6 @@
 .privacy-modal {
   width: 600px;
 }
-.privacy-modal > svg {
-  margin-bottom: var(--s3);
-  color: var(--muted);
-}
 .privacy-modal h3 {
   margin: 20px 0 6px;
   font-size: var(--t-h3);

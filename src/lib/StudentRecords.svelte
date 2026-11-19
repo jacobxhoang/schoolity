@@ -283,9 +283,6 @@
   </section>
   <details class="history-course-records" open={page.requirements.length === 0}>
     <summary>Course records <span>{courses.length}</span></summary>
-    <p class="records-intro">
-      District-reported marks and credits from previous courses.
-    </p>
     {#if courses.length}
       <div class="record-filters">
         <div class="record-filter">

@@ -58,13 +58,13 @@
   import "./login.css";
   import "./workspace.css";
   const navigation = [
-    { id: "grades", label: "Gradebook", icon: "book" },
-    { id: "schedule", label: "Schedule", icon: "calendar" },
-    { id: "attendance", label: "Attendance", icon: "check" },
-    { id: "history", label: "Course History", icon: "history" },
-    { id: "student", label: "Student Info", icon: "person" },
-    { id: "mail", label: "Inbox", icon: "mail" },
-    { id: "documents", label: "Documents", icon: "file" },
+    { id: "grades", label: "Gradebook" },
+    { id: "schedule", label: "Schedule" },
+    { id: "attendance", label: "Attendance" },
+    { id: "history", label: "Course History" },
+    { id: "student", label: "Student Info" },
+    { id: "mail", label: "Inbox" },
+    { id: "documents", label: "Documents" },
   ];
   // One nav model, grouped the way the phone groups it: work first, records,
   // then messages. Section ids are unchanged, so routing stays as it was.
@@ -90,17 +90,14 @@
   ];
   const indexRows = [
     {
-      icon: "book",
       name: "Gradebook",
       detail: "Courses, assignments and estimates",
     },
     {
-      icon: "person",
       name: "Records",
       detail: "Student info, attendance, course history",
     },
     {
-      icon: "mail",
       name: "Messages",
       detail: "Inbox and document downloads",
     },
@@ -932,14 +929,14 @@
               class:active={tab === item.id}
               aria-current={tab === item.id ? "page" : undefined}
               onclick={() => navigate(item.id)}
-              ><Icon name={item.icon} /><span>{item.label}</span></button
+              ><span>{item.label}</span></button
             >{/each}
         {/each}
       </nav>
 
       <div class="sidebar-bottom">
         <button class="privacy-link" onclick={() => (privacyOpen = true)}
-          ><Icon name="shield" size={17} /> Privacy & connection</button
+          >Privacy & connection</button
         >
         <button
           class="profile"
@@ -957,7 +954,7 @@
           >
         </button>
         <button class="sign-out-button" onclick={logout}
-          ><Icon name="logout" size={17} />Sign out</button
+          >Sign out</button
         >
       </div>
     </aside>
@@ -1089,7 +1086,7 @@
                 <button class="text-button" onclick={resetEdits}
                   >Reset changes</button
                 ><button class="primary small" onclick={addAssignment}
-                  ><Icon name="plus" size={16} /> Add hypothetical</button
+                  >Add hypothetical</button
                 >
               </div>{/if}
           </div>
@@ -1196,7 +1193,7 @@
             <button
               class="refresh-button"
               disabled={busy}
-              onclick={() => void load()}>↻ Refresh</button
+              onclick={() => void load()}>Refresh</button
             >
           </div>
           <section class="stats-grid">
@@ -1234,11 +1231,6 @@
                 {#each data.courses as course}<button
                     class="course-card"
                     onclick={() => openCourse(course)}
-                    ><div class="course-card-top">
-                      <span class="subject-icon"
-                        ><Icon name="book" size={22} /></span
-                      >
-                    </div>
                     <h3>{course.name}</h3>
                     <p>{course.teacher} <span>· Room {course.room}</span></p>
                     <div class="course-card-bottom">
@@ -1267,7 +1259,6 @@
                 </div>
               {/if}
               {#if !data.courses.length && !busy}<div class="empty-state">
-                  <Icon name="search" size={32} />
                   <h3>No courses yet</h3>
                   <p>
                     No courses are available for this reporting period. Try
@@ -1280,9 +1271,6 @@
               aria-labelledby="recent-assignments-title"
             >
               <h2 id="recent-assignments-title">Recent assignments</h2>
-              <p class="recent-assignments-note">
-                Latest due dates in this reporting period
-              </p>
               <ul class="recent-assignment-list">
                 {#each recentAssignments as assignment}
                   <li>
@@ -1328,7 +1316,7 @@
             <button
               class="refresh-button"
               disabled={busy}
-              onclick={() => loadResource(tab)}>↻ Refresh</button
+              onclick={() => loadResource(tab)}>Refresh</button
             >
           </div>
           {#if refreshTimes[tab]}<p class="resource-freshness">
@@ -1375,12 +1363,12 @@
             <button
               class="refresh-button"
               disabled={busy}
-              onclick={() => loadResource(tab)}>↻ Refresh</button
+              onclick={() => loadResource(tab)}>Refresh</button
             >
           </div>
           {#if tab === "schedule" && schedule.terms.length}
             <div class="term-line">
-              <span class="green-dot"></span><SelectMenu
+              <SelectMenu
                 label="Schedule term"
                 value={String(schedule.currentTerm)}
                 options={schedule.terms.map((term) => ({
@@ -1471,8 +1459,7 @@
                   aria-busy={!!item.id && !!downloading[item.id]}
                   onclick={() => downloadFile(item)}
                 >
-                  <span class="record-icon"><Icon name="file" size={18} /></span
-                  ><span class="document-copy"
+                  <span class="document-copy"
                     ><small>{item.date}</small><strong>{item.title}</strong
                     ><span>{item.detail}</span></span
                   >
@@ -1487,16 +1474,6 @@
                   >
                     {downloadErrors[item.id]}
                   </p>{/if}{:else}<article class="record-card">
-                  <span class="record-icon"
-                    ><Icon
-                      name={tab === "schedule"
-                        ? "clock"
-                        : tab === "mail"
-                          ? "mail"
-                          : "file"}
-                      size={18}
-                    /></span
-                  >
                   <div>
                     <small>{item.date}</small>
                     <h3>{item.title}</h3>
@@ -1505,10 +1482,6 @@
                 </article>{/if}{/each}{#if !shownRecords.length && !busy}<div
                 class="empty-state"
               >
-                <Icon
-                  name={navigation.find((n) => n.id === tab)?.icon}
-                  size={36}
-                />
                 {#if tab === "schedule"}
                   <h2>No classes to show</h2>
                   <p>
@@ -1543,30 +1516,19 @@
                 class="login-wordmark">Schoolity</span
               >
             </div>
-            <div class="login-meta">
-              <span class="login-district"
-                ><span class="district-dot" aria-hidden="true"
-                ></span>Anoka-Hennepin Schools</span
-              ><button
-                class="login-privacy"
-                onclick={() => (privacyOpen = true)}
-                ><Icon name="shield" size={13} /><span>Privacy</span></button
-              >
-            </div>
+            <button
+              class="login-privacy"
+              onclick={() => (privacyOpen = true)}
+              >Privacy</button
+            >
           </div>
 
           <div class="login-hero">
-            <p class="login-eyebrow" data-rise style="--i: 0">
-              <span class="eyebrow-dot" aria-hidden="true"></span>StudentVUE
-              sign-in · Anoka-Hennepin
-            </p>
             <h1 id="login-title" data-rise style="--i: 1">
               The Anoka-Hennepin student dashboard.
             </h1>
             <p class="login-deck" data-rise style="--i: 2">
-              Your gradebook, schedule, attendance and records in one place.
-              Schoolity reads the record your district already keeps, and never
-              changes it.
+              Your gradebook, schedule, attendance, and records.
             </p>
 
             <section
@@ -1577,10 +1539,7 @@
               data-rise
               style="--i: 3"
             >
-              <div class="login-form-head">
-                <h2 id="signin-title">Sign in</h2>
-                <span>StudentVUE</span>
-              </div>
+              <h2 class="login-form-title" id="signin-title">Sign in</h2>
               <form onsubmit={login}>
                 <label class="field" for="school-username">
                   <span>Username</span>
@@ -1637,10 +1596,7 @@
                   class="primary login-submit"
                   type="submit"
                   disabled={loginBusy || restoring}
-                  ><span>{loginBusy ? "Signing in…" : "Sign in"}</span><span
-                    class="submit-arrow"
-                    aria-hidden="true"><Icon name="arrow" size={15} /></span
-                  ></button
+                  ><span>{loginBusy ? "Signing in…" : "Sign in"}</span></button
                 >
               </form>
               <p class="login-help">
@@ -1671,7 +1627,6 @@
               <span>Gradebook</span><span>Quarter 2</span>
             </p>
             <div class="preview-course">
-              <span class="preview-icon"><Icon name="book" size={18} /></span>
               <div>
                 <strong>Algebra II</strong>
                 <small>Period 2 · Room 108</small>
@@ -1713,9 +1668,6 @@
           <ul class="index-list" data-rise style="--i: 3">
             {#each indexRows as row (row.name)}
               <li>
-                <span class="index-icon"
-                  ><Icon name={row.icon} size={17} /></span
-                >
                 <span class="index-copy">
                   <span class="index-name">{row.name}</span>
                   <span class="index-detail">{row.detail}</span>
@@ -1724,17 +1676,11 @@
             {/each}
           </ul>
           <div class="index-note" data-rise style="--i: 4">
-            <span class="index-note-icon" aria-hidden="true"
-              ><Icon name="shield" size={16} /></span
-            >
-            <div class="index-note-copy">
-              <p class="index-note-title">Read-only by design.</p>
-              <p>
-                Schoolity reads the record your district already keeps. Grade
-                estimates come from your assignments; district-reported grades
-                stay separate.
-              </p>
-            </div>
+            <p class="index-note-title">District records stay unchanged.</p>
+            <p>
+              Grade estimates use assignments; district-reported grades stay
+              separate.
+            </p>
           </div>
         </aside>
       </div>
@@ -1768,7 +1714,6 @@
           class="modal-close icon-button"
           aria-label="Close privacy"
           onclick={() => (privacyOpen = false)}><Icon name="close" /></button
-        ><Icon name="shield" size={32} />
         <h2 id="privacy-title">Privacy</h2>
         <p class="privacy-summary">
           Saved sign-in keeps an encrypted copy of your school login on
@@ -1800,14 +1745,10 @@
             including decrypting saved sign-ins if they control the encryption
             key.
           </p>
-          <h3>About this version</h3>
+          <h3>Grade estimates</h3>
           <p>
-            Login is required to access your school information. The district
-            feature coverage is still being verified across district responses.
-            Grade estimates may differ from district rules. This first version
-            includes gradebook, calculator, schedule, student info, course
-            history, attendance, inbox, and document-list adapters, and document
-            downloads.
+            Some district features are still being verified. Grade estimates
+            may differ from district rules.
           </p>
         </details>
         <button class="primary" onclick={() => (privacyOpen = false)}
