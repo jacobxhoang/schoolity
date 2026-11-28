@@ -33,6 +33,12 @@ private struct GradebookContent: View, Equatable {
                     .schoolityPageRow(bottom: 22)
 
                 SectionHeading(title: "Your courses", count: book.courses.count)
+                    .schoolityPageRow(bottom: 4)
+
+                Text("Grades here are Schoolity estimates, calculated from each course's assignments. Open a course for the district's grade and how the estimate is worked out.")
+                    .font(SchoolityText.meta)
+                    .foregroundStyle(SchoolityPalette.muted)
+                    .fixedSize(horizontal: false, vertical: true)
                     .schoolityPageRow(bottom: 10)
 
                 if !book.terms.isEmpty {
@@ -85,34 +91,36 @@ private struct GradebookContent: View, Equatable {
                         .schoolityPageRow(bottom: 10)
                 }
             }
-
-            if let error {
-                FailureCard(message: error, dismiss: dismiss) { Task { await refresh(nil) } }
-                    .schoolityPageRow(top: 4, bottom: 16)
-            }
         }
         .schoolityPageList()
+        // A failed refresh keeps the last grades on screen, so the failure is
+        // pinned above the list instead of below rows nobody scrolls to.
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if let error {
+                FailureCard(message: error, dismiss: dismiss) {
+                    Task { await refresh(nil) }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 4)
+                .padding(.bottom, 8)
+            }
+        }
         .onChange(of: book, initial: true) { _, next in
             recentAssignments = next?.recentAssignments ?? []
         }
         .animation(nil, value: book)
         .navigationTitle("Gradebook")
         .schoolityNavigationChrome()
-        .navigationDestination(isPresented: Binding(
-            get: { selectedCourse != nil },
-            set: { if !$0 { selectedCourse = nil } }
-        )) {
-            if let selectedCourse {
-                CourseDetailView(course: selectedCourse)
-            }
+        .navigationDestination(item: $selectedCourse) { course in
+            CourseDetailView(course: course)
         }
         .refreshable { await refresh(nil) }
-        // A successful load, including a pull to refresh, lands with a tap.
-        .sensoryFeedback(.success, trigger: updated)
     }
 }
 
-/// The website's term line: a bordered row holding the reporting period and freshness.
+/// The website's term line: a bordered row holding the reporting period and
+/// freshness. The choice opens the app's own popover menu, as every other list
+/// of options does, so a card row can never resize under the label or clip it.
 private struct TermLine: View {
     let book: Gradebook
     let isLoading: Bool
@@ -123,34 +131,33 @@ private struct TermLine: View {
         book.terms.first { $0.id == book.currentTerm }?.name ?? "Reporting period"
     }
 
+    /// Built outside the body so the row only reads a value and reports a choice.
+    private var term: Binding<Int> {
+        Binding(get: { book.currentTerm }, set: select)
+    }
+
     var body: some View {
-        Menu {
-            ForEach(book.terms) { term in
-                Button {
-                    select(term.id)
-                } label: {
-                    if term.id == book.currentTerm {
-                        Label(term.name, systemImage: "checkmark")
-                    } else {
-                        Text(term.name)
-                    }
-                }
-            }
-        } label: {
+        SchoolityMenu(
+            title: "Reporting period",
+            options: book.terms.map {
+                SchoolityMenuOption(value: $0.id, label: $0.name)
+            },
+            value: term,
+            isEnabled: !isLoading
+        ) { isOpen in
             HStack(spacing: 10) {
-                Circle()
-                    .fill(SchoolityPalette.ink)
-                    .frame(width: 6, height: 6)
-                    .accessibilityHidden(true)
+                Text("Term")
+                    .font(.subheadline)
+                    .foregroundStyle(SchoolityPalette.muted)
                 HStack(spacing: 6) {
                     Text(currentName)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(SchoolityPalette.ink)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
                         .contentTransition(.opacity)
                         .animation(.easeInOut(duration: 0.2), value: currentName)
-                    Image(systemName: "chevron.down")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(SchoolityPalette.muted)
+                    SchoolityMenuChevron(isOpen: isOpen)
                 }
                 Spacer(minLength: 8)
                 if isLoading {
@@ -166,15 +173,25 @@ private struct TermLine: View {
             .padding(.horizontal, 14)
             .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
             .contentShape(Rectangle())
-            .background(SchoolityPalette.panel, in: RoundedRectangle(cornerRadius: SchoolityRadius.panel, style: .continuous))
+            .background(
+                SchoolityPalette.panel,
+                in: RoundedRectangle(
+                    cornerRadius: SchoolityRadius.panel,
+                    style: .continuous
+                )
+            )
             .overlay {
-                RoundedRectangle(cornerRadius: SchoolityRadius.panel, style: .continuous)
-                    .strokeBorder(SchoolityPalette.line, lineWidth: 1)
-                    .allowsHitTesting(false)
+                RoundedRectangle(
+                    cornerRadius: SchoolityRadius.panel,
+                    style: .continuous
+                )
+                .strokeBorder(SchoolityPalette.line, lineWidth: 1)
+                .allowsHitTesting(false)
             }
         }
-        .disabled(isLoading)
-        .accessibilityLabel("Reporting period, \(currentName)")
+        // Choosing a reporting period is the reader's own action, so it lands
+        // with a tap. A load nobody asked for stays silent.
+        .sensoryFeedback(.selection, trigger: book.currentTerm)
     }
 }
 
@@ -276,7 +293,7 @@ private struct GradeAverageRing: View {
                     .contentTransition(.numericText())
             } else {
                 Text("—")
-                    .font(.headline)
+                    .font(SchoolityText.cardTitle)
                     .foregroundStyle(SchoolityPalette.muted)
             }
         }
@@ -307,7 +324,7 @@ struct CourseRow: View {
                     Spacer(minLength: 8)
                     grade
                     Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
+                        .font(SchoolityText.caption.weight(.semibold))
                         .foregroundStyle(SchoolityPalette.faint)
                         .accessibilityHidden(true)
                 }
@@ -328,7 +345,7 @@ struct CourseRow: View {
                 .foregroundStyle(SchoolityPalette.ink)
                 .contentTransition(.numericText(value: score ?? 0))
             Text(GradeMath.letter(score))
-                .font(.caption.weight(.semibold))
+                .font(SchoolityText.caption.weight(.semibold))
                 .foregroundStyle(customization.gradeColor(score))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
@@ -345,7 +362,7 @@ struct CourseRow: View {
     private var identity: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(customization.name(for: course.name))
-                .font(.headline)
+                .font(SchoolityText.cardTitle)
                 .foregroundStyle(SchoolityPalette.ink)
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
@@ -368,7 +385,7 @@ struct CourseDetailView: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     let original: Course
     @State private var course: Course
-    @State private var presentedSheet: Assignment?
+    @State private var sheet: Sheet?
     @State private var showReset = false
     @State private var detailSection: DetailSection = .assignments
     @State private var expandedAssignmentIDs: Set<String> = []
@@ -376,6 +393,22 @@ struct CourseDetailView: View {
     private enum DetailSection: String, CaseIterable {
         case assignments = "Assignments"
         case breakdown = "Breakdown"
+    }
+
+    /// One sheet per course screen: the score editor and the class appearance
+    /// editor never open together, so they share a state.
+    private enum Sheet: Identifiable {
+        case score(Assignment)
+        case appearance
+
+        var id: String {
+            switch self {
+            case .score(let assignment):
+                return "score-\(assignment.id)"
+            case .appearance:
+                return "appearance"
+            }
+        }
     }
 
     init(course: Course) {
@@ -392,6 +425,20 @@ struct CourseDetailView: View {
                 GradeHistoryView(course: course).equatable()
             }
             .schoolityCard(padding: 20)
+            .schoolityPageRow(bottom: 16)
+
+            DisclosureGroup {
+                Text("Schoolity calculates this estimate from the graded assignments in this course, weighted by the district's categories when it provides them. The school grade is reported by the district and never changes here.")
+                    .font(SchoolityText.meta)
+                    .foregroundStyle(SchoolityPalette.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            } label: {
+                Text("About estimates")
+                    .font(SchoolityText.cardTitle)
+                    .foregroundStyle(SchoolityPalette.ink)
+            }
+            .tint(SchoolityPalette.ink)
+            .schoolityCard(padding: 16)
             .schoolityPageRow(bottom: 16)
 
             Picker("Section", selection: $detailSection) {
@@ -411,8 +458,27 @@ struct CourseDetailView: View {
         .schoolityPageList()
         .navigationTitle(customization.name(for: course.name))
         .schoolityNavigationChrome()
-        .sheet(item: $presentedSheet) { assignment in
-            ScoreEditor(assignment: assignment, categories: categoryNames, save: saveAssignment)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    sheet = .appearance
+                } label: {
+                    Image(systemName: "paintbrush")
+                }
+                .accessibilityLabel("Customize class")
+            }
+        }
+        .sheet(item: $sheet) { item in
+            switch item {
+            case .score(let assignment):
+                ScoreEditor(
+                    assignment: assignment,
+                    categories: categoryNames,
+                    save: saveAssignment
+                )
+            case .appearance:
+                ClassAppearanceSheet(title: course.name)
+            }
         }
         .confirmationDialog("Reset all hypothetical changes?", isPresented: $showReset, titleVisibility: .visible) {
             Button("Reset changes", role: .destructive) { course = original }
@@ -458,7 +524,7 @@ struct CourseDetailView: View {
             SectionHeading(title: "Assignments", count: course.assignments.count)
             if changed {
                 Button("Reset changes", role: .destructive) { showReset = true }
-                    .font(.footnote.weight(.medium))
+                    .font(SchoolityText.meta.weight(.medium))
                     .foregroundStyle(SchoolityPalette.muted)
                     .frame(minHeight: 44)
                     .accessibilityHint("Restore the district's assignments and scores")
@@ -467,7 +533,7 @@ struct CourseDetailView: View {
         .schoolityPageRow(bottom: 10)
 
         Button {
-            presentedSheet = Assignment(
+            sheet = .score(Assignment(
                 id: UUID().uuidString,
                 title: "",
                 category: categoryNames.first ?? "Assignments",
@@ -475,7 +541,7 @@ struct CourseDetailView: View {
                 possible: 0,
                 due: "",
                 hypothetical: true
-            )
+            ))
         } label: {
             Label("Add hypothetical score", systemImage: "plus")
                 .frame(maxWidth: .infinity)
@@ -506,7 +572,7 @@ struct CourseDetailView: View {
                             }
                         }
                     ),
-                    edit: { presentedSheet = assignment },
+                    edit: { sheet = .score(assignment) },
                     remove: removable(assignment) ? { course.assignments.removeAll { $0.id == assignment.id } } : nil
                 )
                 .schoolityCard(padding: 16)
@@ -595,6 +661,10 @@ struct GradeHistoryView: View, Equatable {
                     PointMark(x: .value("Graded assignment", point.id), y: .value("Grade", point.score))
                         .foregroundStyle(customization.gradeColor(point.score))
                         .symbolSize(points.count > 30 ? 6 : 18)
+                        // Each point is its own element, so VoiceOver can read
+                        // the course's history one graded assignment at a time.
+                        .accessibilityLabel("Graded assignment \(point.id)")
+                        .accessibilityValue(GradeMath.percent(point.score))
                 }
                 .chartYScale(domain: min(0, points.map(\.score).min() ?? 0)...max(100, points.map(\.score).max() ?? 100))
                 .chartXAxis(.hidden)
@@ -634,10 +704,21 @@ struct ScoreEditor: View {
                     Picker("Category", selection: $assignment.category) {
                         ForEach(categories, id: \.self) { Text($0).tag($0) }
                     }
+                } footer: {
+                    Text("A hypothetical assignment stays on this iPhone. Your school record is not changed.")
                 }
-                Section("Hypothetical score") {
+                Section {
                     TextField("Points earned", text: $earned).keyboardType(.decimalPad)
                     TextField("Points possible", text: $possible).keyboardType(.decimalPad)
+                } header: {
+                    Text("Hypothetical score")
+                } footer: {
+                    if let earnedValue, let possibleValue,
+                       possibleValue > 0, earnedValue > possibleValue {
+                        Text("More points than the assignment is worth. The estimate shows the result.")
+                    } else {
+                        Text("Schoolity recalculates the course estimate from these points. The district's score stays as it is.")
+                    }
                 }
             }
             .scrollContentBackground(.hidden)
@@ -705,19 +786,19 @@ private struct RecentAssignmentRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(item.assignment.title.isEmpty ? "Untitled assignment" : item.assignment.title)
-                .font(.footnote.weight(.semibold))
+                .font(SchoolityText.meta.weight(.semibold))
                 .foregroundStyle(SchoolityPalette.ink)
                 .fixedSize(horizontal: false, vertical: true)
             Text(item.course.name)
-                .font(.caption)
+                .font(SchoolityText.caption)
                 .foregroundStyle(SchoolityPalette.muted)
             HStack(alignment: .firstTextBaseline, spacing: 12) {
                 Text(dueLabel)
-                    .font(.caption)
+                    .font(SchoolityText.caption)
                     .foregroundStyle(SchoolityPalette.muted)
                 Spacer(minLength: 8)
                 Text(scoreLabel)
-                    .font(.caption.weight(.medium))
+                    .font(SchoolityText.caption.weight(.medium))
                     .foregroundStyle(SchoolityPalette.ink)
                     .monospacedDigit()
             }

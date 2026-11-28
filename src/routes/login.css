@@ -1,7 +1,9 @@
 /* Sign-in surface. Kept light in both themes: the credential screen is the one
-   surface that does not follow the workspace theme. */
+   surface that does not follow the workspace theme. Its palette belongs to the
+   signed-out shell rather than to the page, so the Privacy and Account dialogs
+   opened from this screen keep it too. */
 
-.login-page {
+.signed-out {
   --canvas: #f3f3f3;
   --panel: #ffffff;
   --ink: #0f0f0f;
@@ -9,9 +11,16 @@
   --faint: #6e6e6e;
   --line: #e4e4e4;
   --line-strong: #cfcfcf;
+  --line-hover: #9a9a9a;
   --field: #f5f5f5;
   --soft: #ececec;
+  --ink-hover: #262626;
+  --ink-press: #000000;
+  --on-ink: #ffffff;
   color-scheme: light;
+}
+
+.login-page {
   display: flex;
   flex-direction: column;
   min-height: 100svh;
@@ -53,15 +62,15 @@
   padding-bottom: 1px;
   border-radius: 9px;
   background: var(--ink);
-  color: #ffffff;
+  color: var(--on-ink);
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: var(--t-mark);
   font-weight: 700;
   line-height: 1;
 }
 .login-wordmark {
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: var(--t-mark);
   font-weight: 600;
   letter-spacing: -0.045em;
 }
@@ -105,7 +114,7 @@
   max-width: 54ch;
   margin-top: 16px;
   color: var(--muted);
-  font-size: 16px;
+  font-size: var(--t-h3);
   line-height: 1.65;
   text-wrap: pretty;
 }
@@ -127,7 +136,7 @@
 .login-form-title {
   margin-bottom: 18px;
   font-family: var(--font-display);
-  font-size: 21px;
+  font-size: var(--t-h2);
   font-weight: 600;
   letter-spacing: -0.025em;
   line-height: 1.2;
@@ -156,18 +165,18 @@
   min-height: 48px;
   margin: 0;
   padding: 0 14px;
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--field-line);
   border-radius: var(--r-chip);
   background: var(--field);
   color: var(--ink);
-  font-size: 15px;
+  font-size: var(--t-body);
   line-height: 1.2;
   transition:
     background 0.18s ease,
     border-color 0.18s ease;
 }
 .login-page .field input:hover {
-  border-color: #9a9a9a;
+  border-color: var(--line-hover);
 }
 .login-page .field input:focus-visible {
   border-color: var(--ink);
@@ -178,7 +187,7 @@
 .password-control {
   display: flex;
   align-items: stretch;
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--field-line);
   border-radius: var(--r-chip);
   background: var(--field);
   transition:
@@ -186,7 +195,7 @@
     border-color 0.18s ease;
 }
 .password-control:hover {
-  border-color: #9a9a9a;
+  border-color: var(--line-hover);
 }
 .password-control:focus-within {
   border-color: var(--ink);
@@ -233,7 +242,7 @@
   gap: 10px;
   min-height: var(--s6);
   color: var(--ink);
-  font-size: 13.5px;
+  font-size: var(--t-meta);
   cursor: pointer;
 }
 .remember-sign-in input[type="checkbox"] {
@@ -272,16 +281,16 @@
   padding: 0 18px;
   border-radius: var(--r-chip);
   background: var(--ink);
-  color: #ffffff;
-  font-size: 14px;
+  color: var(--on-ink);
+  font-size: var(--t-meta);
   font-weight: 600;
   box-shadow: 0 12px 30px -22px rgba(0, 0, 0, 0.7);
 }
 .login-page .primary.login-submit:hover {
-  background: #262626;
+  background: var(--ink-hover);
 }
 .login-page .primary.login-submit:active {
-  background: #000000;
+  background: var(--ink-press);
   transform: translateY(1px);
 }
 .login-help {
@@ -320,13 +329,8 @@
   flex-direction: column;
   min-width: 0;
   padding: 24px clamp(22px, 3.4vw, 44px);
-  background: radial-gradient(
-    120% 100% at 100% 0%,
-    #1c1c1c 0%,
-    #111111 52%,
-    var(--rail-end) 100%
-  );
-  box-shadow: inset 1px 0 0 #ffffff12;
+  background: var(--rail);
+  box-shadow: inset 1px 0 0 var(--rail-line);
   color: var(--rail-ink);
 }
 .index-head {
@@ -340,134 +344,14 @@
 .index-head h2 {
   color: var(--rail-ink);
   font-family: var(--font-display);
-  font-size: clamp(24px, 2.2vw, 30px);
+  font-size: clamp(var(--t-stat-sm), 2.2vw, 30px);
   font-weight: 600;
   letter-spacing: -0.045em;
   line-height: 1.05;
 }
-.index-head span {
-  padding: 5px 10px;
-  border: 1px solid var(--rail-line);
-  border-radius: var(--r-pill);
-  background: #ffffff0a;
-  color: var(--rail-muted);
-  font-size: var(--t-mini);
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  line-height: 1.4;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.index-preview {
-  margin-top: 18px;
-  padding: 16px;
-  border: 1px solid var(--rail-line);
-  border-radius: var(--r);
-  background: #ffffff08;
-}
-.preview-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  color: var(--rail-muted);
-  font-size: var(--t-mini);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-.preview-course {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 14px;
-}
-.preview-course > div {
-  min-width: 0;
-}
-.preview-course strong {
-  display: block;
-  color: var(--rail-ink);
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.35;
-}
-.preview-course small {
-  display: block;
-  margin-top: 2px;
-  color: var(--rail-muted);
-  font-size: var(--t-mini);
-}
-.preview-score {
-  margin-left: auto;
-  color: var(--rail-ink);
-  font-family: var(--font-display);
-  font-size: 24px;
-  font-weight: 600;
-  letter-spacing: -0.04em;
-  font-variant-numeric: tabular-nums;
-}
-.preview-rows {
-  display: grid;
-  gap: 7px;
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px solid var(--rail-line);
-}
-.preview-rows p {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  color: var(--rail-muted);
-  font-size: 11.5px;
-  line-height: 1.4;
-}
-.preview-rows p > span:first-child {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.preview-rows p > span:last-child {
-  flex: 0 0 auto;
-  color: var(--rail-ink);
-  font-variant-numeric: tabular-nums;
-}
-.preview-rows .preview-pending {
-  color: var(--rail-muted);
-}
-
-.preview-pair {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid var(--rail-line);
-}
-.preview-pair span {
-  display: block;
-  color: var(--rail-muted);
-  font-size: var(--t-mini);
-}
-.preview-pair strong {
-  display: block;
-  margin-top: 2px;
-  color: var(--rail-ink);
-  font-size: 13.5px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-.preview-chart {
-  display: block;
-  width: 100%;
-  height: 56px;
-  margin-top: 12px;
-  color: var(--rail-ink);
-  opacity: 0.75;
-}
 
 .index-list {
-  margin-top: 18px;
+  margin-top: 8px;
   padding: 0;
   list-style: none;
 }
@@ -478,13 +362,16 @@
   padding: 11px 0;
   border-top: 1px solid var(--rail-line);
 }
+.index-list li:first-child {
+  border-top: 0;
+}
 .index-copy {
   min-width: 0;
 }
 .index-name {
   display: block;
   color: var(--rail-ink);
-  font-size: 13.5px;
+  font-size: var(--t-meta);
   font-weight: 600;
   letter-spacing: -0.01em;
   line-height: 1.35;
@@ -504,7 +391,7 @@
 }
 .index-note-title {
   color: var(--rail-ink);
-  font-size: 13px;
+  font-size: var(--t-mini);
   font-weight: 600;
 }
 .index-note p {
@@ -592,7 +479,7 @@
   }
   .login-deck {
     margin-top: 12px;
-    font-size: 14px;
+    font-size: var(--t-meta);
   }
   .login-form-panel {
     margin-top: 22px;
@@ -603,10 +490,10 @@
   }
   .login-page .field input,
   .login-page .password-control input {
-    font-size: 16px;
+    font-size: var(--t-h3);
   }
   .index-head h2 {
-    font-size: 24px;
+    font-size: var(--t-page-sm);
   }
 }
 

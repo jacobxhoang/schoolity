@@ -2,7 +2,7 @@
 
 An independently implemented student dashboard for Anoka-Hennepin. A valid StudentVUE login is required to access the workspace. There is no demo entry point.
 
-The native SwiftUI iPhone app is in [`ios/`](ios/README.md). On pushes to `main`, the **iOS IPA** GitHub Actions workflow packages and uploads the unsigned app, runs simulator tests, then publishes a release only if the tests pass. The **iOS** workflow runs simulator tests for pull requests and can be started manually. SideStore, Feather, and AltStore users can add the [app source](app.json). See the [iPhone build instructions](ios/README.md) for Xcode, signing, and installation requirements.
+The native SwiftUI iPhone app is in [`ios/`](ios/README.md) and opens from `ios/Schoolity.xcodeproj`, which is ready for the simulator. On pushes to `main`, the **iOS IPA** GitHub Actions workflow packages and uploads the unsigned app, runs simulator tests, then publishes a release only if the tests pass. The **iOS** workflow runs simulator tests for pull requests and can be started manually. SideStore, Feather, and AltStore users can add the [app source](app.json). See the [iPhone build instructions](ios/README.md) for Xcode, signing, and installation requirements.
 
 ## Run locally
 
@@ -32,7 +32,7 @@ For the production Node server set HOST=127.0.0.1, PORT=5180, and ORIGIN=http://
 
 ## Features and privacy
 
-The workspace includes a gradebook, original weighted/points-based calculations, hypothetical assignments, schedule terms, and read adapters for inbox and document listings. Unauthenticated HTML renders the login screen; every school-data request checks the session cookie. Signing out clears the displayed school data.
+The workspace includes a gradebook, original weighted/points-based calculations, hypothetical assignments, schedule terms, a search over the courses, assignments, messages, documents and classes already loaded, and read adapters for inbox and document listings. Unauthenticated HTML renders the login screen; every school-data request checks the session cookie. Signing out clears the displayed school data.
 
 Course detail keeps the district grade beside the Schoolity estimate, with a visible grade-history graph above the hypothetical controls and assignments. Calculation details stay under “About estimates.” Hypothetical mode announces score changes and supports removing individual hypothetical assignments. Course navigation supports browser Back/Forward; refresh failures retain the current workspace and offer Retry. Login includes password reveal. Mobile navigation supports keyboard focus trapping, Escape, and focus restoration.
 
@@ -40,7 +40,7 @@ The web client and server do not save passwords by default. When a student selec
 
 ## Verification and limits
 
-Calculator, data mapping, connection validation, fixed district configuration, schedule mapping, and student-record adapters have automated coverage. Real Anoka account login still requires verification. District grading policies may differ from estimates. Inbox is read-only and limited to 50 messages. Authenticated document downloads are implemented with account-membership checks and strict file decoding; live district download compatibility still needs verification. Inbox attachments can be downloaded from expanded messages using the authenticated mail API; live district compatibility still needs verification. A live calendar subscription feed, two-way calendar sync, and persistent offline caching are not implemented. No actual student credentials were used during development tests.
+Calculator, data mapping, connection validation, fixed district configuration, schedule mapping, and student-record adapters have automated coverage. Real Anoka account login still requires verification. District grading policies may differ from estimates. Inbox is read-only, limited to 50 messages, and filterable by subject, sender, and date. Authenticated document downloads are implemented with account-membership checks and strict file decoding; live district download compatibility still needs verification. Inbox attachments can be downloaded from expanded messages using the authenticated mail API; live district compatibility still needs verification. A live calendar subscription feed, two-way calendar sync, and persistent offline caching are not implemented. No actual student credentials were used during development tests.
 
 ## Original implementation
 
@@ -50,7 +50,9 @@ No source code, assets, or branding is imported from Student or GradeCompass. Th
 
 `PRODUCT.md` records the confirmed audience, workflows, scope, and constraints. `.impeccable/config.json` records the user's image-mockup-first preference for future landing and showcase surfaces; app screens remain code-first. `.impeccable/live/config.json` identifies the SvelteKit shell for future local development sessions. Live mode is not currently started or injected into the production app.
 
-Keep durable design context in version control: `PRODUCT.md`, `DESIGN.md` when created, `.impeccable/config.json`, `.impeccable/surfaces/`, `.impeccable/design.json`, `.impeccable/live/config.json`, and `.impeccable/critique/ignore.md` when created. Do not blanket-ignore `.impeccable/`. Runtime questions, mocks, review captures, and critique snapshots manage their own ignores; `.impeccable/config.local.json` stays machine-local.
+Keep durable design context in version control: `PRODUCT.md`, `DESIGN.md` when created, `.impeccable/evaluation.md`, `.impeccable/config.json`, `.impeccable/surfaces/`, `.impeccable/design.json`, `.impeccable/live/config.json`, and `.impeccable/critique/ignore.md` when created. Do not blanket-ignore `.impeccable/`. Runtime questions, mocks, review captures, and critique snapshots manage their own ignores; `.impeccable/config.local.json` stays machine-local.
+
+While `npm run dev` runs, `/design` serves the evaluation and the critique snapshots in `.impeccable` as plain text, with the evaluation first and the runs beside their scores. The route answers 404 outside development, and `.impeccable` is excluded from deployment, so the page is never part of the published app.
 
 ## Student record pages
 

@@ -70,7 +70,7 @@ private struct RecordDestinationRow: View {
             IconTile(symbol: symbol, size: 40, background: .field)
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .font(.headline)
+                    .font(SchoolityText.cardTitle)
                     .foregroundStyle(SchoolityPalette.ink)
                 if !typeSize.isAccessibilitySize {
                     Text(detail)
@@ -81,7 +81,7 @@ private struct RecordDestinationRow: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             Image(systemName: "chevron.right")
-                .font(.caption.weight(.semibold))
+                .font(SchoolityText.caption.weight(.semibold))
                 .foregroundStyle(SchoolityPalette.faint)
                 .accessibilityHidden(true)
         }
@@ -106,7 +106,7 @@ struct StudentInfoView: View {
                     IconTile(symbol: "barcode", size: 40, background: .field)
                     VStack(alignment: .leading, spacing: 3) {
                         Text("Student ID")
-                            .font(.headline)
+                            .font(SchoolityText.cardTitle)
                             .foregroundStyle(SchoolityPalette.ink)
                         Text(store.profile?.studentId ?? "View your district ID")
                             .font(SchoolityText.meta)
@@ -114,7 +114,7 @@ struct StudentInfoView: View {
                     }
                     Spacer(minLength: 8)
                     Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
+                        .font(SchoolityText.caption.weight(.semibold))
                         .foregroundStyle(SchoolityPalette.faint)
                         .accessibilityHidden(true)
                 }
@@ -166,15 +166,20 @@ struct StudentInfoView: View {
                 )
                 .schoolityPageRow(bottom: 12)
             }
-
+        }
+        .schoolityPageList()
+        // A failed refresh keeps the last record on screen, so the failure is
+        // pinned above the list instead of below rows nobody scrolls to.
+        .safeAreaInset(edge: .top, spacing: 0) {
             if let error = store.recordErrors[.student] {
                 FailureCard(message: error, dismiss: { store.recordErrors[.student] = nil }) {
                     Task { await store.loadRecord(.student, refresh: true) }
                 }
-                .schoolityPageRow(top: 4, bottom: 16)
+                .padding(.horizontal, 20)
+                .padding(.top, 4)
+                .padding(.bottom, 8)
             }
         }
-        .schoolityPageList()
         .navigationTitle("Student Info")
         .schoolityNavigationChrome()
         .navigationDestination(isPresented: $showStudentID) { StudentIDPage() }
@@ -286,7 +291,7 @@ private struct StudentInfoDisclosure<Content: View>: View {
                         .foregroundStyle(SchoolityPalette.ink)
                     Spacer(minLength: 8)
                     Image(systemName: "chevron.down")
-                        .font(.caption.weight(.semibold))
+                        .font(SchoolityText.caption.weight(.semibold))
                         .foregroundStyle(SchoolityPalette.muted)
                         .rotationEffect(.degrees(isExpanded ? 180 : 0))
                         .accessibilityHidden(true)
@@ -373,7 +378,7 @@ private struct StudentInfoTableRow: View {
                 if index < row.count {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(table.columns[index])
-                            .font(.caption)
+                            .font(SchoolityText.caption)
                             .foregroundStyle(SchoolityPalette.muted)
                         Text(StudentRecordFormat.value(row[index]))
                             .font(.subheadline)
@@ -424,15 +429,18 @@ struct AttendanceView: View {
                 )
                 .schoolityPageRow(bottom: 12)
             }
-
+        }
+        .schoolityPageList()
+        .safeAreaInset(edge: .top, spacing: 0) {
             if let error = store.recordErrors[.attendance] {
                 FailureCard(message: error, dismiss: { store.recordErrors[.attendance] = nil }) {
                     Task { await store.loadRecord(.attendance, refresh: true) }
                 }
-                .schoolityPageRow(top: 4, bottom: 16)
+                .padding(.horizontal, 20)
+                .padding(.top, 4)
+                .padding(.bottom, 8)
             }
         }
-        .schoolityPageList()
         .navigationTitle("Attendance")
         .schoolityNavigationChrome()
         .task { await store.loadRecord(.attendance) }
@@ -513,11 +521,11 @@ private struct AttendancePeriodRow: View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(alignment: .firstTextBaseline) {
                 Text(period.period.isEmpty ? "Period not provided" : "Period \(period.period)")
-                    .font(.caption)
+                    .font(SchoolityText.caption)
                     .foregroundStyle(SchoolityPalette.muted)
                 Spacer(minLength: 8)
                 Text(period.status.isEmpty ? "Status not provided" : period.status)
-                    .font(.footnote.weight(.semibold))
+                    .font(SchoolityText.meta.weight(.semibold))
                     .foregroundStyle(SchoolityPalette.ink)
                     .multilineTextAlignment(.trailing)
             }
@@ -527,7 +535,7 @@ private struct AttendancePeriodRow: View {
             let detail = [period.teacher, period.reason].filter { !$0.isEmpty }.joined(separator: " · ")
             if !detail.isEmpty {
                 Text(detail)
-                    .font(.caption)
+                    .font(SchoolityText.caption)
                     .foregroundStyle(SchoolityPalette.muted)
             }
         }
@@ -582,17 +590,19 @@ struct CourseHistoryView: View {
                     )
                     .padding(.bottom, 12)
                 }
-
-                if let error = store.recordErrors[.history] {
-                    FailureCard(message: error, dismiss: { store.recordErrors[.history] = nil }) {
-                        Task { await store.loadRecord(.history, refresh: true) }
-                    }
-                    .padding(.top, 4)
-                    .padding(.bottom, 16)
-                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 20)
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if let error = store.recordErrors[.history] {
+                FailureCard(message: error, dismiss: { store.recordErrors[.history] = nil }) {
+                    Task { await store.loadRecord(.history, refresh: true) }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 4)
+                .padding(.bottom, 8)
+            }
         }
         .background { SchoolityBackdrop() }
         .navigationTitle("Course History")
@@ -646,7 +656,7 @@ struct CourseHistoryView: View {
                                 GraduationRequirementSummary(requirement: requirement)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                 Image(systemName: "chevron.down")
-                                    .font(.caption.weight(.semibold))
+                                    .font(SchoolityText.caption.weight(.semibold))
                                     .rotationEffect(.degrees(openRequirements.contains(key) ? 180 : 0))
                                     .accessibilityHidden(true)
                             }
@@ -687,7 +697,7 @@ struct CourseHistoryView: View {
                         .foregroundStyle(SchoolityPalette.ink)
                     Spacer(minLength: 8)
                     Image(systemName: "chevron.down")
-                        .font(.caption.weight(.semibold))
+                        .font(SchoolityText.caption.weight(.semibold))
                         .foregroundStyle(SchoolityPalette.muted)
                         .rotationEffect(.degrees(expanded ? 180 : 0))
                         .accessibilityHidden(true)
@@ -723,7 +733,7 @@ struct CourseHistoryView: View {
                         }
 
                         Text("\(shownCourses(page).count) \(shownCourses(page).count == 1 ? "course" : "courses")")
-                            .font(.caption)
+                            .font(SchoolityText.caption)
                             .foregroundStyle(SchoolityPalette.faint)
 
                         if shownCourses(page).isEmpty {
@@ -828,12 +838,12 @@ private struct GraduationRequirementSummary: View {
                     inProgress: requirement.inProgress
                 )
                 Text("\(String(format: "%.1f", max(0, completed / required * 100)))% · \(StudentRecordFormat.credit(completed)) of \(StudentRecordFormat.credit(required)) credits")
-                    .font(.caption)
+                    .font(SchoolityText.caption)
                     .foregroundStyle(SchoolityPalette.muted)
                     .monospacedDigit()
             } else {
                 Text("Progress not provided")
-                    .font(.caption)
+                    .font(SchoolityText.caption)
                     .foregroundStyle(SchoolityPalette.muted)
             }
         }
@@ -847,7 +857,7 @@ private struct GraduationLegend: View {
             HStack(spacing: 14) { entries }
             VStack(alignment: .leading, spacing: 4) { entries }
         }
-        .font(.caption)
+        .font(SchoolityText.caption)
         .foregroundStyle(SchoolityPalette.muted)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Progress legend: completed, in progress, remaining")
@@ -937,7 +947,7 @@ private struct GraduationRequirementDetail: View {
                     Text(StudentRecordFormat.credit(requirement.remaining))
                 }
             }
-            .font(.caption)
+            .font(SchoolityText.caption)
             .monospacedDigit()
 
             if loading.contains(key) {
@@ -966,7 +976,7 @@ private struct SubjectDetailGroup: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(label)
-                .font(.footnote.weight(.semibold))
+                .font(SchoolityText.meta.weight(.semibold))
                 .foregroundStyle(SchoolityPalette.ink)
             if rows.isEmpty {
                 Text("No \(label.lowercased()) classes were returned for this subject.")
@@ -997,7 +1007,7 @@ private struct CourseHistoryRow: View {
             }
             if !course.code.isEmpty {
                 Text(course.code)
-                    .font(.caption)
+                    .font(SchoolityText.caption)
                     .foregroundStyle(SchoolityPalette.faint)
             }
             let place = [course.school, [course.year, course.term].filter { !$0.isEmpty }.joined(separator: " · ")]
@@ -1014,7 +1024,7 @@ private struct CourseHistoryRow: View {
                 }
                 Text("\(StudentRecordFormat.credit(course.attempted)) attempted · \(StudentRecordFormat.credit(course.completed)) completed")
             }
-            .font(.caption)
+            .font(SchoolityText.caption)
             .foregroundStyle(SchoolityPalette.muted)
             .monospacedDigit()
         }

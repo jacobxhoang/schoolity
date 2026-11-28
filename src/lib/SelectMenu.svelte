@@ -163,7 +163,7 @@
     border-radius: var(--r-chip);
     background: var(--field);
     color: var(--ink);
-    font-size: 14px;
+    font-size: var(--t-meta);
     text-align: left;
   }
   .select-trigger > span:first-child {
@@ -180,7 +180,7 @@
     transform: rotate(-90deg);
   }
   .select-trigger:hover {
-    border-color: var(--accent);
+    border-color: var(--line-strong);
   }
   .select-menu {
     position: fixed;
@@ -207,7 +207,7 @@
     min-height: 44px;
     padding: 10px 12px;
     border-radius: 7px;
-    font-size: 14px;
+    font-size: var(--t-meta);
     text-align: left;
     overflow-wrap: anywhere;
   }

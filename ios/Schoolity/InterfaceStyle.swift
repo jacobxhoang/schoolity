@@ -70,29 +70,40 @@ enum SchoolityRadius {
 }
 
 enum SchoolitySpace {
+    static let s0: CGFloat = 4
     static let s1: CGFloat = 8
     static let s2: CGFloat = 12
     static let s3: CGFloat = 16
-    static let s4: CGFloat = 24
-    static let s5: CGFloat = 32
+    static let s4: CGFloat = 20
+    static let s5: CGFloat = 24
+    static let s6: CGFloat = 28
+    static let s7: CGFloat = 32
+    static let s8: CGFloat = 36
+    static let s9: CGFloat = 44
 }
 
 /// The website's type scale in the system face, so Dynamic Type still applies.
+/// Every view reads a role here instead of naming a font locally: `sectionTitle`
+/// for a screen section, `cardTitle` for the title inside a card, `body` for
+/// reading text, `meta` for supporting text and `caption` for compact badges and
+/// table headers.
 enum SchoolityText {
-    static let pageTitle = Font.system(.largeTitle, weight: .semibold)
     static let sectionTitle = Font.system(.title3, weight: .semibold)
     static let cardTitle = Font.headline
     static let body = Font.subheadline
     static let meta = Font.footnote
+    static let caption = Font.caption
+    /// Chevrons and other small glyphs that follow a label's size.
+    static let icon = Font.caption2
     static let stat = Font.system(.title, weight: .semibold)
     static let statSmall = Font.system(.title3, weight: .semibold)
 }
 
-/// The sign-in screens keep the original teal accent; the signed-in workspace
-/// uses the website's ink accent unless the reader chose their own.
+/// Action color. The app's own accent (deep teal in Light Mode, pale teal in
+/// Dark Mode) covers sheets and dialogs; the sign-in screens replace it with the
+/// login ink, and the signed-in workspace uses the reader's accent.
 enum SchoolityStyle {
     static let accent = Color.accentColor
-    static let muted = SchoolityPalette.muted
 }
 
 /// Shared motion tokens. Every spring tier is named for the moment it covers, and
@@ -124,7 +135,7 @@ struct SchoolityBackdrop: View {
 // MARK: - Surfaces
 
 struct SchoolityCardSurface: ViewModifier {
-    var padding: CGFloat = 18
+    var padding: CGFloat = SchoolitySpace.s3
     var radius: CGFloat = SchoolityRadius.card
 
     func body(content: Content) -> some View {
@@ -144,19 +155,19 @@ struct SchoolityCardSurface: ViewModifier {
 
 extension View {
     /// A flat panel card with a fine border, the website's only surface level.
-    func schoolityCard(padding: CGFloat = 18, radius: CGFloat = SchoolityRadius.card) -> some View {
+    func schoolityCard(padding: CGFloat = SchoolitySpace.s3, radius: CGFloat = SchoolityRadius.card) -> some View {
         modifier(SchoolityCardSurface(padding: padding, radius: radius))
     }
 
     /// A full-bleed card row inside a plain `List`.
-    func schoolityPageRow(top: CGFloat = 0, bottom: CGFloat = 12, horizontal: CGFloat = 20) -> some View {
+    func schoolityPageRow(top: CGFloat = 0, bottom: CGFloat = SchoolitySpace.s2, horizontal: CGFloat = SchoolitySpace.s4) -> some View {
         listRowInsets(EdgeInsets(top: top, leading: horizontal, bottom: bottom, trailing: horizontal))
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
     }
 
     /// A card with the page's equal gutters already applied.
-    func schoolityCardRow(top: CGFloat = 0, bottom: CGFloat = 12, padding: CGFloat = 18) -> some View {
+    func schoolityCardRow(top: CGFloat = 0, bottom: CGFloat = SchoolitySpace.s2, padding: CGFloat = SchoolitySpace.s3) -> some View {
         schoolityCard(padding: padding)
             .schoolityPageRow(top: top, bottom: bottom)
     }
@@ -400,7 +411,7 @@ private struct SchoolityMenuList<Value: Hashable>: View {
                             Spacer(minLength: 8)
                             if option.value == selected {
                                 Image(systemName: "checkmark")
-                                    .font(.caption.weight(.semibold))
+                                    .font(SchoolityText.caption.weight(.semibold))
                                     .foregroundStyle(SchoolityPalette.ink)
                             }
                         }
@@ -431,7 +442,7 @@ struct SchoolityMenuChevron: View {
 
     var body: some View {
         Image(systemName: "chevron.down")
-            .font(.caption2.weight(.semibold))
+            .font(SchoolityText.icon.weight(.semibold))
             .foregroundStyle(SchoolityPalette.muted)
             .rotationEffect(.degrees(isOpen ? 180 : 0))
             .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: isOpen)
@@ -470,7 +481,7 @@ struct SchoolitySelectField: View {
             .background(SchoolityPalette.field, in: RoundedRectangle(cornerRadius: SchoolityRadius.chip, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: SchoolityRadius.chip, style: .continuous)
-                    .strokeBorder(SchoolityPalette.line, lineWidth: 1)
+                    .strokeBorder(SchoolityPalette.lineStrong, lineWidth: 1)
             }
             .contentShape(Rectangle())
         }
@@ -500,7 +511,7 @@ struct CountBadge: View {
 
     var body: some View {
         Text("\(count)")
-            .font(.caption.weight(.medium))
+            .font(SchoolityText.caption.weight(.medium))
             .monospacedDigit()
             .foregroundStyle(SchoolityPalette.muted)
             .padding(.horizontal, 8)
@@ -518,7 +529,7 @@ struct SchoolityTag: View {
 
     var body: some View {
         Text(text)
-            .font(.caption.weight(emphasis ? .semibold : .medium))
+            .font(SchoolityText.caption.weight(emphasis ? .semibold : .medium))
             .foregroundStyle(emphasis ? SchoolityPalette.ink : SchoolityPalette.muted)
             .padding(.horizontal, 8)
             .padding(.vertical, 2)
@@ -642,6 +653,10 @@ struct FailureRow: View {
             Label(message, systemImage: "exclamationmark.circle")
                 .font(SchoolityText.body)
                 .foregroundStyle(SchoolityPalette.ink)
+            Text("Check your connection. If it keeps failing, sign out and sign in again.")
+                .font(SchoolityText.meta)
+                .foregroundStyle(SchoolityPalette.muted)
+                .fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 14) {
                 Button("Try again", action: retry)
                     .buttonStyle(SchoolityPrimaryButtonStyle())
@@ -698,7 +713,7 @@ struct LastUpdatedFooter: View {
             HStack {
                 Spacer(minLength: 0)
                 Label("Last updated \(date.formatted(date: .omitted, time: .shortened))", systemImage: "clock")
-                    .font(.caption)
+                    .font(SchoolityText.caption)
                     .foregroundStyle(SchoolityPalette.faint)
                 Spacer(minLength: 0)
             }

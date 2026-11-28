@@ -52,7 +52,7 @@
     background: var(--ink);
     color: var(--panel);
     font-family: var(--font-display);
-    font-size: 22px;
+    font-size: var(--t-h2);
     font-weight: 600;
   }
   .error-status {

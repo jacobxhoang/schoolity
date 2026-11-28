@@ -78,20 +78,22 @@
     {
       label: "Records",
       items: navigation.filter((item) =>
-        ["student", "attendance", "history"].includes(item.id),
+        ["student", "attendance", "history", "documents"].includes(item.id),
       ),
     },
     {
-      label: "",
-      items: navigation.filter((item) =>
-        ["mail", "documents"].includes(item.id),
-      ),
+      label: "Messages",
+      items: navigation.filter((item) => item.id === "mail"),
     },
   ];
   const indexRows = [
     {
       name: "Gradebook",
       detail: "Courses, assignments and estimates",
+    },
+    {
+      name: "Schedule",
+      detail: "Terms, classes and rooms",
     },
     {
       name: "Records",
@@ -111,11 +113,18 @@
     }),
     busy = $state(untrack(() => sessionData.authenticated)),
     error = $state(""),
+    errorTitle = $state("School data could not be refreshed"),
+    loadingSection = $state<Record<string, boolean>>({}),
+    sectionFailures = $state<Record<string, string>>({}),
+    searchOpen = $state(false),
+    searchQuery = $state(""),
+    undoReset = $state<{ courseId: string; course: Course } | null>(null),
     notice = $state("");
   let selected = $state<string | null>(null),
     mobileMenu = $state(false),
     privacyOpen = $state(false),
     accountOpen = $state(false),
+    inboxFilter = $state(""),
     dark = $state(false);
   let isMobile = $state(false),
     showPassword = $state(false);
@@ -132,6 +141,7 @@
     loginError = $state(untrack(() => sessionData.signInError ?? "")),
     hypothetical = $state(false);
   let edits = $state<Record<string, Course>>({}),
+    scoreDrafts = $state<Record<string, string>>({}),
     resourceData = $state<Record<string, EventItem[]>>({}),
     schedule = $state<ScheduleData>({ terms: [], currentTerm: 0 });
   let generation = 0;
@@ -216,9 +226,117 @@
         .join(" · "),
     })),
   );
+  const sectionBusy = $derived(busy || !!loadingSection[tab]);
   const shownRecords = $derived(
     tab === "schedule" ? scheduleRecords : (resourceData[tab] ?? []),
   );
+  // The inbox loads its latest 50 messages at once, so the filter narrows what
+  // already loaded instead of asking the district for the list again.
+  const mailResults = $derived(
+    (resourceData.mail ?? []).filter((item) => {
+      const query = inboxFilter.trim().toLowerCase();
+      if (!query) return true;
+      return [item.title, item.author, item.date, item.detail].some((value) =>
+        (value ?? "").toLowerCase().includes(query),
+      );
+    }),
+  );
+  type SearchResult = {
+    id: string;
+    kind: string;
+    title: string;
+    detail: string;
+    section: string;
+    courseId?: string;
+  };
+  // Search reads the workspace already in memory, so it never asks the district
+  // for anything and works the moment a section has loaded.
+  const searchIndex: SearchResult[] = $derived([
+    ...data.courses.map((course) => ({
+      id: "course:" + course.id,
+      kind: "Course",
+      title: course.name,
+      detail: [course.teacher, course.room ? "Room " + course.room : ""]
+        .filter(Boolean)
+        .join(" · "),
+      section: "grades",
+      courseId: course.id,
+    })),
+    ...data.courses.flatMap((course) =>
+      course.assignments
+        .filter((assignment) => !assignment.hypothetical)
+        .map((assignment) => ({
+          id: "assignment:" + assignment.id,
+          kind: "Assignment",
+          title: assignment.title || "Untitled assignment",
+          detail: [course.name, assignment.category]
+            .filter(Boolean)
+            .join(" · "),
+          section: "grades",
+          courseId: course.id,
+        })),
+    ),
+    ...(resourceData.mail ?? []).map((item, index) => ({
+      id: "mail:" + index,
+      kind: "Message",
+      title: item.title || "Untitled message",
+      detail: [item.author ?? "Unknown sender", item.date]
+        .filter(Boolean)
+        .join(" · "),
+      section: "mail",
+    })),
+    ...(resourceData.documents ?? []).map((item, index) => ({
+      id: "document:" + index,
+      kind: "Document",
+      title: item.title,
+      detail: [item.detail, item.date].filter(Boolean).join(" · "),
+      section: "documents",
+    })),
+    ...schedule.terms.flatMap((term) =>
+      term.classes.map((course) => ({
+        id: "class:" + course.id,
+        kind: "Class",
+        title: course.title,
+        detail: [
+          course.teacher,
+          course.period ? "Period " + course.period : "",
+          course.room ? "Room " + course.room : "",
+        ]
+          .filter(Boolean)
+          .join(" · "),
+        section: "schedule",
+      })),
+    ),
+  ]);
+  const searchMatches: SearchResult[] = $derived.by(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return [];
+    return searchIndex.filter((entry) =>
+      (entry.title + " " + entry.detail).toLowerCase().includes(query),
+    );
+  });
+  const searchResults: SearchResult[] = $derived(searchMatches.slice(0, 8));
+  function openSearch() {
+    searchQuery = "";
+    searchOpen = true;
+  }
+  function closeSearch(restore = true) {
+    searchOpen = false;
+    if (restore)
+      void tick().then(() => document.getElementById("search-toggle")?.focus());
+  }
+  async function openSearchResult(result: SearchResult) {
+    closeSearch(false);
+    const course = result.courseId
+      ? data.courses.find((item) => item.id === result.courseId)
+      : undefined;
+    if (course) {
+      openCourse(course);
+      return;
+    }
+    await navigate(result.section);
+    if (result.section === "mail") inboxFilter = result.title;
+  }
   const dateLabel = (value: string) => {
     const d = new Date(value);
     return Number.isNaN(d.getTime())
@@ -320,6 +438,7 @@
           e instanceof Error
             ? e.message
             : "School data could not be loaded. Try again.";
+        errorTitle = "Your gradebook could not be refreshed";
         retryAction = () => load(term);
       }
     } finally {
@@ -353,6 +472,7 @@
     tab = id;
     selected = null;
     hypothetical = false;
+    undoReset = null;
     closeMenu(false);
     notice = "";
     error = "";
@@ -438,6 +558,8 @@
     const version = generation;
     const foreground = mode === "foreground";
     resourceFailures.delete(id);
+    sectionFailures = { ...sectionFailures, [id]: "" };
+    loadingSection = { ...loadingSection, [id]: true };
     if (foreground) {
       busy = true;
       error = "";
@@ -464,17 +586,21 @@
         preloadHistorySubjects();
       }
     } catch (e) {
-      if (version === generation)
-        resourceFailures.set(
-          id,
-          e instanceof Error ? e.message : "Could not load this information.",
-        );
+      const message =
+        e instanceof Error ? e.message : "Could not load this information.";
+      if (version === generation) {
+        resourceFailures.set(id, message);
+        sectionFailures = { ...sectionFailures, [id]: message };
+      }
       if (foreground && version === generation && tab === id) {
-        error =
-          e instanceof Error ? e.message : "Could not load this information.";
+        error = message;
+        errorTitle =
+          (navigation.find((item) => item.id === id)?.label ?? "This section") +
+          " could not be loaded";
         retryAction = () => loadResource(id);
       }
     } finally {
+      loadingSection = { ...loadingSection, [id]: false };
       if (foreground && version === generation) busy = false;
     }
   }
@@ -498,6 +624,7 @@
     selected = course.id;
     tab = "grades";
     hypothetical = false;
+    undoReset = null;
     closeMenu(false);
     window.scrollTo(0, 0);
     void tick().then(() => mainContent?.focus());
@@ -514,31 +641,62 @@
       },
     };
   }
+  const scoreKey = (assignmentId: string, field: "earned" | "possible") =>
+    (activeCourse?.id ?? "") + ":" + assignmentId + ":" + field;
+  // A score is a number the student typed. Anything else is held as a draft and
+  // never reaches the estimate, so a stray keystroke cannot move the grade.
+  function readScore(raw: string): { value: number | null; valid: boolean } {
+    const text = raw.trim().replace(",", ".");
+    if (!text) return { value: null, valid: true };
+    const number = Number(text);
+    return number >= 0 && Number.isFinite(number)
+      ? { value: number, valid: true }
+      : { value: null, valid: false };
+  }
+  function setDraft(key: string, value: string | null) {
+    if (value !== null) {
+      scoreDrafts = { ...scoreDrafts, [key]: value };
+      return;
+    }
+    if (!(key in scoreDrafts)) return;
+    const next = { ...scoreDrafts };
+    delete next[key];
+    scoreDrafts = next;
+  }
   function editAssignment(
     id: string,
     key: "earned" | "possible" | "title" | "category",
     value: string,
   ) {
     if (!activeCourse) return;
+    if (key === "title" || key === "category") {
+      const course = clone(activeCourse);
+      course.assignments = course.assignments.map((a) =>
+        a.id === id ? { ...a, [key]: value } : a,
+      );
+      edits = { ...edits, [course.id]: course };
+      return;
+    }
+    const draftKey = scoreKey(id, key);
+    const read = readScore(value);
+    if (!read.valid) {
+      setDraft(draftKey, value);
+      return;
+    }
     const course = clone(activeCourse);
-    course.assignments = course.assignments.map((a) =>
-      a.id === id
-        ? {
-            ...a,
-            [key]:
-              key === "title" || key === "category"
-                ? value
-                : value === "" && key === "earned"
-                  ? null
-                  : Math.max(0, Number(value) || 0),
-            ...(key === "possible" ? { emptyPossible: value === "" } : {}),
-          }
-        : a,
-    );
+    course.assignments = course.assignments.map((a) => {
+      if (a.id !== id) return a;
+      if (key === "earned") return { ...a, earned: read.value };
+      return read.value === null
+        ? { ...a, possible: 0, emptyPossible: true }
+        : { ...a, possible: read.value, emptyPossible: false };
+    });
     edits = { ...edits, [course.id]: course };
+    setDraft(draftKey, null);
   }
   function enableHypothetical() {
     hypothetical = !hypothetical;
+    scoreDrafts = {};
     if (hypothetical && activeCourse && !edits[activeCourse.id])
       edits = { ...edits, [activeCourse.id]: clone(activeCourse) };
   }
@@ -559,10 +717,22 @@
   }
   function resetEdits() {
     if (!selected) return;
+    const previous = edits[selected];
     const next = { ...edits };
     delete next[selected];
     edits = next;
+    scoreDrafts = {};
     hypothetical = false;
+    undoReset = previous ? { courseId: selected, course: previous } : null;
+  }
+  // A reset is one tap, so taking it back is one tap too.
+  function restoreReset() {
+    if (!undoReset) return;
+    const { courseId, course } = undoReset;
+    edits = { ...edits, [courseId]: course };
+    undoReset = null;
+    selected = courseId;
+    hypothetical = true;
   }
   async function login(event: SubmitEvent) {
     event.preventDefault();
@@ -708,6 +878,13 @@
     recordPages = {};
     schedule = { terms: [], currentTerm: 0 };
     edits = {};
+    scoreDrafts = {};
+    inboxFilter = "";
+    sectionFailures = {};
+    loadingSection = {};
+    searchOpen = false;
+    searchQuery = "";
+    undoReset = null;
     selected = null;
     password = "";
     lastRefresh = null;
@@ -736,6 +913,8 @@
   }
   async function changeTerm(value: string) {
     edits = {};
+    scoreDrafts = {};
+    undoReset = null;
     selected = null;
     hypothetical = false;
     writeLocation("#grades");
@@ -754,7 +933,7 @@
       if (event.key !== "Tab") return;
       const controls = [
         ...node.querySelectorAll<HTMLElement>(
-          'button:not(:disabled),input,select,[tabindex="0"]',
+          'button:not(:disabled),input,select,textarea,summary,a[href],[tabindex="0"]',
         ),
       ];
       const first = controls[0],
@@ -780,7 +959,15 @@
     localStorage.setItem("schoolity_theme", dark ? "dark" : "light");
   }
   $effect(() => {
-    if (!isMobile || !mobileMenu || !sidebar || privacyOpen) return;
+    if (
+      !isMobile ||
+      !mobileMenu ||
+      !sidebar ||
+      privacyOpen ||
+      accountOpen ||
+      searchOpen
+    )
+      return;
     const panel = sidebar;
     const before = document.activeElement as HTMLElement | null;
     const overflow = document.body.style.overflow;
@@ -892,19 +1079,39 @@
     if (e.key === "Escape") {
       privacyOpen = false;
       accountOpen = false;
+      searchOpen = false;
       closeMenu();
+    }
+    if (
+      e.key.toLowerCase() === "k" &&
+      (e.metaKey || e.ctrlKey) &&
+      authenticated &&
+      !searchOpen &&
+      !privacyOpen &&
+      !accountOpen
+    ) {
+      e.preventDefault();
+      openSearch();
     }
   }}
 />
 
-<div class:dark class:workspace={authenticated} class="app-shell">
+<div
+  class:dark={authenticated && dark}
+  class:signed-out={!authenticated}
+  class:workspace={authenticated}
+  class="app-shell"
+>
   {#if authenticated}
     <a class="skip-link" href="#workspace-main">Skip to school workspace</a>
     <aside
       id="school-navigation"
       bind:this={sidebar}
       class:mobile-open={mobileMenu}
-      inert={(isMobile && !mobileMenu) || privacyOpen}
+      inert={(isMobile && !mobileMenu) ||
+        privacyOpen ||
+        accountOpen ||
+        searchOpen}
       aria-hidden={isMobile && !mobileMenu}
     >
       <button
@@ -962,9 +1169,15 @@
         tabindex="-1"
         onclick={() => closeMenu()}
       ></button>{/if}
-    <div class="main-shell" inert={(isMobile && mobileMenu) || privacyOpen}>
+    <div
+      class="main-shell"
+      inert={(isMobile && mobileMenu) ||
+        privacyOpen ||
+        accountOpen ||
+        searchOpen}
+    >
       <div class="update-toast">
-        {#if busy}
+        {#if busy && tab === "grades"}
           <div
             class="update-status"
             role="status"
@@ -974,7 +1187,11 @@
             out:fly={{ y: -90, duration: reducedMotion ? 0 : 180 }}
           >
             <span class="update-spinner" aria-hidden="true"></span>
-            <span>{data.courses.length ? "Updating…" : "Loading…"}</span>
+            <span
+              >{data.courses.length
+                ? "Updating your gradebook…"
+                : "Loading your gradebook…"}</span
+            >
           </div>
         {/if}
       </div>
@@ -993,9 +1210,17 @@
         <div class="header-actions">
           <button
             class="icon-button"
+            id="search-toggle"
+            aria-label="Search your workspace"
+            aria-keyshortcuts="Meta+K Control+K"
+            aria-haspopup="dialog"
+            onclick={openSearch}><Icon name="search" /></button
+          >
+          <button
+            class="icon-button"
             aria-label="Toggle color theme"
             aria-pressed={dark}
-            onclick={toggleTheme}><Icon name="sun" /></button
+            onclick={toggleTheme}><Icon name={dark ? "moon" : "sun"} /></button
           >
         </div>
       </header>
@@ -1006,8 +1231,12 @@
         aria-label="School workspace"
       >
         {#if error}<div class="alert" role="alert">
-            <strong>School data could not be refreshed</strong>
+            <strong>{errorTitle}</strong>
             <p>{error}</p>
+            <p>
+              Check your connection. If it keeps failing, sign out and sign in
+              again.
+            </p>
             <div class="inline-actions">
               {#if retryAction}<button
                   class="primary small"
@@ -1018,7 +1247,12 @@
               >
             </div>
           </div>{/if}
-        {#if notice}<div class="notice" role="status">{notice}</div>{/if}
+        {#if undoReset}<div class="notice" role="status">
+            Changes reset.
+            <button class="text-button" onclick={restoreReset}>Undo</button>
+          </div>{:else if notice}<div class="notice" role="status">
+            {notice}
+          </div>{/if}
         {#if activeCourse}
           <button class="back-link" onclick={() => navigate("grades")}
             >← All courses</button
@@ -1036,8 +1270,18 @@
               {#if startingCourse}<GradeSummary
                   course={activeCourse}
                   starting={startingCourse}
+                  official={activeCourse.official}
                   scenario={hypothetical}
                 />{/if}
+              <details class="estimate-details">
+                <summary>About estimates</summary>
+                <p>
+                  Schoolity calculates this estimate from the graded assignments
+                  in this course, weighted by the district's categories when it
+                  provides them. The school grade is reported by the district
+                  and never changes here.
+                </p>
+              </details>
             </div>
             <div class="large-trend">
               <Trend
@@ -1102,7 +1346,13 @@
                     >{/if}</tr
                 ></thead
               ><tbody
-                >{#each activeCourse.assignments as a}<tr
+                >{#each activeCourse.assignments as a (a.id)}
+                  {@const earnedKey = scoreKey(a.id, "earned")}
+                  {@const possibleKey = scoreKey(a.id, "possible")}
+                  {@const invalidScore =
+                    scoreDrafts[earnedKey] !== undefined ||
+                    scoreDrafts[possibleKey] !== undefined}
+                  {@const scoreHint = `${a.id}-score-hint`}<tr
                     class:hypothetical-row={a.hypothetical}
                     ><td data-label="Assignment"
                       >{#if hypothetical}<input
@@ -1138,9 +1388,14 @@
                       >{#if hypothetical}<div class="score-inputs">
                           <input
                             aria-label={`Points earned for ${a.title}`}
-                            type="number"
-                            min="0"
-                            value={a.earned ?? ""}
+                            aria-invalid={invalidScore}
+                            aria-describedby={invalidScore
+                              ? scoreHint
+                              : undefined}
+                            type="text"
+                            inputmode="decimal"
+                            autocomplete="off"
+                            value={scoreDrafts[earnedKey] ?? a.earned ?? ""}
                             placeholder="—"
                             oninput={(e) =>
                               editAssignment(
@@ -1150,9 +1405,15 @@
                               )}
                           /><span>/</span><input
                             aria-label={`Points possible for ${a.title}`}
-                            type="number"
-                            min="0"
-                            value={a.emptyPossible ? "" : a.possible}
+                            aria-invalid={invalidScore}
+                            aria-describedby={invalidScore
+                              ? scoreHint
+                              : undefined}
+                            type="text"
+                            inputmode="decimal"
+                            autocomplete="off"
+                            value={scoreDrafts[possibleKey] ??
+                              (a.emptyPossible ? "" : a.possible)}
                             oninput={(e) =>
                               editAssignment(
                                 a.id,
@@ -1160,14 +1421,20 @@
                                 e.currentTarget.value,
                               )}
                           />
-                        </div>{:else}{a.earned === null ? "—" : a.earned}
+                        </div>
+                        {#if invalidScore}<small
+                            class="score-hint"
+                            id={scoreHint}>Enter a number of points.</small
+                          >{/if}{:else}{a.earned === null ? "—" : a.earned}
                         <span class="muted">/ {a.possible}</span>{/if}</td
                     ><td data-label="Grade"
                       >{#if a.earned === null || a.emptyPossible}<span
                           class="pending">Not graded</span
                         >{:else if a.possible > 0}<span class="grade-label"
                           >{percentage((a.earned / a.possible) * 100)}</span
-                        >{:else}Extra credit{/if}</td
+                        >{:else}Extra credit{/if}{#if a.earned !== null && !a.emptyPossible && a.possible > 0 && a.earned > a.possible}<small
+                          class="score-hint">More points than possible.</small
+                        >{/if}</td
                     >{#if hypothetical}<td
                         >{#if a.hypothetical}<button
                             class="remove-assignment icon-button"
@@ -1196,8 +1463,7 @@
           </div>
           <section class="stats-grid">
             <div class="stat-card">
-              <span>Course average</span><strong>{percentage(average)}</strong
-              ><small>Unweighted</small>
+              <span>Course average</span><strong>{percentage(average)}</strong>
             </div>
             <div class="stat-card">
               <span>Courses</span><strong>{data.courses.length}</strong>
@@ -1211,6 +1477,11 @@
                     Your courses <span class="count">{data.courses.length}</span
                     >
                   </h2>
+                  <p class="section-note">
+                    Grades here are Schoolity estimates, calculated from each
+                    course's assignments. Open a course for the district's grade
+                    and how the estimate is worked out.
+                  </p>
                 </div>
               </div>
               <div class="term-line">
@@ -1226,7 +1497,7 @@
                 /><span>{refreshLabel}</span>
               </div>
               <div class="course-grid">
-                {#each data.courses as course}<button
+                {#each data.courses as course (course.id)}<button
                     class="course-card"
                     onclick={() => openCourse(course)}
                   >
@@ -1271,7 +1542,7 @@
             >
               <h2 id="recent-assignments-title">Recent assignments</h2>
               <ul class="recent-assignment-list">
-                {#each recentAssignments as assignment}
+                {#each recentAssignments as assignment (assignment.id)}
                   <li>
                     <button
                       class="recent-assignment"
@@ -1314,7 +1585,8 @@
             <h1>{navigation.find((item) => item.id === tab)?.label}</h1>
             <button
               class="refresh-button"
-              disabled={busy}
+              disabled={sectionBusy}
+              aria-busy={sectionBusy}
               onclick={() => loadResource(tab)}>Refresh</button
             >
           </div>
@@ -1329,7 +1601,7 @@
                 page={recordPages[tab]}
                 loadSubject={loadHistorySubject}
               />{/key}
-          {:else if busy}
+          {:else if sectionBusy}
             <div class="records-list" aria-hidden="true">
               {#each [0, 1] as row (row)}
                 <div class="skeleton-card">
@@ -1340,6 +1612,25 @@
                   ></div>
                 </div>
               {/each}
+            </div>
+          {:else if sectionFailures[tab] && !error}<div
+              class="alert"
+              role="alert"
+            >
+              <strong
+                >{navigation.find((item) => item.id === tab)?.label} could not be
+                loaded</strong
+              >
+              <p>{sectionFailures[tab]}</p>
+              <p>
+                Check your connection. If it keeps failing, sign out and sign in
+                again.
+              </p>
+              <div class="inline-actions">
+                <button class="primary small" onclick={() => loadResource(tab)}
+                  >Retry</button
+                >
+              </div>
             </div>
           {:else if !error}<p class="records-empty">
               No information has been loaded.
@@ -1361,7 +1652,8 @@
             </div>
             <button
               class="refresh-button"
-              disabled={busy}
+              disabled={sectionBusy}
+              aria-busy={sectionBusy}
               onclick={() => loadResource(tab)}>Refresh</button
             >
           </div>
@@ -1384,7 +1676,26 @@
                 minute: "2-digit",
               })}
             </p>{/if}
-          {#if busy && !shownRecords.length}
+          {#if tab === "mail" && (resourceData.mail?.length ?? 0) > 0}
+            <div class="filter-row">
+              <label for="inbox-filter">Filter</label>
+              <input
+                id="inbox-filter"
+                type="search"
+                placeholder="Subject, sender or date"
+                autocomplete="off"
+                bind:value={inboxFilter}
+              />
+              <span
+                >{mailResults.length} of {resourceData.mail?.length ?? 0}</span
+              >
+              {#if inboxFilter}<button
+                  class="text-button"
+                  onclick={() => (inboxFilter = "")}>Clear</button
+                >{/if}
+            </div>
+          {/if}
+          {#if sectionBusy && !shownRecords.length}
             <div class="records-list" aria-hidden="true">
               {#each [0, 1, 2] as row (row)}
                 <div class="skeleton-card">
@@ -1397,8 +1708,26 @@
               {/each}
             </div>
           {/if}
+          {#if sectionFailures[tab] && !error}
+            <div class="alert" role="alert">
+              <strong
+                >{navigation.find((item) => item.id === tab)?.label} could not be
+                loaded</strong
+              >
+              <p>{sectionFailures[tab]}</p>
+              <p>
+                Check your connection. If it keeps failing, sign out and sign in
+                again.
+              </p>
+              <div class="inline-actions">
+                <button class="primary small" onclick={() => loadResource(tab)}
+                  >Retry</button
+                >
+              </div>
+            </div>
+          {/if}
           <section class="records-list">
-            {#each shownRecords as item}{#if tab === "mail"}{#key item}<details
+            {#each tab === "mail" ? mailResults : shownRecords as item, index (item.id ?? index)}{#if tab === "mail"}{#key item}<details
                     class="mail-message"
                   >
                     <summary
@@ -1418,7 +1747,8 @@
                         >
                           <h3>Attachments</h3>
                           <ul>
-                            {#each item.attachments as attachment}<li>
+                            {#each item.attachments as attachment (attachment.id)}<li
+                              >
                                 <span class="attachment-name"
                                   >{attachment.filename}</span
                                 ><button
@@ -1478,7 +1808,15 @@
                     <h3>{item.title}</h3>
                     <p>{item.detail}</p>
                   </div>
-                </article>{/if}{/each}{#if !shownRecords.length && !busy}<div
+                </article>{/if}{/each}{#if tab === "mail" && inboxFilter.trim() && !mailResults.length}<div
+                class="empty-state"
+              >
+                <h2>No messages match</h2>
+                <p>
+                  Clear the filter to see all {resourceData.mail?.length ?? 0}
+                  messages.
+                </p>
+              </div>{:else if !shownRecords.length && !sectionBusy && !sectionFailures[tab]}<div
                 class="empty-state"
               >
                 {#if tab === "schedule"}
@@ -1617,50 +1955,6 @@
         <aside class="login-index" aria-labelledby="index-title">
           <div class="index-head" data-rise style="--i: 2">
             <h2 id="index-title">Inside the workspace</h2>
-            <span>Example view</span>
-          </div>
-          <div class="index-preview" data-rise style="--i: 3">
-            <p class="preview-head">
-              <span>Gradebook</span><span>Quarter 2</span>
-            </p>
-            <div class="preview-course">
-              <div>
-                <strong>Algebra II</strong>
-                <small>Period 2 · Room 108</small>
-              </div>
-              <span class="preview-score">A</span>
-            </div>
-            <div class="preview-rows">
-              <p>
-                <span>Chapter 4 &amp; 5 test</span><span>37 / 40</span>
-              </p>
-              <p><span>Graphing review</span><span>20 / 20</span></p>
-              <p>
-                <span>Unit 3 quiz</span><span class="preview-pending"
-                  >Not graded</span
-                >
-              </p>
-            </div>
-            <div class="preview-pair">
-              <div>
-                <strong>91.2%</strong>
-              </div>
-            </div>
-            <svg
-              class="preview-chart"
-              viewBox="0 0 240 56"
-              preserveAspectRatio="none"
-              aria-hidden="true"
-              focusable="false"
-            >
-              <polyline
-                points="0,44 30,40 60,42 90,33 120,35 150,26 180,29 210,17 240,20"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.5"
-                vector-effect="non-scaling-stroke"
-              ></polyline>
-            </svg>
           </div>
           <ul class="index-list" data-rise style="--i: 3">
             {#each indexRows as row (row.name)}
@@ -1752,6 +2046,61 @@
         <button class="primary" onclick={() => (privacyOpen = false)}
           >Done</button
         >
+      </div>
+    </div>{/if}
+  {#if searchOpen}<div
+      class="modal-backdrop"
+      role="presentation"
+      onclick={(e) => {
+        if (e.target === e.currentTarget) closeSearch();
+      }}
+    >
+      <div
+        use:focusDialog
+        class="modal search-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="search-title"
+        tabindex="-1"
+      >
+        <h2 id="search-title">Search</h2>
+        <input
+          type="search"
+          bind:value={searchQuery}
+          aria-label="Search courses, assignments, messages, documents and classes"
+          placeholder="Course, assignment, message or document"
+          autocomplete="off"
+          onkeydown={(e) => {
+            if (e.key === "Enter" && searchResults.length) {
+              e.preventDefault();
+              void openSearchResult(searchResults[0]);
+            }
+          }}
+        />
+        {#if searchQuery.trim()}
+          {#if searchResults.length}<p class="search-count" role="status">
+              {searchMatches.length > searchResults.length
+                ? `${searchResults.length} of ${searchMatches.length} results`
+                : searchMatches.length === 1
+                  ? "1 result"
+                  : `${searchMatches.length} results`}
+            </p>
+            <ul class="search-results">
+              {#each searchResults as result (result.id)}<li>
+                  <button onclick={() => void openSearchResult(result)}>
+                    <span>{result.title}</span>
+                    <small>{result.kind} · {result.detail}</small>
+                  </button>
+                </li>{/each}
+            </ul>
+          {:else}<p class="search-empty" role="status">
+              No matches in your workspace.
+            </p>{/if}
+        {:else}<p class="search-empty">
+            Search the courses, assignments, messages, documents and classes
+            already loaded.
+          </p>{/if}
+        <button class="primary" onclick={() => closeSearch()}>Done</button>
       </div>
     </div>{/if}
   {#if accountOpen}<div

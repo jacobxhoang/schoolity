@@ -7,6 +7,30 @@ struct ResourceView: View {
     @State private var previewURL: URL?
     @State private var pendingDownload: String?
     @State private var downloadError: String?
+    @State private var query = ""
+
+    private var trimmedQuery: String {
+        query.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// The inbox and the document list can be long, so both narrow the loaded
+    /// rows by name, sender, detail or date without asking the district again.
+    private var results: [SchoolEvent] {
+        let items = store.records[resource] ?? []
+        guard !trimmedQuery.isEmpty else { return items }
+        return items.filter { item in
+            [item.title, item.detail, item.author ?? "", item.date, item.filename ?? ""]
+                .contains { $0.localizedCaseInsensitiveContains(trimmedQuery) }
+        }
+    }
+
+    /// A district id names the row, so filtering keeps each row's identity.
+    /// Rows the district left without an id fall back to their position.
+    private var rows: [(key: String, item: SchoolEvent)] {
+        results.enumerated().map { index, item in
+            (item.id ?? "row-\(index)", item)
+        }
+    }
 
     var body: some View {
         List {
@@ -17,19 +41,26 @@ struct ResourceView: View {
                 .schoolityPageRow(bottom: 12)
             }
 
-            if let items = store.records[resource] {
-                if items.isEmpty {
+            if let loaded = store.records[resource] {
+                if loaded.isEmpty {
                     SchoolityEmptyState(
-                        title: resource == .mail ? "No messages" : "No \(resource.title.lowercased())",
+                        title: resource == .mail ? "No messages" : "No documents",
                         description: "Nothing to show from your district yet.",
                         symbol: resource.symbol
                     )
                     .schoolityPageRow(bottom: 12)
+                } else if results.isEmpty {
+                    SchoolityEmptyState(
+                        title: "No matches",
+                        description: "Nothing here matches “\(trimmedQuery)”.",
+                        symbol: "magnifyingglass"
+                    )
+                    .schoolityPageRow(bottom: 12)
                 } else {
-                    ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                    ForEach(rows, id: \.key) { row in
                         switch resource {
-                        case .mail: mailRow(item, index: index)
-                        case .documents: documentRow(item, index: index)
+                        case .mail: mailRow(row.item, key: row.key)
+                        case .documents: documentRow(row.item, key: row.key)
                         }
                     }
                 }
@@ -45,19 +76,24 @@ struct ResourceView: View {
         .schoolityNavigationChrome()
         .task { await store.load(resource) }
         .refreshable { await store.load(resource, refresh: true) }
+        .searchable(
+            text: $query,
+            placement: .navigationBarDrawer(displayMode: .always),
+            prompt: resource == .mail ? "Subject, sender or date" : "Name or detail"
+        )
         .quickLookPreview($previewURL)
         .alert("Download failed", isPresented: Binding(get: { downloadError != nil }, set: { if !$0 { downloadError = nil } })) {
             Button("OK") { downloadError = nil }
         } message: { Text(downloadError ?? "Try downloading this file again.") }
     }
 
-    private func mailRow(_ item: SchoolEvent, index: Int) -> some View {
+    private func mailRow(_ item: SchoolEvent, key: String) -> some View {
         DisclosureGroup {
             VStack(alignment: .leading, spacing: 16) {
                 HairlineDivider()
                 if !item.date.isEmpty {
                     Text(item.date)
-                        .font(.caption)
+                        .font(SchoolityText.caption)
                         .foregroundStyle(SchoolityPalette.faint)
                 }
                 Text(item.detail.isEmpty ? "No message text." : item.detail)
@@ -68,14 +104,14 @@ struct ResourceView: View {
                 if let attachments = item.attachments, !attachments.isEmpty {
                     VStack(alignment: .leading, spacing: 0) {
                         Text("Attachments")
-                            .font(.footnote.weight(.semibold))
+                            .font(SchoolityText.meta.weight(.semibold))
                             .foregroundStyle(SchoolityPalette.ink)
                             .padding(.bottom, 8)
                         ForEach(Array(attachments.enumerated()), id: \.offset) { attachmentIndex, attachment in
-                            let key = "mail-\(index)-\(attachmentIndex)"
+                            let rowKey = "mail-\(key)-\(attachmentIndex)"
                             if attachmentIndex > 0 { HairlineDivider() }
                             Button {
-                                download(id: attachment.id, filename: attachment.filename, messageID: item.id, key: key)
+                                download(id: attachment.id, filename: attachment.filename, messageID: item.id, key: rowKey)
                             } label: {
                                 HStack(spacing: 12) {
                                     IconTile(symbol: "paperclip", size: 32, background: .field)
@@ -84,11 +120,11 @@ struct ResourceView: View {
                                         .foregroundStyle(SchoolityPalette.ink)
                                         .multilineTextAlignment(.leading)
                                     Spacer(minLength: 8)
-                                    if pendingDownload == key {
+                                    if pendingDownload == rowKey {
                                         ProgressView().accessibilityLabel("Downloading")
                                     } else {
                                         Text("Open")
-                                            .font(.caption.weight(.semibold))
+                                            .font(SchoolityText.caption.weight(.semibold))
                                             .foregroundStyle(SchoolityPalette.ink)
                                             .padding(.horizontal, 10)
                                             .padding(.vertical, 5)
@@ -133,8 +169,7 @@ struct ResourceView: View {
         .schoolityPageRow(bottom: 10)
     }
 
-    private func documentRow(_ item: SchoolEvent, index: Int) -> some View {
-        let key = "document-\(index)"
+    private func documentRow(_ item: SchoolEvent, key: String) -> some View {
         return Button {
             download(id: item.id ?? "", filename: item.filename ?? item.title, key: key)
         } label: {

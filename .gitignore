@@ -4,7 +4,6 @@ build/
 .vercel/
 .env*
 !.env.example
-ios/*.xcodeproj/
 ios/Schoolity-Info.plist
 ios/DerivedData/
 ios/build/

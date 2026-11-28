@@ -48,15 +48,20 @@ struct ScheduleView: View {
                         .schoolityPageRow(bottom: 10)
                 }
             }
-
+        }
+        .schoolityPageList()
+        // A failed refresh keeps the last schedule on screen, so the failure is
+        // pinned above the list instead of sitting below rows nobody scrolls to.
+        .safeAreaInset(edge: .top, spacing: 0) {
             if let error = store.scheduleError {
                 FailureCard(message: error, dismiss: { store.scheduleError = nil }) {
                     Task { await store.loadSchedule(refresh: true) }
                 }
-                .schoolityPageRow(top: 4, bottom: 16)
+                .padding(.horizontal, 20)
+                .padding(.top, 4)
+                .padding(.bottom, 8)
             }
         }
-        .schoolityPageList()
         .navigationTitle("Schedule")
         .schoolityNavigationChrome()
         .task { await store.loadSchedule() }
@@ -70,44 +75,46 @@ struct ScheduleView: View {
     }
 
     private func termLine(_ schedule: ScheduleData) -> some View {
-        HStack(spacing: 10) {
-            Circle()
-                .fill(SchoolityPalette.ink)
-                .frame(width: 6, height: 6)
-                .accessibilityHidden(true)
-            Menu {
-                ForEach(schedule.terms) { term in
-                    Button {
-                        selectedTerm = term.id
-                    } label: {
-                        if term.id == termID(schedule) {
-                            Label(term.name, systemImage: "checkmark")
-                        } else {
-                            Text(term.name)
-                        }
-                    }
-                }
-            } label: {
+        let term = Binding(get: { termID(schedule) }, set: { selectedTerm = $0 })
+        return SchoolityMenu(
+            title: "Term",
+            options: schedule.terms.map {
+                SchoolityMenuOption(value: $0.id, label: $0.name)
+            },
+            value: term
+        ) { isOpen in
+            HStack(spacing: 10) {
+                Text("Term")
+                    .font(.subheadline)
+                    .foregroundStyle(SchoolityPalette.muted)
                 HStack(spacing: 6) {
                     Text(visibleTerm(in: schedule)?.name ?? "Term")
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(SchoolityPalette.ink)
-                    Image(systemName: "chevron.down")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(SchoolityPalette.muted)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                    SchoolityMenuChevron(isOpen: isOpen)
                 }
-                .frame(minHeight: 44)
-                .contentShape(Rectangle())
+                Spacer(minLength: 8)
             }
-            .accessibilityLabel("Term, \(visibleTerm(in: schedule)?.name ?? "Term")")
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 14)
-        .frame(minHeight: 52)
-        .background(SchoolityPalette.panel, in: RoundedRectangle(cornerRadius: SchoolityRadius.panel, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: SchoolityRadius.panel, style: .continuous)
+            .padding(.horizontal, 14)
+            .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
+            .contentShape(Rectangle())
+            .background(
+                SchoolityPalette.panel,
+                in: RoundedRectangle(
+                    cornerRadius: SchoolityRadius.panel,
+                    style: .continuous
+                )
+            )
+            .overlay {
+                RoundedRectangle(
+                    cornerRadius: SchoolityRadius.panel,
+                    style: .continuous
+                )
                 .strokeBorder(SchoolityPalette.line, lineWidth: 1)
+                .allowsHitTesting(false)
+            }
         }
     }
 
@@ -139,7 +146,7 @@ private struct ScheduleClassRow: View {
             }
             VStack(alignment: .leading, spacing: 4) {
                 Text(customization.name(for: course.title))
-                    .font(.headline)
+                    .font(SchoolityText.cardTitle)
                     .foregroundStyle(SchoolityPalette.ink)
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
@@ -154,7 +161,7 @@ private struct ScheduleClassRow: View {
                 }
                 if let meetingDays = course.meetingDays, !meetingDays.isEmpty {
                     Text(meetingDays)
-                        .font(.caption)
+                        .font(SchoolityText.caption)
                         .foregroundStyle(SchoolityPalette.faint)
                 }
             }
@@ -171,6 +178,19 @@ private struct ScheduleClassRow: View {
                     .accessibilityLabel("Period \(course.period)")
                     .accessibilityIdentifier("schedule-period-\(course.id)")
             }
+            // Class appearance stays reachable by press and hold, but the row
+            // also shows it, so nobody has to guess the gesture.
+            Button {
+                customizing = true
+            } label: {
+                Image(systemName: "paintbrush")
+                    .font(SchoolityText.body)
+                    .foregroundStyle(SchoolityPalette.muted)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(SchoolityCardButtonStyle())
+            .accessibilityLabel("Customize \(customization.name(for: course.title))")
         }
         .frame(minHeight: 56)
         .padding(.vertical, 8)

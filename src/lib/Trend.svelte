@@ -28,6 +28,10 @@
       };
     }),
   );
+  // Many graded assignments put more labels on the line than the line can hold,
+  // so a dense graph labels only its latest point. The figure's screen-reader
+  // list still carries every value.
+  const dense = $derived(plotted.length > 6);
   const summary = $derived(
     clean.length
       ? `Calculated grade changed from ${clean[0].toFixed(1)}% to ${clean.at(-1)!.toFixed(1)}%, with a low of ${Math.min(...clean).toFixed(1)}% and a high of ${Math.max(...clean).toFixed(1)}% across ${clean.length} scored assignments.`
@@ -81,11 +85,12 @@
               class:first={point.index === 0}
               class:last={point.index === plotted.length - 1}
               style={`left:${point.x}%;top:${point.y}%`}
-              ><span class="trend-dot"></span><span
-                class="trend-point-label"
-                class:below={(point.index % 2 === 1 || point.y < 12) &&
-                  point.y < 84}>{point.value.toFixed(1)}%</span
-              ></span
+              ><span class="trend-dot"
+              ></span>{#if !dense || point.index === plotted.length - 1}<span
+                  class="trend-point-label"
+                  class:below={(point.index % 2 === 1 || point.y < 12) &&
+                    point.y < 84}>{point.value.toFixed(1)}%</span
+                >{/if}</span
             >{/each}
         </div>
       </div>
@@ -152,7 +157,7 @@
     border-radius: 4px;
     background: var(--panel, #fff);
     color: var(--ink, #0f0f0f);
-    font-size: 10px;
+    font-size: var(--t-mini);
     font-weight: 500;
     font-variant-numeric: tabular-nums;
     line-height: 1.4;
@@ -175,7 +180,6 @@
   @media (max-width: 500px) {
     .trend-point-label {
       padding: 1px 3px;
-      font-size: 9px;
     }
   }
 </style>

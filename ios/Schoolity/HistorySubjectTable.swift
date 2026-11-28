@@ -21,7 +21,7 @@ struct HistorySubjectTable: View {
                     HistoryColumnsLayout(weights: headers.map(weight)) {
                         ForEach(headers.indices, id: \.self) { index in
                             Text(headers[index])
-                                .font(.caption.weight(.semibold))
+                                .font(SchoolityText.caption.weight(.semibold))
                                 .foregroundStyle(SchoolityPalette.muted)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .padding(.horizontal, 4).padding(.vertical, 10)
@@ -34,7 +34,7 @@ struct HistorySubjectTable: View {
                         HistoryColumnsLayout(weights: headers.map(weight)) {
                             ForEach(headers.indices, id: \.self) { index in
                                 Text(value(row, at: index))
-                                    .font(.caption)
+                                    .font(SchoolityText.caption)
                                     .foregroundStyle(SchoolityPalette.ink)
                                     .monospacedDigit()
                                     .fixedSize(horizontal: false, vertical: true)
@@ -66,7 +66,7 @@ struct HistorySubjectTable: View {
                 VStack(alignment: .leading, spacing: 14) {
                     if let titleIndex {
                         VStack(alignment: .leading, spacing: 5) {
-                            Text(headers[titleIndex]).font(.caption).foregroundStyle(SchoolityPalette.muted)
+                            Text(headers[titleIndex]).font(SchoolityText.caption).foregroundStyle(SchoolityPalette.muted)
                             Text(value(row, at: titleIndex))
                                 .font(.body.weight(.semibold))
                                 .foregroundStyle(SchoolityPalette.ink)
@@ -77,7 +77,7 @@ struct HistorySubjectTable: View {
                     LazyVGrid(columns: [GridItem(.flexible(), alignment: .leading), GridItem(.flexible(), alignment: .leading)], alignment: .leading, spacing: 14) {
                         ForEach(headers.indices.filter { $0 != titleIndex }, id: \.self) { index in
                             VStack(alignment: .leading, spacing: 5) {
-                                Text(headers[index]).font(.caption).foregroundStyle(SchoolityPalette.muted)
+                                Text(headers[index]).font(SchoolityText.caption).foregroundStyle(SchoolityPalette.muted)
                                     .fixedSize(horizontal: false, vertical: true)
                                 Text(value(row, at: index)).font(.subheadline.weight(.medium)).foregroundStyle(SchoolityPalette.ink).monospacedDigit()
                                     .textSelection(.enabled)
@@ -99,7 +99,7 @@ struct HistorySubjectTable: View {
                 VStack(alignment: .leading, spacing: 10) {
                     ForEach(headers.indices, id: \.self) { index in
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(headers[index]).font(.caption).foregroundStyle(SchoolityPalette.muted)
+                            Text(headers[index]).font(SchoolityText.caption).foregroundStyle(SchoolityPalette.muted)
                             Text(value(row, at: index)).font(.body).foregroundStyle(SchoolityPalette.ink).textSelection(.enabled)
                         }
                     }

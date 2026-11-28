@@ -64,7 +64,7 @@ private struct SettingsLinkRow: View {
                     .foregroundStyle(SchoolityPalette.ink)
                 Spacer(minLength: 8)
                 Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
+                    .font(SchoolityText.caption.weight(.semibold))
                     .foregroundStyle(SchoolityPalette.faint)
                     .accessibilityHidden(true)
             }

@@ -4,8 +4,14 @@
   let {
     course,
     starting,
+    official = null,
     scenario = false,
-  }: { course: Course; starting: Course; scenario?: boolean } = $props();
+  }: {
+    course: Course;
+    starting: Course;
+    official?: number | null;
+    scenario?: boolean;
+  } = $props();
   const estimate = $derived(calculate(course));
   const baseline = $derived(calculate(starting));
   const change = $derived(
@@ -13,11 +19,20 @@
   );
 </script>
 
-<section class="grade-comparison" aria-label="Schoolity grade estimate">
+<section
+  class="grade-comparison"
+  aria-label="District grade and Schoolity estimate"
+>
+  <div>
+    <span>School grade</span>
+    <strong>{percentage(official)}</strong>
+    <small>Reported by the district</small>
+  </div>
   <div class:scenario>
-    {#if scenario}<span>Hypothetical estimate</span>{/if}<strong
-      >{percentage(estimate)}</strong
-    >{#if scenario}<small aria-label={scoreChange(estimate, baseline)}
+    {#if scenario}<span>Hypothetical estimate</span>{:else}<span
+        >Schoolity estimate</span
+      >{/if}<strong>{percentage(estimate)}</strong>
+    {#if scenario}<small aria-label={scoreChange(estimate, baseline)}
         >{change === null
           ? "No comparison"
           : `${change >= 0 ? "+" : "−"}${Math.abs(change).toFixed(1)} pts`}</small

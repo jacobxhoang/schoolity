@@ -1,7 +1,6 @@
 /* Schoolity design tokens.
    One palette, one type scale, one radius set, one focus ring.
-   Surface stylesheets (app.css, login.css, workspace.css) reference these
-   variables and never restate the palette. */
+   Surface stylesheets reference these variables and never restate the palette. */
 
 @font-face {
   font-family: "Inter";
@@ -51,9 +50,16 @@
   --field: #f5f5f5;
   --soft: #ececec;
 
+  /* A filled ink control: its hover and pressed value, and the text on it. */
+  --ink-hover: #262626;
+  --ink-press: #000000;
+  --on-ink: #ffffff;
+  /* The border a field shows at rest, and the one it shows once focused. */
+  --field-line: #8a8a8a;
+  --line-hover: #9a9a9a;
+
   /* The dark rail is used by the sign-in index and the workspace sidebar. */
   --rail: #0c0c0c;
-  --rail-end: #090909;
   --rail-panel: #171717;
   --rail-line: #272727;
   --rail-ink: #ffffff;
@@ -68,7 +74,9 @@
   --r-lg: 20px;
   --r-pill: 999px;
 
-  /* Type scale. Nothing renders below --t-mini. */
+  /* Type scale. Nothing renders below --t-mini. The display sizes below it are
+     the page titles, the large figures and the brand marks, so a heading never
+     needs a hand-written size. */
   --t-display: clamp(35px, 4.2vw, 58px);
   --t-h1: 34px;
   --t-h2: 20px;
@@ -76,6 +84,12 @@
   --t-body: 15px;
   --t-meta: 14px;
   --t-mini: 13px;
+  --t-page: clamp(32px, 3vw, 42px);
+  --t-page-sm: 26px;
+  --t-stat-lg: 44px;
+  --t-stat: 32px;
+  --t-stat-sm: 24px;
+  --t-mark: 18px;
 
   --s1: 8px;
   --s2: 12px;
@@ -97,22 +111,9 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Only the values that change. The aliases above resolve through these, so
+   restating them here would give the same palette a second place to drift. */
 .dark {
-  --accent: var(--ink);
-  --accent-soft: var(--soft);
-  --accent-ink: var(--ink);
-  --summary: var(--panel);
-  --summary-ink: var(--ink);
-  --summary-muted: var(--muted);
-  --summary-line: var(--line);
-  --elevated: var(--panel);
-  --nav-bg: var(--panel);
-  --nav-ink: var(--ink);
-  --nav-muted: var(--muted);
-  --nav-line: var(--line);
-  --nav-hover: var(--field);
-  --nav-selected: var(--ink);
-  --nav-selected-ink: var(--panel);
   color-scheme: dark;
   --canvas: #111113;
   --panel: #1a1a1d;
@@ -121,11 +122,15 @@
   --faint: #909090;
   --line: #2a2a2a;
   --line-strong: #3d3d3d;
+  --field-line: #6a6a6a;
+  --line-hover: #4a4a4a;
   --field: #1c1c1c;
   --soft: #242424;
+  --ink-hover: #ffffff;
+  --ink-press: #ffffff;
+  --on-ink: #111113;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 24px 50px -38px rgba(0, 0, 0, 0.8);
   --rail: #0a0a0a;
-  --rail-end: #050505;
   --rail-panel: #141414;
   --rail-line: #262626;
 }
@@ -179,7 +184,7 @@ button {
 }
 
 button:disabled {
-  cursor: wait;
+  cursor: default;
 }
 
 a {
@@ -194,7 +199,7 @@ svg {
 
 ::selection {
   background: var(--ink);
-  color: var(--panel);
+  color: var(--on-ink);
 }
 
 :focus-visible {
@@ -226,7 +231,7 @@ svg {
   padding: 0 14px;
   border-radius: var(--r-chip);
   background: var(--ink);
-  color: var(--panel);
+  color: var(--on-ink);
   font-size: var(--t-meta);
   font-weight: 600;
   box-shadow: 0 0 0 4px var(--canvas);

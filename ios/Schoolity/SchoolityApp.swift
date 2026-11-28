@@ -31,7 +31,6 @@ struct SchoolityApp: App {
             .tint(SchoolityStyle.accent)
             .environmentObject(store)
             .environmentObject(customization)
-            .accentColor(Color("ActionAccent"))
             .preferredColorScheme(preferredColorScheme)
             .task { if scenePhase == .active { await store.start() } }
             .task(id: gradeNotifications.enabled && scenePhase == .active && store.access == .signedIn) {
@@ -74,17 +73,29 @@ struct WorkspaceView: View {
     @State private var selectedTab: WorkspaceTab = .grades
     var body: some View {
         TabView(selection: $selectedTab) {
-            NavigationStack { GradebookView() }.tabItem { Label("Grades", systemImage: "menucard.fill") }.tag(WorkspaceTab.grades)
-            NavigationStack { ScheduleView() }.tabItem { Label("Schedule", systemImage: "list.bullet.rectangle.portrait.fill") }.tag(WorkspaceTab.schedule)
+            NavigationStack { GradebookView() }.tabItem { Label("Grades", systemImage: "chart.bar") }.tag(WorkspaceTab.grades)
+            NavigationStack { ScheduleView() }.tabItem { Label("Schedule", systemImage: "calendar") }.tag(WorkspaceTab.schedule)
             NavigationStack { ResourceView(resource: .mail) }.tabItem { Label("Inbox", systemImage: "tray") }.tag(WorkspaceTab.inbox)
             NavigationStack { RecordsView() }.tabItem { Label("Records", systemImage: "list.bullet.rectangle") }.tag(WorkspaceTab.records)
             NavigationStack { AccountDetailsView() }.tabItem { Label("Account", systemImage: "person.crop.circle") }.tag(WorkspaceTab.account)
         }
         .task { await store.preloadWorkspace() }
         .tint(customization.accentColor)
-        .accentColor(customization.accentColor)
-        .toolbarBackground(SchoolityPalette.panel, for: .tabBar)
-        .toolbarBackground(.visible, for: .tabBar)
+        .modifier(SchoolityTabBarBackground())
+    }
+}
+
+/// iOS 26 gives the tab bar its own system material, as the navigation bar gets
+/// in `schoolityNavigationChrome()`. Older releases keep the app's panel.
+private struct SchoolityTabBarBackground: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content
+        } else {
+            content
+                .toolbarBackground(SchoolityPalette.panel, for: .tabBar)
+                .toolbarBackground(.visible, for: .tabBar)
+        }
     }
 }
 
@@ -107,7 +118,7 @@ struct AccountDetailsView: View {
                             .foregroundStyle(SchoolityPalette.muted)
                         if !profile.grade.isEmpty {
                             Text("Grade \(profile.grade)")
-                                .font(.caption)
+                                .font(SchoolityText.caption)
                                 .foregroundStyle(SchoolityPalette.faint)
                         }
                     }
@@ -140,11 +151,11 @@ struct AccountDetailsView: View {
                 HStack(spacing: 12) {
                     IconTile(symbol: "gearshape.fill", size: 40, background: .field)
                     Text("Settings")
-                        .font(.headline)
+                        .font(SchoolityText.cardTitle)
                         .foregroundStyle(SchoolityPalette.ink)
                     Spacer(minLength: 8)
                     Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
+                        .font(SchoolityText.caption.weight(.semibold))
                         .foregroundStyle(SchoolityPalette.faint)
                         .accessibilityHidden(true)
                 }
@@ -153,6 +164,8 @@ struct AccountDetailsView: View {
                 .schoolityCard(padding: 16)
             }
             .buttonStyle(.plain)
+            // The row opens another screen, so it is announced as a link.
+            .accessibilityAddTraits(.isLink)
             .schoolityPageRow(bottom: 20)
 
             Button(role: .destructive) {
@@ -166,7 +179,7 @@ struct AccountDetailsView: View {
             .schoolityPageRow(bottom: 24)
 
             Text(appVersion)
-                .font(.caption2)
+                .font(SchoolityText.meta)
                 .foregroundStyle(SchoolityPalette.faint)
                 .frame(maxWidth: .infinity)
                 .schoolityPageRow(bottom: 8)

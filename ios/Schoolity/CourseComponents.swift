@@ -63,7 +63,7 @@ private struct CategoryGradeRow: View {
                 SchoolityBar(value: score / 100, tint: customization.gradeColor(score), height: 5)
             }
             Text("\(GradeMath.points(earned)) / \(GradeMath.points(possible)) points")
-                .font(.caption)
+                .font(SchoolityText.caption)
                 .foregroundStyle(SchoolityPalette.muted)
                 .monospacedDigit()
         }
@@ -98,7 +98,7 @@ struct AssignmentDetailRow: View {
                             .fixedSize(horizontal: false, vertical: true)
                         HStack(spacing: 6) {
                             Text(points)
-                                .font(.caption)
+                                .font(SchoolityText.caption)
                                 .foregroundStyle(SchoolityPalette.muted)
                                 .monospacedDigit()
                             if !assignment.category.isEmpty {
@@ -111,7 +111,7 @@ struct AssignmentDetailRow: View {
                     }
                     Spacer(minLength: 0)
                     Image(systemName: "chevron.down")
-                        .font(.caption.weight(.semibold))
+                        .font(SchoolityText.caption.weight(.semibold))
                         .foregroundStyle(SchoolityPalette.muted)
                         .rotationEffect(.degrees(isExpanded ? 180 : 0))
                         .accessibilityHidden(true)

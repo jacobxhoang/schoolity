@@ -36,7 +36,7 @@ struct ClassAliasesView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(title)
                             if let alias = customization.settings.alias(for: title) {
-                                Label(alias.name, systemImage: alias.symbol).font(.caption).foregroundStyle(.secondary)
+                                Label(alias.name, systemImage: alias.symbol).font(SchoolityText.caption).foregroundStyle(.secondary)
                             }
                         }
                     }
@@ -134,7 +134,7 @@ private struct ClassAliasEditor: View {
                     TextField("Class display name", text: $alias.name)
                         .accessibilityIdentifier("alias.name")
                     Label(alias.name.isEmpty ? "Preview" : alias.name, systemImage: validSymbol ? alias.symbol : "questionmark")
-                        .font(.headline)
+                        .font(SchoolityText.cardTitle)
                 }
                 Section("Icon") {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 52))], spacing: 12) {

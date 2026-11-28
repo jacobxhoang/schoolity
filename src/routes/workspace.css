@@ -37,7 +37,7 @@
   padding: 0 8px;
   color: var(--nav-ink);
   font-family: var(--font-display);
-  font-size: 20px;
+  font-size: var(--t-h2);
   font-weight: 600;
   letter-spacing: -0.045em;
 }
@@ -50,7 +50,7 @@
   background: var(--nav-ink);
   color: var(--nav-bg);
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: var(--t-mark);
   font-weight: 700;
   line-height: 1;
 }
@@ -67,7 +67,7 @@ nav button {
   padding: 0 12px;
   border-radius: 10px;
   color: var(--nav-muted);
-  font-size: 14px;
+  font-size: var(--t-meta);
   font-weight: 500;
   text-align: left;
   transition:
@@ -103,7 +103,7 @@ nav button.active {
   padding: 0 10px;
   border-radius: 10px;
   color: var(--nav-muted);
-  font-size: 13px;
+  font-size: var(--t-mini);
   text-align: left;
   transition:
     background 0.18s ease,
@@ -138,7 +138,7 @@ nav button.active {
   border-radius: 10px;
   background: var(--nav-hover);
   color: var(--nav-ink);
-  font-size: 13px;
+  font-size: var(--t-mini);
   font-weight: 600;
 }
 .profile > span:last-child {
@@ -148,7 +148,7 @@ nav button.active {
   display: block;
   overflow: hidden;
   color: var(--nav-ink);
-  font-size: 14px;
+  font-size: var(--t-meta);
   font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -190,7 +190,7 @@ nav button.active {
   align-items: center;
   gap: 10px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--t-mini);
 }
 .breadcrumb strong {
   min-width: 0;
@@ -199,7 +199,7 @@ nav button.active {
   white-space: nowrap;
   color: var(--ink);
   font-family: var(--font-display);
-  font-size: 14px;
+  font-size: var(--t-meta);
   font-weight: 600;
   letter-spacing: -0.01em;
 }
@@ -228,7 +228,7 @@ nav button.active {
   background: var(--panel);
   box-shadow: 0 4px 16px rgb(0 0 0 / 0.1);
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--t-mini);
   font-weight: 500;
   white-space: nowrap;
 }
@@ -262,7 +262,7 @@ nav button.active {
 
 h1 {
   font-family: var(--font-display);
-  font-size: clamp(32px, 3vw, 42px);
+  font-size: var(--t-page);
   font-weight: 600;
   letter-spacing: -0.04em;
   line-height: 1.05;
@@ -307,7 +307,7 @@ h3 {
   min-height: var(--s6);
   margin-bottom: 8px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--t-mini);
   font-weight: 500;
 }
 .back-link:hover {
@@ -333,11 +333,11 @@ h3 {
 }
 :is(input, select) {
   min-height: var(--s6);
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--field-line);
   border-radius: var(--r-chip);
   background: var(--panel);
   color: var(--ink);
-  font-size: 13.5px;
+  font-size: var(--t-meta);
 }
 :is(input, select):focus-visible {
   border-color: var(--ink);
@@ -362,6 +362,12 @@ select option {
 }
 .section-heading .count {
   margin-left: 6px;
+}
+.section-note {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: var(--t-mini);
+  line-height: 1.5;
 }
 
 /* Gradebook */
@@ -388,9 +394,7 @@ select option {
   border-left: 1px solid var(--summary-line);
 }
 .stat-card > span {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: block;
   color: var(--summary-muted);
   font-size: var(--t-meta);
   font-weight: 500;
@@ -399,17 +403,12 @@ select option {
   display: block;
   margin: 8px 0 2px;
   font-family: var(--font-display);
-  font-size: 44px;
+  font-size: var(--t-stat-lg);
   font-weight: 600;
   letter-spacing: -0.045em;
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
 }
-.stat-card small {
-  color: var(--summary-muted);
-  font-size: var(--t-mini);
-}
-
 .content-columns {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
@@ -424,7 +423,7 @@ select option {
   box-shadow: none;
 }
 .recent-assignments h2 {
-  font-size: 18px;
+  font-size: var(--t-h2);
 }
 .recent-assignment-list {
   margin-top: 12px;
@@ -449,7 +448,7 @@ select option {
 }
 .recent-assignment-title {
   color: var(--ink);
-  font-size: 13px;
+  font-size: var(--t-mini);
   font-weight: 600;
   line-height: 1.4;
   overflow-wrap: anywhere;
@@ -550,15 +549,13 @@ select option {
   color: var(--faint);
 }
 .course-card-bottom {
-  display: flex;
   grid-column: 2;
   grid-row: 1 / span 2;
-  justify-content: flex-end;
   text-align: right;
 }
 .course-card-bottom strong {
   font-family: var(--font-display);
-  font-size: 23px;
+  font-size: var(--t-stat-sm);
   font-weight: 600;
   letter-spacing: -0.04em;
   font-variant-numeric: tabular-nums;
@@ -596,9 +593,9 @@ select option {
 .grade-comparison {
   display: grid;
   flex: 1;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 28px;
-  max-width: 420px;
+  max-width: 440px;
   margin: 0;
 }
 .grade-comparison > div {
@@ -613,7 +610,7 @@ select option {
 }
 .grade-comparison strong {
   font-family: var(--font-display);
-  font-size: 32px;
+  font-size: var(--t-stat);
   font-weight: 600;
   letter-spacing: -0.045em;
   line-height: 1.1;
@@ -643,7 +640,7 @@ select option {
 }
 .estimate-details summary::after {
   content: "+";
-  font-size: 14px;
+  font-size: var(--t-meta);
 }
 .estimate-details[open] summary::after {
   content: "−";
@@ -709,7 +706,7 @@ select option {
   background: var(--panel);
 }
 .what-if h2 {
-  font-size: 16px;
+  font-size: var(--t-h3);
   letter-spacing: -0.02em;
 }
 .what-if p {
@@ -772,7 +769,7 @@ select option {
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13.5px;
+  font-size: var(--t-meta);
   text-align: left;
 }
 th {
@@ -806,7 +803,7 @@ td:first-child {
   font-variant-numeric: normal;
 }
 td strong {
-  font-size: 13.5px;
+  font-size: var(--t-meta);
   font-weight: 600;
 }
 td small {
@@ -816,7 +813,7 @@ td small {
   font-size: var(--t-mini);
 }
 .grade-label {
-  font-size: 13.5px;
+  font-size: var(--t-meta);
   font-weight: 600;
 }
 .muted {
@@ -847,6 +844,13 @@ td small {
 .score-inputs input {
   width: 56px;
 }
+.score-hint {
+  display: block;
+  margin-top: 4px;
+  color: var(--ink);
+  font-size: var(--t-mini);
+  line-height: 1.5;
+}
 .remove-assignment {
   width: var(--s6);
   height: var(--s6);
@@ -872,6 +876,90 @@ td small {
 
 /* Records, inbox and documents */
 
+/* The inbox filter narrows the messages already loaded. */
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.filter-row > label {
+  color: var(--muted);
+  font-size: var(--t-mini);
+}
+.filter-row input {
+  flex: 1 1 220px;
+  min-width: 0;
+  padding: 0 12px;
+}
+.filter-row > span {
+  color: var(--faint);
+  font-size: var(--t-mini);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Workspace search: one dialog over the data already loaded. */
+.search-modal {
+  width: 560px;
+}
+.search-modal input {
+  width: 100%;
+  margin-top: 12px;
+  padding: 0 12px;
+}
+.search-results {
+  max-height: 320px;
+  margin: 12px 0 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+.search-count {
+  margin: 12px 0 0;
+  color: var(--faint);
+  font-size: var(--t-mini);
+  font-variant-numeric: tabular-nums;
+}
+.search-results li + li {
+  border-top: 1px solid var(--line);
+}
+.search-results button {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 8px;
+  border-radius: var(--r-chip);
+  text-align: left;
+}
+.search-results button:hover,
+.search-results button:focus-visible {
+  background: var(--field);
+}
+.search-results span {
+  color: var(--ink);
+  font-size: var(--t-meta);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.search-results small {
+  color: var(--muted);
+  font-size: var(--t-mini);
+  overflow-wrap: anywhere;
+}
+.search-empty {
+  margin: 12px 0;
+  color: var(--muted);
+  font-size: var(--t-meta);
+  line-height: 1.5;
+}
+.search-modal .primary {
+  width: 100%;
+  margin-top: 16px;
+}
+
 .records-list {
   display: flex;
   flex-direction: column;
@@ -895,7 +983,7 @@ td small {
 }
 .record-card h3 {
   margin-top: 2px;
-  font-size: 14px;
+  font-size: var(--t-meta);
   font-weight: 600;
   line-height: 1.4;
 }
@@ -929,7 +1017,7 @@ td small {
 }
 .document-copy strong {
   display: block;
-  font-size: 14px;
+  font-size: var(--t-meta);
   font-weight: 600;
   overflow-wrap: anywhere;
 }
@@ -958,7 +1046,7 @@ td small {
   min-height: 60px;
   padding: 16px 20px;
   border-radius: var(--r);
-  font-size: 13.5px;
+  font-size: var(--t-meta);
   font-weight: 500;
   list-style: none;
   cursor: pointer;
@@ -1006,7 +1094,7 @@ td small {
 .mail-content p {
   max-width: 75ch;
   margin-top: 8px;
-  font-size: 13.5px;
+  font-size: var(--t-meta);
   line-height: 1.7;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -1017,7 +1105,7 @@ td small {
   border-top: 1px solid var(--line);
 }
 .mail-attachments h3 {
-  font-size: 13px;
+  font-size: var(--t-mini);
 }
 .mail-attachments ul {
   margin: 10px 0 0;
@@ -1073,7 +1161,7 @@ td small {
 .attendance-note {
   max-width: 70ch;
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--t-mini);
   line-height: 1.6;
 }
 .records-empty {
@@ -1095,7 +1183,7 @@ td small {
 }
 .student-record-section h2 {
   margin-bottom: 14px;
-  font-size: 17px;
+  font-size: var(--t-h3);
 }
 .student-info-fields {
   display: grid;
@@ -1113,7 +1201,7 @@ td small {
 }
 .student-info-fields dd {
   margin-top: 3px;
-  font-size: 13.5px;
+  font-size: var(--t-meta);
   line-height: 1.55;
   white-space: pre-line;
   overflow-wrap: anywhere;
@@ -1127,7 +1215,7 @@ td small {
 }
 .student-info-group h3 {
   margin-bottom: 12px;
-  font-size: 13.5px;
+  font-size: var(--t-meta);
 }
 .student-info-table th,
 .student-info-table td {
@@ -1137,7 +1225,7 @@ td small {
 .student-info-note {
   max-width: 70ch;
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--t-mini);
   line-height: 1.6;
   white-space: pre-line;
 }
@@ -1157,7 +1245,7 @@ td small {
   margin-bottom: 16px;
 }
 .graduation-heading h2 {
-  font-size: 19px;
+  font-size: var(--t-h2);
 }
 .graduation-heading > span {
   color: var(--muted);
@@ -1216,7 +1304,7 @@ td small {
 }
 .graduation-requirement h3 {
   padding-top: 2px;
-  font-size: 13.5px;
+  font-size: var(--t-meta);
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
@@ -1228,7 +1316,7 @@ td small {
   margin: -8px 0 -8px -8px;
   padding: 8px;
   border-radius: var(--r-chip);
-  font-size: 13.5px;
+  font-size: var(--t-meta);
   font-weight: 600;
   line-height: 1.5;
   text-align: left;
@@ -1293,7 +1381,7 @@ td small {
 }
 .subject-course-group h4 {
   margin-bottom: 10px;
-  font-size: 13.5px;
+  font-size: var(--t-meta);
   font-weight: 600;
 }
 .subject-course-group .records-intro {
@@ -1307,7 +1395,7 @@ td small {
 .subject-error {
   margin-bottom: 14px;
   color: var(--ink);
-  font-size: 13px;
+  font-size: var(--t-mini);
   line-height: 1.6;
 }
 .subject-error p {
@@ -1323,7 +1411,7 @@ td small {
   gap: 8px;
   min-height: var(--s6);
   padding: 10px 0;
-  font-size: 15px;
+  font-size: var(--t-body);
   font-weight: 600;
   cursor: pointer;
 }
@@ -1349,14 +1437,14 @@ td small {
 .attendance-totals dd {
   margin-top: 2px;
   font-family: var(--font-display);
-  font-size: 24px;
+  font-size: var(--t-stat-sm);
   font-weight: 600;
   letter-spacing: -0.04em;
   font-variant-numeric: tabular-nums;
 }
 .attendance-reason {
   color: var(--ink);
-  font-size: 13px;
+  font-size: var(--t-mini);
 }
 .attendance-note {
   margin-top: 4px;
@@ -1373,7 +1461,7 @@ td small {
   gap: 12px;
   padding: 10px 0;
   border-top: 1px solid var(--line);
-  font-size: 13px;
+  font-size: var(--t-mini);
 }
 .attendance-periods li:first-child {
   border-top: 0;
@@ -1385,7 +1473,7 @@ td small {
 .attendance-course strong,
 .attendance-status strong {
   display: block;
-  font-size: 13px;
+  font-size: var(--t-mini);
   font-weight: 600;
   overflow-wrap: anywhere;
 }
@@ -1417,11 +1505,11 @@ td small {
 }
 .account-fields dd {
   margin-top: 3px;
-  font-size: 13.5px;
+  font-size: var(--t-meta);
   overflow-wrap: anywhere;
 }
 .account-note {
-  margin-bottom: 18px !important;
+  margin-bottom: 18px;
 }
 
 /* Narrower desktop */
@@ -1436,11 +1524,17 @@ td small {
 }
 
 @media (max-width: 1000px) {
+  /* Two large figures need the full width of the header before they sit side by
+     side, so below this width the district grade sits above the estimate. */
+  .grade-comparison {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
   .table-wrap {
     overflow: visible;
   }
   table {
-    font-size: 13px;
+    font-size: var(--t-mini);
   }
   thead {
     position: absolute;
@@ -1515,7 +1609,7 @@ td small {
     top: 10px;
     right: 8px;
     display: grid;
-    border-color: #ffffff1f;
+    border-color: var(--rail-line);
     background: transparent;
     color: var(--rail-ink);
   }
@@ -1536,10 +1630,10 @@ td small {
     padding: 20px 16px 40px;
   }
   h1 {
-    font-size: 26px;
+    font-size: var(--t-page-sm);
   }
   h2 {
-    font-size: 18px;
+    font-size: var(--t-h2);
   }
   .page-heading {
     flex-wrap: wrap;
@@ -1560,10 +1654,7 @@ td small {
     padding-left: 16px;
   }
   .stat-card > strong {
-    font-size: 26px;
-  }
-  .stat-card small {
-    font-size: var(--t-mini);
+    font-size: var(--t-stat-sm);
   }
   .course-card {
     grid-template-columns: minmax(0, 1fr) 92px;
@@ -1571,10 +1662,10 @@ td small {
     padding: 14px;
   }
   .course-card h3 {
-    font-size: 15px;
+    font-size: var(--t-body);
   }
   .course-card-bottom strong {
-    font-size: 20px;
+    font-size: var(--t-h2);
   }
   .course-progress,
   .graduation-status,
@@ -1587,11 +1678,12 @@ td small {
     gap: 12px;
   }
   .grade-comparison {
+    grid-template-columns: minmax(0, 1fr);
     max-width: none;
     gap: 14px;
   }
   .grade-comparison strong {
-    font-size: 28px;
+    font-size: var(--t-stat-sm);
   }
   .estimate-details {
     flex-basis: 100%;
@@ -1658,16 +1750,13 @@ td small {
     column-gap: 10px;
   }
   .course-card h3 {
-    font-size: 13.5px;
+    font-size: var(--t-meta);
   }
   .stat-card > strong {
-    font-size: 24px;
+    font-size: var(--t-stat-sm);
   }
 }
 
-.course-card:hover {
-  border-color: var(--accent);
-}
 @media (prefers-reduced-motion: no-preference) {
   .main-shell > main {
     animation: workspace-arrive 320ms ease-out both;

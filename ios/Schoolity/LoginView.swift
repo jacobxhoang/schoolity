@@ -43,11 +43,11 @@ struct SavedSignInView: View {
 
                                     VStack(alignment: .leading, spacing: 3) {
                                         Text("Sign in with \(store.unlockMethod)")
-                                            .font(.headline)
+                                            .font(SchoolityText.cardTitle)
                                             .foregroundStyle(SchoolityLoginPalette.ink)
                                             .fixedSize(horizontal: false, vertical: true)
                                         Text("No password needed. Your saved credentials stay in the protected Keychain.")
-                                            .font(.footnote)
+                                            .font(SchoolityText.meta)
                                             .foregroundStyle(SchoolityLoginPalette.muted)
                                             .fixedSize(horizontal: false, vertical: true)
                                     }
@@ -83,7 +83,7 @@ struct SavedSignInView: View {
 
                         if !typeSize.isAccessibilitySize {
                             Text("Cancel leaves your saved sign-in for another try.")
-                                .font(.caption)
+                                .font(SchoolityText.caption)
                                 .foregroundStyle(SchoolityLoginPalette.faint)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -136,7 +136,7 @@ struct LoginView: View {
             if compact {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("StudentVUE sign-in · Anoka-Hennepin")
-                        .font(.caption.weight(.medium))
+                        .font(SchoolityText.caption.weight(.medium))
                         .tracking(0.8)
                         .foregroundStyle(SchoolityLoginPalette.muted)
                         .fixedSize(horizontal: false, vertical: true)
@@ -163,7 +163,7 @@ struct LoginView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             Text("Schoolity is an independent student project. It is not affiliated with or endorsed by Anoka-Hennepin Schools or Edupoint.")
-                .font(.caption)
+                .font(SchoolityText.caption)
                 .foregroundStyle(SchoolityLoginPalette.faint)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -185,7 +185,7 @@ struct LoginView: View {
                             .foregroundStyle(SchoolityLoginPalette.ink)
                         Spacer(minLength: 8)
                         Text("StudentVUE")
-                            .font(.caption.weight(.medium))
+                            .font(SchoolityText.caption.weight(.medium))
                             .foregroundStyle(SchoolityLoginPalette.faint)
                     }
                 }
@@ -238,7 +238,7 @@ struct LoginView: View {
                             reveal.toggle()
                         } label: {
                             Text(reveal ? "Hide" : "Show")
-                                .font(.footnote.weight(.semibold))
+                                .font(SchoolityText.meta.weight(.semibold))
                                 .foregroundStyle(SchoolityLoginPalette.ink)
                                 .frame(minWidth: 44, minHeight: 44)
                                 .contentShape(Rectangle())
@@ -273,7 +273,7 @@ struct LoginView: View {
                 .accessibilityIdentifier("login.submit")
 
                 Text("Use the same username and password as the district portal.")
-                    .font(.caption)
+                    .font(SchoolityText.caption)
                     .foregroundStyle(SchoolityLoginPalette.faint)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -326,7 +326,7 @@ private struct LoginTopBar: View {
                         .font(.system(size: 12, weight: .medium))
                     Text("Privacy")
                 }
-                .font(.footnote.weight(.medium))
+                .font(SchoolityText.meta.weight(.medium))
                 .foregroundStyle(SchoolityLoginPalette.muted)
                 .frame(minHeight: 44)
                 .contentShape(Rectangle())
@@ -349,7 +349,7 @@ private struct LoginIntro: View {
                     .frame(width: 5, height: 5)
                     .accessibilityHidden(true)
                 Text(eyebrow.uppercased())
-                    .font(.caption.weight(.medium))
+                    .font(SchoolityText.caption.weight(.medium))
                     .tracking(0.8)
                     .foregroundStyle(SchoolityLoginPalette.muted)
                     .fixedSize(horizontal: false, vertical: true)
@@ -403,7 +403,7 @@ private struct LoginFieldLabel: View {
 
     var body: some View {
         Text(text)
-            .font(.footnote.weight(.medium))
+            .font(SchoolityText.meta.weight(.medium))
             .foregroundStyle(SchoolityLoginPalette.muted)
     }
 }
@@ -418,7 +418,7 @@ private struct LoginFieldShell: ViewModifier {
             .background(SchoolityLoginPalette.field, in: RoundedRectangle(cornerRadius: SchoolityRadius.panel, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: SchoolityRadius.panel, style: .continuous)
-                    .strokeBorder(SchoolityLoginPalette.line, lineWidth: 1)
+                    .strokeBorder(SchoolityLoginPalette.lineStrong, lineWidth: 1)
             }
     }
 }
@@ -468,7 +468,7 @@ private struct LoginNotice: View {
                 .foregroundStyle(SchoolityLoginPalette.muted)
                 .accessibilityHidden(true)
             Text(message)
-                .font(.footnote)
+                .font(SchoolityText.meta)
                 .foregroundStyle(SchoolityLoginPalette.ink)
                 .fixedSize(horizontal: false, vertical: true)
         }

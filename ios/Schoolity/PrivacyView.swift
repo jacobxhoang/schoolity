@@ -48,7 +48,7 @@ struct PrivacyView: View {
                             .foregroundStyle(SchoolityPalette.ink)
                         Spacer(minLength: 8)
                         Image(systemName: "chevron.down")
-                            .font(.caption.weight(.semibold))
+                            .font(SchoolityText.caption.weight(.semibold))
                             .foregroundStyle(SchoolityPalette.muted)
                             .rotationEffect(.degrees(connectionExpanded ? 180 : 0))
                             .accessibilityHidden(true)
@@ -111,7 +111,7 @@ struct PrivacyView: View {
     private func detail(_ title: String, _ body: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(title)
-                .font(.footnote.weight(.semibold))
+                .font(SchoolityText.meta.weight(.semibold))
                 .foregroundStyle(SchoolityPalette.ink)
             Text(body)
                 .font(SchoolityText.meta)

@@ -10,24 +10,18 @@
   padding: 0 var(--s3);
   border-radius: var(--r-chip);
   background: var(--ink);
-  color: var(--panel);
-  font-size: 13.5px;
+  color: var(--on-ink);
+  font-size: var(--t-meta);
   font-weight: 600;
   transition:
     background 0.2s ease,
     transform 0.12s ease;
 }
 .primary:hover {
-  background: #262626;
-}
-.dark .primary {
-  background: #f2f2f2;
-  color: #111111;
-}
-.dark .primary:hover {
-  background: #ffffff;
+  background: var(--ink-hover);
 }
 .primary:active {
+  background: var(--ink-press);
   transform: translateY(1px);
 }
 .primary:disabled {
@@ -36,7 +30,7 @@
 .primary.small {
   min-height: var(--s6);
   padding: 0 var(--s2);
-  font-size: 12.5px;
+  font-size: var(--t-mini);
 }
 
 .text-button {
@@ -97,14 +91,14 @@
 .modal h2 {
   margin-bottom: 10px;
   font-family: var(--font-display);
-  font-size: 26px;
+  font-size: var(--t-page-sm);
   font-weight: 600;
   letter-spacing: -0.035em;
   line-height: 1.1;
 }
 .modal > p {
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--t-mini);
   line-height: 1.7;
 }
 .modal-close {
@@ -124,8 +118,8 @@
 .privacy-modal .primary {
   margin-top: var(--s4);
 }
-.privacy-summary {
-  color: var(--ink) !important;
+.modal > p.privacy-summary {
+  color: var(--ink);
   font-weight: 500;
 }
 .privacy-details {
@@ -172,6 +166,14 @@
   background: var(--panel);
   color: var(--muted);
   font-size: var(--t-meta);
+}
+.notice .text-button {
+  display: inline;
+  min-height: 0;
+  margin-left: 4px;
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: underline;
 }
 
 .alert {

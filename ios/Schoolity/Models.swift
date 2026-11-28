@@ -1,6 +1,6 @@
 import Foundation
 
-struct Assignment: Codable, Identifiable, Equatable {
+struct Assignment: Codable, Identifiable, Equatable, Hashable {
     var id: String
     var title: String
     var category: String
@@ -11,12 +11,12 @@ struct Assignment: Codable, Identifiable, Equatable {
     var hypothetical: Bool?
 }
 
-struct GradeCategory: Codable, Equatable {
+struct GradeCategory: Codable, Equatable, Hashable {
     var name: String
     var weight: Double
 }
 
-struct Course: Codable, Identifiable, Equatable {
+struct Course: Codable, Identifiable, Equatable, Hashable {
     var id: String
     var name: String
     var teacher: String
